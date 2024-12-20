@@ -1,0 +1,120 @@
+package controllers.api;
+
+import controllers.TestExtension;
+import io.mangoo.test.http.TestRequest;
+import io.mangoo.test.http.TestResponse;
+import io.mangoo.utils.JsonUtils;
+import io.mangoo.utils.MangooUtils;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+
+import java.util.Map;
+
+import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+
+@ExtendWith({TestExtension.class})
+public class UserControllerV1Tests {
+
+    @Test
+    void testLogin() {
+        //given
+        String username = "foo";
+        String password = "bar";
+        String body = JsonUtils.toJson(Map.of("username", username, "password", password));
+
+        //when
+        TestResponse response = TestRequest.post("/api/v1/users/login")
+                .withContentType("application/json")
+                .withStringBody(body)
+                .execute();
+
+        //then
+        assertThat(response).isNotNull();
+        assertThat(response.getStatusCode()).isEqualTo(200);
+        assertThat(response.getContent()).isNotNull();
+        assertThat(response.getContent()).contains("accessToken", "refreshToken");
+        assertThatJson(response.getContent()).node("accessToken").isString().isNotNull();
+        assertThatJson(response.getContent()).node("refreshToken").isString().isNotNull();
+        assertThatJson(response.getContent()).node("accessToken").isString().contains("v4.local");
+        assertThatJson(response.getContent()).node("refreshToken").isString().contains("v4.local");
+    }
+
+    @Test
+    void testInvalidLogin() {
+        //given
+        String username = MangooUtils.randomString(16);
+        String password = MangooUtils.randomString(16);
+        String body = JsonUtils.toJson(Map.of("username", username, "password", password));
+
+        //when
+        TestResponse response = TestRequest.post("/api/v1/users/login")
+                .withContentType("application/json")
+                .withStringBody(body)
+                .execute();
+
+        //then
+        assertThat(response).isNotNull();
+        assertThat(response.getStatusCode()).isEqualTo(401);
+        assertThat(response.getContent()).isEmpty();
+        assertThat(response.getContent()).doesNotContain("accessToken", "refreshToken");
+    }
+
+    @Test
+    void testRefresh() {
+        //given
+        String username = "foo";
+        String password = "bar";
+        String body = JsonUtils.toJson(Map.of("username", username, "password", password));
+
+        TestResponse response = TestRequest.post("/api/v1/users/login")
+                .withContentType("application/json")
+                .withStringBody(body)
+                .execute();
+
+        Map<String, String> credentials = JsonUtils.toFlatMap(response.getContent());
+
+        //when
+        response = TestRequest.post("/api/v1/users/refresh")
+                .withContentType("application/json")
+                .withStringBody(JsonUtils.toJson(Map.of("refreshToken", credentials.get("refreshToken"))))
+                .execute();
+
+        //then
+        assertThat(response).isNotNull();
+        assertThat(response.getStatusCode()).isEqualTo(200);
+        assertThat(response.getContent()).isNotNull();
+        assertThat(response.getContent()).contains("accessToken", "refreshToken");
+        assertThatJson(response.getContent()).node("accessToken").isString().isNotNull();
+        assertThatJson(response.getContent()).node("refreshToken").isString().isNotNull();
+        assertThatJson(response.getContent()).node("accessToken").isString().contains("v4.local");
+        assertThatJson(response.getContent()).node("refreshToken").isString().contains("v4.local");
+    }
+
+    @Test
+    void testRefreshShouldNotWorkWithAccessToken() {
+        //given
+        String username = "foo";
+        String password = "bar";
+        String body = JsonUtils.toJson(Map.of("username", username, "password", password));
+
+        TestResponse response = TestRequest.post("/api/v1/users/login")
+                .withContentType("application/json")
+                .withStringBody(body)
+                .execute();
+
+        Map<String, String> credentials = JsonUtils.toFlatMap(response.getContent());
+
+        //when
+        response = TestRequest.post("/api/v1/users/refresh")
+                .withContentType("application/json")
+                .withStringBody(JsonUtils.toJson(Map.of("refreshToken", credentials.get("accessToken"))))
+                .execute();
+
+        //then
+        assertThat(response).isNotNull();
+        assertThat(response.getStatusCode()).isEqualTo(401);
+        assertThat(response.getContent()).isEmpty();
+        assertThat(response.getContent()).doesNotContain("accessToken", "refreshToken");
+    }
+}

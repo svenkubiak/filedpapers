@@ -1,0 +1,33 @@
+services:
+  filepapers-backend:
+    image: fp
+    build: .
+    ports:
+      - "9090:9090"
+    environment:
+      - JAVA_OPTS=-Xms256m -Xmx512m
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    depends_on:
+      - filepapers-database
+    networks:
+      - app-network
+
+  filepapers-database:
+    image: mongo:latest
+    container_name: mongodb
+    command: ["mongod", "--bind_ip", "0.0.0.0"]
+    networks:
+     - app-network
+    #volumes:
+     # - mongo-data:/data/db # Persistent storage for MongoDB data
+
+networks:
+  app-network:
+    driver: bridge
+
+#volumes:
+ # mongo-data:
