@@ -1,0 +1,361 @@
+/* Custom styles for fixed sidebar and layout */
+.sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 240px;
+    background-color: #f5f5f5;
+    padding: 1rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.sidebar-content {
+    flex-grow: 1;
+    padding-top: 1rem;
+}
+
+.sidebar-content > p.menu-label {
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+}
+
+.sidebar-footer {
+    padding-top: 1rem;
+    border-top: 1px solid #dbdbdb;
+    margin-top: auto;
+}
+
+.main-content {
+    margin-left: 240px;
+    padding: 1.5rem;
+    max-width: 1600px;
+}
+
+.card {
+    margin-bottom: 1rem;
+    height: 100%;
+    box-shadow: none;
+    background: transparent;
+    border-radius: var(--radius);
+}
+
+.card:hover .card-title {
+    color: #1a73e8;
+}
+
+.card-content {
+    padding: 0.75rem 0;
+    position: relative;
+}
+
+.card-title {
+    flex: 1;
+    font-size: 1rem !important;
+    margin-bottom: 0.5rem !important;
+    color: #363636;
+    font-weight: 600;
+    line-height: 1.4;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-decoration: none;
+    cursor: grab;
+}
+
+.card-title:active {
+    cursor: grabbing;
+}
+
+.card-trash {
+    color: #666;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 2;
+    opacity: 0.5;
+    position: relative;
+    z-index: 3;
+    pointer-events: all;
+}
+
+.card:hover .card-trash {
+    opacity: 1;
+}
+
+.card-trash:hover {
+    color: #ff3860;
+}
+
+.content {
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+}
+
+.menu-label {
+    color: #7a7a7a;
+    font-size: 0.8em;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+}
+
+.menu-list a {
+    border-radius: var(--radius);
+    color: #4a4a4a;
+    padding: 0.75em 1em;
+    margin-bottom: 0.5rem;
+    transition: all 0.2s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.menu-list a:hover {
+    background-color: #f0f0f0;
+}
+
+.menu-list a.is-active {
+    background-color: #3273dc;
+    color: white;
+}
+
+.menu-list .icon {
+    margin-right: 0.5rem;
+}
+
+.card.dragging {
+    opacity: 0.4;
+    transform: scale(0.95);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
+
+.menu-list a.drag-over {
+    background-color: rgba(50, 115, 220, 0.1);
+    box-shadow: inset 0 0 0 2px #3273dc;
+    transition: all 0.2s ease;
+}
+
+.menu-list a::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(50, 115, 220, 0.1);
+    transform: scaleX(0);
+    transform-origin: left;
+    transition: transform 0.3s ease;
+}
+
+.menu-list a.drag-over::before {
+    transform: scaleX(1);
+}
+
+.menu-list .tag {
+    transition: all 0.2s ease;
+}
+
+.menu-list a.drag-over .tag {
+    background-color: #3273dc;
+    color: white;
+}
+
+.card-link {
+    text-decoration: none;
+    color: inherit;
+    position: relative;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.menu-list a .tag {
+    background-color: rgba(50, 115, 220, 0.1);
+    color: #3273dc;
+}
+
+.menu-list a.is-active .tag {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: white;
+}
+
+.card-meta {
+    position: relative;
+    color: #666;
+    font-size: 0.8rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    pointer-events: none;
+}
+
+.card-domain {
+    color: #3273dc;
+}
+
+.card-added {
+    color: #888;
+}
+
+.card-trash {
+    pointer-events: auto;
+}
+
+.card-title-wrapper {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.5rem;
+}
+
+.drag-icon {
+    background: white;
+    padding: 10px;
+    border-radius: var(--radius-rounded);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Profile form styles */
+.profile-form {
+    padding: 2rem;
+}
+
+.profile-section {
+    border-bottom: 1px solid #f0f0f0;
+    padding-bottom: 2.5rem;
+    margin-bottom: 2.5rem;
+}
+
+.profile-section:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+    margin-bottom: 0;
+}
+
+.section-title {
+    color: #363636;
+    font-size: 1.5rem;
+    font-weight: 500;
+    margin-bottom: 2rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid rgba(50, 115, 220, 0.1);
+    position: relative;
+}
+
+.section-title::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background-color: rgba(50, 115, 220, 0.2);
+}
+
+.form-field {
+    margin-bottom: 1.5rem;
+}
+
+.form-field:last-child {
+    margin-bottom: 0;
+}
+
+.input {
+    transition: all 0.3s ease;
+    border-color: #dbdbdb;
+    border-radius: var(--radius);
+}
+
+.input:focus {
+    border-color: #3273dc;
+    box-shadow: 0 0 0 1px rgba(50, 115, 220, 0.25);
+}
+
+.input:disabled {
+    background-color: #f5f5f5;
+    border-color: #dbdbdb;
+    color: #7a7a7a;
+}
+
+.button.is-link {
+    transition: all 0.3s ease;
+    min-height: 2.5rem;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+    width: 100%;
+}
+
+.menu-label-with-icon {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* Add CSS variables for Bulma 1.0.2 */
+:root {
+    --radius: 6px;
+    --radius-small: 4px;
+    --radius-large: 8px;
+    --radius-rounded: 9999px;
+}
+
+.tag {
+    border-radius: var(--radius-rounded);
+}
+
+.modal-card {
+    border-radius: var(--radius-large);
+}
+
+.modal-card-head {
+    border-top-left-radius: var(--radius-large);
+    border-top-right-radius: var(--radius-large);
+}
+
+.modal-card-foot {
+    border-bottom-left-radius: var(--radius-large);
+    border-bottom-right-radius: var(--radius-large);
+}
+
+.button {
+    border-radius: var(--radius);
+}
+
+.button.is-rounded {
+    border-radius: var(--radius-rounded);
+}
+
+.card-link .card-image,
+.card-link .card-title {
+    pointer-events: all;
+}
+
+.card-link {
+    text-decoration: none;
+    color: inherit;
+    position: relative;
+    z-index: 1;
+    pointer-events: none;
+}
+
+.card-link .card-image,
+.card-link .card-title {
+    pointer-events: all;
+}
+
+.card-trash {
+    position: relative;
+    z-index: 2;
+    pointer-events: auto;
+}
+
+.card-meta {
+    pointer-events: none;
+}

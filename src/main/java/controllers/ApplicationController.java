@@ -16,6 +16,10 @@ public class ApplicationController {
         return Response.ok().render();
     }
 
+    public Response profile() {
+        return Response.ok().render();
+    }
+
     public Response category(String uid) {
         return Response.ok().render();
     }

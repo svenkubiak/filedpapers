@@ -33,6 +33,7 @@ public class Bootstrap implements MangooBootstrap {
         Bind.controller(ApplicationController.class).withRoutes(
                 On.get().to("/").respondeWith("index"),
                 On.get().to("/dashboard").respondeWith("dashboard"),
+                On.get().to("/dashboard/profile").respondeWith("profile"),
                 On.get().to("/dashboard/category/{uid}").respondeWith("category"),
                 On.get().to("/health").respondeWith("health")
         );
