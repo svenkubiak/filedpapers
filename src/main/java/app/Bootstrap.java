@@ -64,6 +64,9 @@ public class Bootstrap implements MangooBootstrap {
         
         Bind.pathResource().to("/assets/");
         Bind.fileResource().to("/robots.txt");
+        Bind.fileResource().to("/favicon.ico");
+        Bind.fileResource().to("/favicon-16x16.png");
+        Bind.fileResource().to("/favicon-32x32.png");
     }
     
     @Override
