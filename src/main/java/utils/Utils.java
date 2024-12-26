@@ -65,8 +65,9 @@ public final class Utils {
 
 
     public static void sortCategories(Optional<List<Map<String, Object>>> categories) {
-        // Sort the list
-        categories.get().sort((map1, map2) -> {
+        Objects.requireNonNull(categories, "categories can not be null");
+        
+        categories.orElseThrow().sort((map1, map2) -> {
             String name1 = (String) map1.get("name");
             String name2 = (String) map2.get("name");
 

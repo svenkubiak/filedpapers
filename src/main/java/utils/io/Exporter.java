@@ -2,12 +2,13 @@ package utils.io;
 
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.time.ZoneOffset;
 import java.util.List;
 
 public class Exporter {
     public void export(List<Leaf> bookmarks, String filePath) throws IOException {
-        try (FileWriter writer = new FileWriter(filePath)) {
+        try (FileWriter writer = new FileWriter(filePath, StandardCharsets.UTF_8)) {
             writer.write("<!DOCTYPE NETSCAPE-Bookmark-file-1>\n");
             writer.write("<!-- This is an automatically generated file.\n");
             writer.write("     It will be read and overwritten.\n");
