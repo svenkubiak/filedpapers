@@ -61,24 +61,24 @@ public class UserControllerV1 {
         String json = request.getBody();
         if (StringUtils.isNotBlank(json)) {
             Map<String, String> credentials = JsonUtils.toFlatMap(json);
-
             String refreshToken = credentials.get(Const.REFRESH_TOKEN);
-            try {
-                var token = Utils.parsePaseto(refreshToken, refreshTokenSecret);
-
-                if (token != null) {
-                    return Utils.validateToken(token).map(userUid -> {
-                        Map<String, String> tokens = null;
-                        try {
-                            tokens = Utils.getTokens(userUid, accessTokenSecret, refreshTokenSecret, accessTokenExpires, refreshTokenExpires);
-                            return Response.ok().bodyJson(tokens);
-                        } catch (MangooTokenException e) {
-                            return Response.unauthorized();
-                        }
-                    }).orElseGet(Response::unauthorized);
+            if (StringUtils.isNotBlank(refreshToken)) {
+                try {
+                    var token = Utils.parsePaseto(refreshToken, refreshTokenSecret);
+                    if (token != null) {
+                        return Utils.validateToken(token).map(userUid -> {
+                            Map<String, String> tokens = null;
+                            try {
+                                tokens = Utils.getTokens(userUid, accessTokenSecret, refreshTokenSecret, accessTokenExpires, refreshTokenExpires);
+                                return Response.ok().bodyJson(tokens);
+                            } catch (MangooTokenException e) {
+                                return Response.unauthorized();
+                            }
+                        }).orElseGet(Response::unauthorized);
+                    }
+                } catch (MangooTokenException e) {
+                    return Response.unauthorized();
                 }
-            } catch (MangooTokenException e) {
-                return Response.unauthorized();
             }
         }
 
