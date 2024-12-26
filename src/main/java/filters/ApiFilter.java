@@ -1,11 +1,10 @@
 package filters;
 
 import constants.Const;
-import io.mangoo.constants.NotNull;
+import io.mangoo.constants.Key;
 import io.mangoo.exceptions.MangooTokenException;
 import io.mangoo.interfaces.filters.PerRequestFilter;
 import io.mangoo.routing.Response;
-import io.mangoo.constants.Key;
 import io.mangoo.routing.bindings.Request;
 import io.mangoo.utils.RequestUtils;
 import io.undertow.server.handlers.Cookie;

@@ -7,7 +7,6 @@ import io.mangoo.routing.bindings.Flash;
 import io.mangoo.routing.bindings.Form;
 import io.mangoo.routing.bindings.Session;
 import io.mangoo.utils.CodecUtils;
-import io.undertow.util.Sessions;
 import jakarta.inject.Inject;
 import models.Category;
 import models.User;

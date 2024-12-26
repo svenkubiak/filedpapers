@@ -1,6 +1,5 @@
 package app;
 
-import constants.Const;
 import controllers.ApplicationController;
 import controllers.AuthenticationController;
 import controllers.DashboardController;
@@ -8,17 +7,9 @@ import controllers.api.CategoriesControllerV1;
 import controllers.api.ItemsControllerV1;
 import controllers.api.UserControllerV1;
 import io.mangoo.interfaces.MangooBootstrap;
-import io.mangoo.persistence.interfaces.Datastore;
 import io.mangoo.routing.Bind;
 import io.mangoo.routing.On;
-import io.mangoo.utils.CodecUtils;
-import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
-import models.Category;
-import models.Item;
-import models.User;
-
-import java.util.Objects;
 
 @Singleton
 public class Bootstrap implements MangooBootstrap {

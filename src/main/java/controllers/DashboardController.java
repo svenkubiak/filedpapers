@@ -9,7 +9,6 @@ import jakarta.inject.Inject;
 import models.Category;
 import models.Item;
 import models.User;
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.util.Strings;
 import services.DataService;
@@ -18,7 +17,6 @@ import utils.io.Exporter;
 import utils.io.Importer;
 import utils.io.Leaf;
 
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -51,9 +49,9 @@ public class DashboardController {
         return Response.ok()
                 .render("active", category.getName().toLowerCase(Locale.ENGLISH))
                 .render("breadcrumb", category.getName())
-                .render("categories", categories.get())
+                .render("categories", categories.orElseThrow())
                 .render("categoryUid", category.getUid())
-                .render("items", items.get() );
+                .render("items", items.orElseThrow() );
     }
 
     public Response profile(Authentication authentication) {
@@ -67,7 +65,7 @@ public class DashboardController {
         return Response.ok()
                 .render("username", user.getUsername())
                 .render("active", "profile")
-                .render("categories", categories.get());
+                .render("categories", categories.orElseThrow());
     }
 
     public Response io(Authentication authentication) {
@@ -78,7 +76,7 @@ public class DashboardController {
 
         return Response.ok()
                 .render("active", "io")
-                .render("categories", categories.get());
+                .render("categories", categories.orElseThrow());
     }
 
     public Response importer(Form form, Authentication authentication) throws IOException {
@@ -86,7 +84,7 @@ public class DashboardController {
         var content = Strings.EMPTY;
         Optional<InputStream> formFile = form.getFile();
         if (formFile.isPresent()) {
-            InputStream file = formFile.get();
+            InputStream file = formFile.orElseThrow();
             try {
                 content = IOUtils.toString(file, StandardCharsets.UTF_8);
             } catch (IOException e) {
@@ -144,14 +142,14 @@ public class DashboardController {
 
         return Response.ok()
                 .render("active", "about")
-                .render("categories", categories.get());
+                .render("categories", categories.orElseThrow());
     }
 
     public Response exporter(Authentication authentication) throws IOException {
         String userUid = authentication.getSubject();
         Optional<List<Map<String, Object>>> categories = dataService.findCategories(userUid);
 
-        List<Map<String, Object>> maps = categories.get();
+        List<Map<String, Object>> maps = categories.orElseThrow();
         List<Leaf> leafs = new ArrayList<>();
 
         for (Map<String, Object> map : maps) {
@@ -160,7 +158,7 @@ public class DashboardController {
                 String name = (String) map.get("name");
 
                 Optional<List<Map<String, Object>>> items = dataService.findItems(userUid, uid);
-                List<Map<String, Object>> i = items.get();
+                List<Map<String, Object>> i = items.orElseThrow();
 
                 Leaf leaf = new Leaf();
                 leaf.setFolder(true);
