@@ -15,7 +15,6 @@ import jakarta.inject.Inject;
 import models.Category;
 import models.Item;
 import models.User;
-import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.util.Strings;
 
 import java.time.ZoneOffset;
@@ -72,12 +71,12 @@ public class DataService {
         Objects.requireNonNull(username, USERNAME_CAN_NOT_BE_NULL);
         Objects.requireNonNull(password, PASSWORD_CAN_NOT_BE_NULL);
 
-        User user = datastore
-                .find(User.class, and(
-                        eq("username", username),
-                        eq("password", CodecUtils.hashArgon2(password))));
+        User user = datastore.find(User.class, eq("username", username));
+        if (user != null && user.getPassword().equals(CodecUtils.hashArgon2(password, user.getSalt()))) {
+            return Optional.of(user.getUid());
+        }
 
-        return (user != null) ? Optional.of(user.getUid()) : Optional.empty();
+        return Optional.empty();
     }
 
     @SuppressWarnings("unchecked")
