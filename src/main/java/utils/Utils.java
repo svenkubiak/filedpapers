@@ -9,10 +9,7 @@ import io.mangoo.utils.paseto.Token;
 import org.apache.commons.lang3.StringUtils;
 
 import java.time.LocalDateTime;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 public final class Utils {
 
@@ -64,5 +61,23 @@ public final class Utils {
         }
 
         return Optional.empty();
+    }
+
+
+    public static void sortCategories(Optional<List<Map<String, Object>>> categories) {
+        // Sort the list
+        categories.get().sort((map1, map2) -> {
+            String name1 = (String) map1.get("name");
+            String name2 = (String) map2.get("name");
+
+            if ("Inbox".equals(name1)) return -1; // Inbox goes first
+            if ("Inbox".equals(name2)) return 1;  // Inbox goes first
+
+            if ("Trash".equals(name1)) return 1;  // Trash goes last
+            if ("Trash".equals(name2)) return -1; // Trash goes last
+
+            // Otherwise, sort alphabetically
+            return name1.compareToIgnoreCase(name2);
+        });
     }
 }

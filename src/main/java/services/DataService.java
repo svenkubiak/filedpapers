@@ -4,6 +4,7 @@ import com.mongodb.client.model.Updates;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 import constants.Const;
+import io.mangoo.constants.NotNull;
 import io.mangoo.persistence.interfaces.Datastore;
 import io.mangoo.utils.CodecUtils;
 import io.mangoo.utils.DateUtils;
@@ -14,6 +15,7 @@ import jakarta.inject.Inject;
 import models.Category;
 import models.Item;
 import models.User;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.util.Strings;
 
 import java.time.ZoneOffset;
@@ -41,29 +43,27 @@ public class DataService {
     public Optional<List<Map<String, Object>>> findCategories(String userUid) {
         Objects.requireNonNull(userUid, USER_UID_CAN_NOT_BE_NULL);
 
-        if (userExists(userUid)) {
-            List<Category> categories = new ArrayList<>();
-            datastore
-                    .query(Category.class)
-                    .find(eq("userUid", userUid)).into(categories);
+        List<Category> categories = new ArrayList<>();
+        datastore
+                .query(Category.class)
+                .find(eq("userUid", userUid)).into(categories);
 
-            List<Map<String, Object>> output = new ArrayList<>();
-            if (categories.size() >= 2) {
-                for (Category category : categories) {
-                    output.add(Map.of(
-                            "name", category.getName(),
-                            "uid", category.getUid(),
-                            "count", String.valueOf(category.getCount())
-                    ));
-                };
-                return Optional.of(output);
-            }
+        List<Map<String, Object>> output = new ArrayList<>();
+        if (categories.size() >= 2) {
+            for (Category category : categories) {
+                output.add(Map.of(
+                        "name", category.getName(),
+                        "uid", category.getUid(),
+                        "count", String.valueOf(category.getCount())
+                ));
+            };
+            return Optional.of(output);
         }
 
         return Optional.empty();
     }
 
-    private boolean userExists(String userUid) {
+    public boolean userExists(String userUid) {
         Objects.requireNonNull(userUid, USER_UID_CAN_NOT_BE_NULL);
         return datastore.find(User.class, eq("uid", userUid)) != null;
     }
@@ -85,29 +85,25 @@ public class DataService {
         Objects.requireNonNull(userUid, USER_UID_CAN_NOT_BE_NULL);
         Objects.requireNonNull(categoryUid, CATEGORY_UID_CAN_NOT_BE_NULL);
 
-        if (userExists(userUid)) {
-            List<Item> items = new ArrayList<>();
-            datastore
-                    .query(Item.class)
-                    .find(and(
-                            eq("userUid", userUid),
-                            eq("categoryUid", categoryUid))).into(items);
+        List<Item> items = new ArrayList<>();
+        datastore
+                .query(Item.class)
+                .find(and(
+                        eq("userUid", userUid),
+                        eq("categoryUid", categoryUid))).into(items);
 
-            List<Map<String, Object>> output = new ArrayList<>();
-            for (Item item: items) {
-                output.add(Map.of(
-                        "uid", item.getUid(),
-                        "url", item.getUrl(),
-                        "image", item.getImage(),
-                        "title", item.getTitle(),
-                        "sort", item.getTimestamp().toEpochSecond(ZoneOffset.UTC),
-                        "added", DateUtils.getPrettyTime(item.getTimestamp())));
-            };
+        List<Map<String, Object>> output = new ArrayList<>();
+        for (Item item: items) {
+            output.add(Map.of(
+                    "uid", item.getUid(),
+                    "url", item.getUrl(),
+                    "image", (item.getImage() == null) ? Strings.EMPTY : item.getImage(),
+                    "title", item.getTitle(),
+                    "sort", item.getTimestamp().toEpochSecond(ZoneOffset.UTC),
+                    "added", DateUtils.getPrettyTime(item.getTimestamp())));
+        };
 
-            return Optional.of(output);
-        }
-
-        return Optional.empty();
+        return Optional.of(output);
     }
 
     public boolean deleteItem(String uid, String userUid) {
@@ -189,20 +185,26 @@ public class DataService {
         Objects.requireNonNull(categoryUid, CATEGORY_UID_CAN_NOT_BE_NULL);
 
         Item item = findItem(uid, userUid);
-        Category category = findCategory(item.getCategoryUid(), userUid);
-        category.setCount(category.getCount() - 1);
-        datastore.save(category);
+        Category sourceCategory = findCategory(item.getCategoryUid(), userUid);
+        Category targetCategory = findCategory(categoryUid, userUid);
 
-        category = findCategory(categoryUid, userUid);
-        category.setCount(category.getCount() + 1);
-        datastore.save(category);
+        if (!sourceCategory.getUid().equals(targetCategory.getUid())) {
+            sourceCategory.setCount(sourceCategory.getCount() - 1);
+            datastore.save(sourceCategory);
 
-        UpdateResult updateResult = datastore.query(Item.class).updateOne(and(
-                eq("userUid", userUid),
-                eq("uid", uid)),
-                Updates.set("categoryUid", categoryUid));
+            targetCategory.setCount(targetCategory.getCount() + 1);
+            datastore.save(targetCategory);
 
-        return updateResult.wasAcknowledged();
+            UpdateResult updateResult = datastore.query(Item.class).updateOne(
+                    and(
+                            eq("userUid", userUid),
+                            eq("uid", uid)),
+                    Updates.set("categoryUid", categoryUid));
+
+            return updateResult.wasAcknowledged();
+        }
+
+        return false;
     }
 
     public void addItem(String userUid, String url) {
@@ -232,31 +234,58 @@ public class DataService {
         Objects.requireNonNull(userUid, USER_UID_CAN_NOT_BE_NULL);
         Objects.requireNonNull(name, NAME_CAN_NOT_BE_NULL);
 
-        if (userExists(userUid)) {
-            datastore.save(new Category(name, userUid));
-        }
+        datastore.save(new Category(name, userUid));
     }
 
     public void deleteCategory(String userUid, String uid) {
         Objects.requireNonNull(userUid, USER_UID_CAN_NOT_BE_NULL);
         Objects.requireNonNull(uid, UID_CAN_NOT_BE_NULL);
 
+        Category inbox = findInbox(userUid);
         Category trash = findTrash(userUid);
-        UpdateResult updateResult = datastore.query(Item.class)
-                .updateMany(
-                        and(
-                                eq("userUid", userUid),
-                                eq("categoryUid", uid)),
-                        Updates.set("categoryUid", trash.getUid()));
 
-        long modifiedCount = updateResult.getModifiedCount();
-        trash.setCount((int) (trash.getCount() + modifiedCount));
-        datastore.save(trash);
+        if (!uid.equals(inbox.getUid()) && !uid.equals(trash.getUid())) {
+            UpdateResult updateResult = datastore.query(Item.class)
+                    .updateMany(
+                            and(
+                                    eq("userUid", userUid),
+                                    eq("categoryUid", uid)),
+                            Updates.set("categoryUid", trash.getUid()));
 
-        datastore.query(Category.class)
-                .deleteOne(
-                        and(
-                                eq("userUid", userUid),
-                                eq("uid", uid)));
+            long modifiedCount = updateResult.getModifiedCount();
+            trash.setCount((int) (trash.getCount() + modifiedCount));
+            datastore.save(trash);
+
+            datastore.query(Category.class)
+                    .deleteOne(
+                            and(
+                                    eq("userUid", userUid),
+                                    eq("uid", uid)));
+        }
+    }
+
+    public User findUser(String username) {
+        Objects.requireNonNull(username, NotNull.USERNAME);
+
+        return datastore.find(User.class, eq("username", username));
+    }
+
+    public User findUserByUid(String uid) {
+        Objects.requireNonNull(uid, "uid can not be null");
+
+        return datastore.find(User.class, eq("uid", uid));
+    }
+
+    public void save(Object object) {
+        Objects.requireNonNull(object, "object can not be null");
+
+        datastore.save(object);
+    }
+
+    public Category findCategoryByName(String name, String userUid) {
+        Objects.requireNonNull(name, NotNull.NAME);
+        Objects.requireNonNull(userUid, USER_UID_CAN_NOT_BE_NULL);
+
+        return datastore.find(Category.class, and(eq("name", name), eq("userUid", userUid)));
     }
 }

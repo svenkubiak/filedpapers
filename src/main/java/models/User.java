@@ -4,6 +4,7 @@ import io.mangoo.annotations.Collection;
 import io.mangoo.annotations.Indexed;
 import io.mangoo.persistence.Entity;
 import io.mangoo.utils.CodecUtils;
+import io.mangoo.utils.MangooUtils;
 
 import java.io.Serializable;
 import java.util.Objects;
@@ -16,14 +17,12 @@ public class User extends Entity implements Serializable  {
     private String username;
     @Indexed
     private String password;
-    @Indexed(unique = true)
-    private String email;
+    private String salt;
 
-    public User(String username, String password, String email) {
+    public User(String username) {
         this.username = Objects.requireNonNull(username, "username can not be null");
-        this.password = Objects.requireNonNull(password, "password can not be null");
-        this.email = Objects.requireNonNull(email, "email can not be null");
         this.uid = CodecUtils.uuid();
+        this.salt = MangooUtils.randomString(64);
     }
 
     public User() {
@@ -53,11 +52,11 @@ public class User extends Entity implements Serializable  {
         this.password = password;
     }
 
-    public String getEmail() {
-        return email;
+    public String getSalt() {
+        return salt;
     }
 
-    public void setEmail(String email) {
-        this.email = email;
+    public void setSalt(String salt) {
+        this.salt = salt;
     }
 }

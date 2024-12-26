@@ -57,6 +57,7 @@ public class ItemsControllerV1 {
     public Response move(Request request) {
         String userUid = request.getAttribute(Const.USER_UID);
         String json = request.getBody();
+
         Map<String, String> data = JsonUtils.toFlatMap(json);
 
         String categoryUid = data.get("category");

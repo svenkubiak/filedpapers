@@ -3,6 +3,7 @@ package app;
 import constants.Const;
 import controllers.ApplicationController;
 import controllers.AuthenticationController;
+import controllers.DashboardController;
 import controllers.api.CategoriesControllerV1;
 import controllers.api.ItemsControllerV1;
 import controllers.api.UserControllerV1;
@@ -21,26 +22,34 @@ import java.util.Objects;
 
 @Singleton
 public class Bootstrap implements MangooBootstrap {
-    private final Datastore datastore;
-    
-    @Inject
-    public Bootstrap(Datastore datastore) {
-        this.datastore = Objects.requireNonNull(datastore, "datastore can not be null");
-    }
-    
+
     @Override
     public void initializeRoutes() {
         Bind.controller(ApplicationController.class).withRoutes(
                 On.get().to("/").respondeWith("index"),
-                On.get().to("/dashboard").respondeWith("dashboard"),
-                On.get().to("/dashboard/profile").respondeWith("profile"),
-                On.get().to("/dashboard/category/{uid}").respondeWith("category"),
                 On.get().to("/health").respondeWith("health")
+        );
+
+        Bind.controller(DashboardController.class).withAuthentication().withRoutes(
+                On.get().to("/dashboard").respondeWith("dashboard"),
+                On.get().to("/dashboard/{categoryUid}").respondeWith("dashboard"),
+                On.get().to("/dashboard/profile").respondeWith("profile"),
+                On.post().to("/dashboard/profile/change-username").respondeWith("changeUsername"),
+                On.post().to("/dashboard/profile/change-password").respondeWith("changePassword"),
+                On.get().to("/dashboard/io").respondeWith("io"),
+                On.get().to("/dashboard/about").respondeWith("about"),
+                On.post().to("/dashboard/importer").respondeWith("importer"),
+                On.get().to("/dashboard/exporter").respondeWith("exporter")
         );
 
         Bind.controller(AuthenticationController.class).withRoutes(
                 On.get().to("/auth/login").respondeWith("login"),
-                On.post().to("/auth/authenticate").respondeWith("authenticate")
+                On.post().to("/auth/login").respondeWith("doLogin"),
+                On.get().to("/auth/logout").respondeWith("logout"),
+                On.get().to("/auth/signup").respondeWith("signup"),
+                On.post().to("/auth/signup").respondeWith("doSignup"),
+                On.get().to("/auth/forgot").respondeWith("forgot"),
+                On.post().to("/auth/forgot").respondeWith("doForgot")
         );
 
         Bind.controller(ItemsControllerV1.class).withRoutes(
@@ -73,15 +82,7 @@ public class Bootstrap implements MangooBootstrap {
 
     @Override
     public void applicationStarted() {
-        //FIXME: Remove test data
-        datastore.dropCollection(Category.class);
-        datastore.dropCollection(Item.class);
-        datastore.dropCollection(User.class);
-
-        User user = new User("foo", CodecUtils.hashArgon2("bar"), "foo@bar.com");
-        datastore.save(user);
-        datastore.save(new Category(Const.INBOX, user.getUid()));
-        datastore.save(new Category(Const.TRASH, user.getUid()));
+        // TODO Auto-generated method stub
     }
 
     @Override

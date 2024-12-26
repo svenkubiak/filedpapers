@@ -1,7 +1,12 @@
-document.addEventListener('DOMContentLoaded', () => {
     // Functions to open and close a modal
     function openModal($el) {
         $el.classList.add('is-active');
+
+        if ($el.id === 'add-category-modal') {
+            setTimeout(() => {
+                document.getElementById('category').focus();
+            }, 100);
+        }
     }
 
     function closeModal($el) {
@@ -15,9 +20,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // Add click event on plus icon
-    const $addButton = document.getElementById('add-bookmark-button');
-    const $modal = document.getElementById('add-bookmark-modal');
+    const $addButton = document.getElementById('add-category-button');
+    const $modal = document.getElementById('add-category-modal');
     const $deleteModal = document.getElementById('delete-confirm-modal');
+    const $deleteCategoryModal = document.getElementById('delete-category-confirm-modal');
+    const $emptyTrashModal = document.getElementById('empty-trash-confirm-modal');
 
     $addButton.addEventListener('click', () => {
         openModal($modal);
@@ -59,7 +66,7 @@ document.addEventListener('DOMContentLoaded', () => {
             e.dataTransfer.setDragImage(dragIcon, 25, 25);
 
             item.closest('.card').classList.add('dragging');
-            e.dataTransfer.setData('text/plain', item.dataset.id);
+            e.dataTransfer.setData('text/plain', item.dataset.uid);
 
             // Remove the temporary element after a short delay
             setTimeout(() => {
@@ -83,31 +90,28 @@ document.addEventListener('DOMContentLoaded', () => {
             target.classList.remove('drag-over');
         });
 
-        target.addEventListener('drop', (e) => {
+        target.addEventListener('drop', async (e) => {
             e.preventDefault();
             target.classList.remove('drag-over');
 
-            const cardId = e.dataTransfer.getData('text/plain');
-            const category = target.dataset.category;
+            const uid = e.dataTransfer.getData('text/plain');
+            const categoryUid = target.dataset.uid;
 
-            // Here you would typically update your backend
-            console.log(`Moving card ${cardId} to ${category}`);
+            const response = await fetch("/api/v1/items", {
+                method: "PUT",
+                body: JSON.stringify({
+                    uid: uid,
+                    category: categoryUid
+                }),
+                headers: {
+                    "Content-type": "application/json"
+                }
+            });
 
-            // Optional: Animate the card away
-            const card = document.querySelector(`[data-id="${cardId}"]`).closest('.card');
-            if (card) {
-                card.style.transition = 'all 0.3s ease';
-                card.style.opacity = '0';
-                setTimeout(() => {
-                    card.closest('.column').remove();
-                }, 300);
-            }
-
-            // Update the counter
-            const counter = target.querySelector('.tag');
-            if (counter) {
-                const currentCount = parseInt(counter.textContent);
-                counter.textContent = currentCount + 1;
+            if (response.ok) {
+                sessionStorage.setItem('toaster', "Bookmark succesfully moved!");
+                closeAllModals();
+                window.location.href = "/dashboard";
             }
         });
     });
@@ -122,8 +126,59 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Handle delete confirmation
-    document.getElementById('confirm-delete').addEventListener('click', () => {
+    document.querySelectorAll('.category-trash').forEach(trashIcon => {
+        trashIcon.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            $categoryToDelete = e.currentTarget;
+            openModal($deleteCategoryModal);
+        });
+    });
+
+    document.querySelectorAll('.empty-trash').forEach(trashIcon => {
+        trashIcon.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            openModal($emptyTrashModal);
+        });
+    });
+
+    document.getElementById('confirm-category-delete').addEventListener('click', async () => {
+        if ($categoryToDelete) {
+            const uid = $categoryToDelete.dataset.uid;
+            const response = await fetch("/api/v1/categories/" + uid, {
+                method: "DELETE",
+                headers: {
+                    "Content-type": "application/json"
+                }
+            });
+
+            if (response.ok) {
+                sessionStorage.setItem('toaster', "Category succesfully deleted!");
+                closeAllModals();
+                window.location.href = "/dashboard";
+            }
+        }
+        closeModal($deleteCategoryModal);
+    });
+
+    document.getElementById('confirm-empty-trash').addEventListener('click', async () => {
+            const response = await fetch("/api/v1/items/trash", {
+                method: "DELETE",
+                headers: {
+                    "Content-type": "application/json"
+                }
+            });
+
+        if (response.ok) {
+            sessionStorage.setItem('toaster', "Trash succesfully emptied!");
+            closeAllModals();
+            window.location.href = "/dashboard";
+        }
+    });
+
+    // Handle item delete confirmation
+    document.getElementById('confirm-delete').addEventListener('click', async () => {
         if ($cardToDelete) {
             $cardToDelete.style.transition = 'all 0.3s ease';
             $cardToDelete.style.opacity = '0';
@@ -131,13 +186,110 @@ document.addEventListener('DOMContentLoaded', () => {
                 $cardToDelete.closest('.column').remove();
             }, 300);
 
-            // Update trash counter
-            const trashCounter = document.querySelector('a[data-category="trash"] .tag');
-            if (trashCounter) {
-                const currentCount = parseInt(trashCounter.textContent);
-                trashCounter.textContent = currentCount + 1;
+            const uid = $cardToDelete.dataset.uid;
+            const response = await fetch("/api/v1/items/" + uid, {
+                method: "PUT",
+                headers: {
+                    "Content-type": "application/json"
+                }
+            });
+
+            if (response.ok) {
+                sessionStorage.setItem('toaster', "Bookmark succesfully deleted!");
+                closeAllModals();
+                window.location.href = "/dashboard";
             }
         }
-        closeModal($deleteModal);
     });
+
+    // Handle Add category submission
+    const $addBookmarkSubmit = document.getElementById('add-category-submit');
+    if ($addBookmarkSubmit) {
+        $addBookmarkSubmit.addEventListener('click', async (e) => {
+            e.preventDefault();
+
+            const category = document.getElementById('category').value;
+            if (category) {
+                const response = await fetch("/api/v1/categories", {
+                    method: "POST",
+                    body: JSON.stringify({
+                        name: category
+                    }),
+                    headers: {
+                        "Content-type": "application/json"
+                    }
+                });
+
+                if (response.ok) {
+                    sessionStorage.setItem('toaster', "Category succesfully created!");
+                    document.getElementById('category').value = '';
+                    closeAllModals();
+                    window.location.href = "/dashboard";
+                }
+            } else {
+                // Show error if URL is empty
+                document.getElementById('category').classList.add('is-danger');
+            }
+        });
+    }
+
+    // Remove error state when typing in URL field
+    const $bookmarkUrl = document.getElementById('bookmark-url');
+    if ($bookmarkUrl) {
+        $bookmarkUrl.addEventListener('input', () => {
+            $bookmarkUrl.classList.remove('is-danger');
+        });
+    }
+
+    // Toast functionality
+    function showToast(message, type = 'success', duration = 3000) {
+        const toastContainer = document.querySelector('.toast-container');
+        const toast = document.createElement('div');
+        toast.className = `toast ${type === 'error' ? 'is-danger' : ''}`;
+        toast.innerHTML = `
+            <span class="icon">
+                <i class="fas ${type === 'error' ? 'fa-exclamation-circle' : 'fa-check-circle'}"></i>
+            </span>
+            <span>${message}</span>
+        `;
+
+        toastContainer.appendChild(toast);
+
+        // Trigger reflow to enable transition
+        toast.offsetHeight;
+
+        // Show toast
+        requestAnimationFrame(() => {
+            toast.classList.add('is-active');
+        });
+
+        // Remove toast after duration
+        setTimeout(() => {
+            toast.classList.remove('is-active');
+            setTimeout(() => {
+                toastContainer.removeChild(toast);
+            }, 300);
+        }, duration);
+    }
+
+function showLoading() {
+    const button = document.getElementById('loading-button');
+    if (button) {
+        button.classList.add('is-loading');
+        button.disabled = true;
+    }
+
+    const button2 = document.getElementById('loading-button2');
+    if (button2) {
+        button2.classList.add('is-loading');
+        button2.disabled = true;
+    }
+}
+
+window.addEventListener('load', () => {
+    const state = sessionStorage.getItem('toaster');
+    if (state) {
+        showToast(state);
+        sessionStorage.setItem('toaster', "");
+    }
 });
