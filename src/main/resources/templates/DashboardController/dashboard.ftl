@@ -13,7 +13,7 @@
 </nav>
 
 <div class="columns is-multiline">
-    <#list items?sort_by("sort") as item>
+    <#list items?sort_by("sort")?reverse as item>
         <div class="column is-one-quarter">
             <div class="card" data-uid="${item.uid}">
                 <a href="${item.url}" target="_blank" class="card-link">
