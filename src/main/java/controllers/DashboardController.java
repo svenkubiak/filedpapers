@@ -9,20 +9,15 @@ import jakarta.inject.Inject;
 import models.Category;
 import models.Item;
 import models.User;
-import org.apache.commons.io.IOUtils;
 import org.apache.logging.log4j.util.Strings;
 import services.DataService;
+import utils.IOUtils;
 import utils.Utils;
-import utils.io.Exporter;
-import utils.io.Importer;
 import utils.io.Leaf;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.*;
@@ -79,34 +74,27 @@ public class DashboardController {
                 .render("categories", categories.orElseThrow());
     }
 
-    public Response importer(Form form, Authentication authentication) throws IOException {
+    public Response importer(Form form, Authentication authentication) {
         String userUid = authentication.getSubject();
-        var content = Strings.EMPTY;
-        Optional<InputStream> formFile = form.getFile();
-        if (formFile.isPresent()) {
-            InputStream file = formFile.orElseThrow();
-            try {
-                content = IOUtils.toString(file, StandardCharsets.UTF_8);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
 
-        Importer importer = new Importer();
+        var content = Optional.ofNullable(form.getFile())
+                .flatMap(file -> file.map(IOUtils::readContent))
+                .orElse(Strings.EMPTY);
+
         try {
-            List<Leaf> leafs = importer.parse(content);
+            List<Leaf> leafs = IOUtils.importItems(content);
+
             for (Leaf leaf : leafs) {
                 if (leaf.isFolder()) {
-                    Category category = dataService.findCategoryByName(leaf.getTitle(), userUid);
+                    var category = dataService.findCategoryByName(leaf.getTitle(), userUid);
                     if (category == null) {
                         dataService.addCategory(userUid, leaf.getTitle());
+                        category = dataService.findCategoryByName(leaf.getTitle(), userUid);
                     }
-
-                    category = dataService.findCategoryByName(leaf.getTitle(), userUid);
 
                     for (Leaf child : leaf.getChildren()) {
                         if (!child.isFolder()) {
-                            Item item = new Item();
+                            var item = new Item();
                             item.setTitle(child.getTitle());
                             item.setUrl(child.getUrl());
                             item.setCategoryUid(category.getUid());
@@ -124,11 +112,7 @@ public class DashboardController {
                 }
             }
         } catch (IOException e) {
-            System.err.println("Error reading the bookmarks file: " + e.getMessage());
-            e.printStackTrace();
-        } catch (Exception e) {
-            System.err.println("Error parsing bookmarks: " + e.getMessage());
-            e.printStackTrace();
+            //Intentionally left blank
         }
 
         return Response.redirect("/dashboard");
@@ -145,56 +129,47 @@ public class DashboardController {
                 .render("categories", categories.orElseThrow());
     }
 
-    public Response exporter(Authentication authentication) throws IOException {
+    public Response exporter(Authentication authentication) {
         String userUid = authentication.getSubject();
-        Optional<List<Map<String, Object>>> categories = dataService.findCategories(userUid);
+        List<Map<String, Object>> categories = dataService.findCategories(userUid).orElse(List.of());
 
-        List<Map<String, Object>> maps = categories.orElseThrow();
-        List<Leaf> leafs = new ArrayList<>();
+        List<Leaf> leafs = categories.stream()
+                .filter(category -> category.containsKey("uid"))
+                .map(category -> {
+                    String uid = (String) category.get("uid");
+                    String name = (String) category.get("name");
 
-        for (Map<String, Object> map : maps) {
-            if (map.containsKey("uid")) {
-                String uid = (String) map.get("uid");
-                String name = (String) map.get("name");
+                    List<Map<String, Object>> items = dataService.findItems(userUid, uid).orElse(List.of());
 
-                Optional<List<Map<String, Object>>> items = dataService.findItems(userUid, uid);
-                List<Map<String, Object>> i = items.orElseThrow();
+                    Leaf folderLeaf = new Leaf();
+                    folderLeaf.setFolder(true);
+                    folderLeaf.setTitle(name);
 
-                Leaf leaf = new Leaf();
-                leaf.setFolder(true);
-                leaf.setTitle(name);
+                    items.stream()
+                            .map(item -> {
+                                String itemUid = (String) item.get("uid");
+                                Item dataItem = dataService.findItem(itemUid, userUid);
 
-                for (Map<String, Object> item : i) {
-                    Item k = dataService.findItem((String) item.get("uid"), userUid);
-                    Leaf s = new Leaf();
-                    s.setFolder(false);
-                    s.setUrl(k.getUrl());
-                    s.setDataCover(k.getImage());
-                    s.setTitle(k.getTitle());
-                    s.setAddDate(k.getTimestamp().toInstant(ZoneOffset.UTC));
-                    leaf.addChild(s);
-                }
+                                Leaf itemLeaf = new Leaf();
+                                itemLeaf.setFolder(false);
+                                itemLeaf.setUrl(dataItem.getUrl());
+                                itemLeaf.setDataCover(dataItem.getImage());
+                                itemLeaf.setTitle(dataItem.getTitle());
+                                itemLeaf.setAddDate(dataItem.getTimestamp().toInstant(ZoneOffset.UTC));
 
-                leafs.add(leaf);
-            }
-        }
+                                return itemLeaf;
+                            }).forEach(folderLeaf::addChild);
 
-        Exporter exporter = new Exporter();
-        try {
-            exporter.export(leafs, "/Users/sven.kubiak/Desktop/filed-papers-export.html");
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+                    return folderLeaf;
+                }).toList();
 
-        Path path = Paths.get("/Users/sven.kubiak/Desktop/filed-papers-export.html");
-
-        String read = Files.readAllLines(path).get(0);
+        String export = IOUtils.exportItems(leafs);
 
         return Response.ok()
-                .bodyText(read)
-                .header("Content-Length", String.valueOf(path.toFile().length()))
+                .bodyText(export)
+                .header("Content-Length", String.valueOf(export.getBytes(StandardCharsets.UTF_8).length))
                 .header("Cache-Control", "no-cache")
-                .header("Content-Disposition", "attachment; filename=\"example.txt\"");
+                .header("Content-Disposition", "attachment; filename=\"filed-papers-export.html\"");
     }
 
     public Response changeUsername(Form form, Authentication authentication, Flash flash) throws InterruptedException {
