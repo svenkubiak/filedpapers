@@ -35,9 +35,9 @@ cd filedpapers
 3. Create an .env file and add the following variables. Feel free to change username, password and database
 
 ```shell
-MONGO_INITDB_ROOT_USERNAME=filedpapers
-MONGO_INITDB_ROOT_PASSWORD=filedpapers
-MONGO_INITDB_DATABASE=filedpapers
+MONGODB_INITDB_ROOT_USERNAME=filedpapers
+MONGODB_INITDB_ROOT_PASSWORD=filedpapers
+MONGODB_INITDB_DATABASE=filedpapers
 ```
 
 4. Create a config folder and change into the newly created folder
