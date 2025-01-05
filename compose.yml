@@ -14,7 +14,7 @@ services:
       - filedpapers-network
 
   filedpapers-database:
-    image: mongo:8.0.4
+    image: mongodb/mongodb-community-server:8.0.4
     container_name: filedpapers-database
     environment:
       - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}

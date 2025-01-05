@@ -21,7 +21,7 @@ public final class IOUtils {
     }
 
     public static String exportItems(List<Leaf> bookmarks) {
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder buffer = new StringBuilder();
         buffer.append("<!DOCTYPE NETSCAPE-Bookmark-file-1>\n");
         buffer.append("<!-- This is an automatically generated file.\n");
         buffer.append("     It will be read and overwritten.\n");
@@ -36,7 +36,7 @@ public final class IOUtils {
         return buffer.toString();
     }
 
-    private static void exportBookmarks(List<Leaf> bookmarks, int indent, StringBuffer buffer) {
+    private static void exportBookmarks(List<Leaf> bookmarks, int indent, StringBuilder buffer) {
         String indentation = "    ".repeat(indent);
 
         for (Leaf bookmark : bookmarks) {
