@@ -27,8 +27,9 @@ public class ItemsControllerV1 {
 
         Map<String, String> data = JsonUtils.toFlatMap(json);
         String url = data.get("url");
+        String category = data.get("category");
 
-        dataService.addItem(userUid, url);
+        dataService.addItem(userUid, url, category);
 
         return Response.ok();
     }

@@ -15,6 +15,7 @@ import jakarta.inject.Inject;
 import models.Category;
 import models.Item;
 import models.User;
+import org.apache.fury.util.StringUtils;
 import org.apache.logging.log4j.util.Strings;
 
 import java.time.ZoneOffset;
@@ -206,7 +207,7 @@ public class DataService {
         return false;
     }
 
-    public void addItem(String userUid, String url) {
+    public void addItem(String userUid, String url, String categoryUid) {
         Objects.requireNonNull(userUid, USER_UID_CAN_NOT_BE_NULL);
         Objects.requireNonNull(url, URL_CAN_NOT_BE_NULL);
 
@@ -221,11 +222,19 @@ public class DataService {
             }
         }
 
-        Category inbox = findInbox(userUid);
-        inbox.setCount(inbox.getCount() + 1);
-        datastore.save(inbox);
+        Category category = null;
+        if (StringUtils.isNotBlank(categoryUid)) {
+            category = findCategory(categoryUid, userUid);
+        }
 
-        Item item = new Item(userUid, inbox.getUid(), url, previewImage, title);
+        if (category == null) {
+            category = findInbox(userUid);
+        }
+
+        category.setCount(category.getCount() + 1);
+        datastore.save(category);
+
+        Item item = new Item(userUid, category.getUid(), url, previewImage, title);
         datastore.save(item);
     }
 
