@@ -44,7 +44,7 @@ else
   # Verify the push
   if [ $? -eq 0 ]; then
       echo "Image successfully pushed to $IMAGE_FULL_PATH"
-      git tag $VERSION
+      git tag $IMAGE_VERSION
       mvn release:update-versions
       git commit -am "Updated version after release"
       git push origin main
