@@ -47,7 +47,7 @@ else
       git tag $IMAGE_VERSION
       mvn release:update-versions
       git commit -am "Updated version after release"
-      git push origin main
+      git push --tags origin main
   else
       echo "Failed to push the image. Exiting..."
       exit 1
