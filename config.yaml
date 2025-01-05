@@ -1,0 +1,63 @@
+# Do not change anything _below_ this line unless you knw what you are doing
+
+default:
+  application:
+    name: filedpapers
+    language: en
+  api:
+    accessToken:
+      expires: 1
+    refreshToken:
+      expires: 20
+  connector:
+    http:
+      host: 0.0.0.0
+      port: 9090
+  session:
+    cookie:
+      name: filedpapers-session
+      secure: true
+  authentication:
+    redirect: /auth/login
+    cookie:
+      name: filedpapers-authentication
+      secure: true
+  flash:
+    cookie:
+      name: filedpapers-flash
+      secure: true
+  smtp:
+    host: localhost
+    port: 25
+  persistence:
+    embedded: false
+    host: filedpapers-database
+    port: 27017
+    dbname: filedpapers
+    authdb: filedpapers
+    auth: true
+    package: models
+
+# Do not change anything _above_ this line unless you know what you are doing
+
+environments:
+  prod:
+    application:
+      secret: 7jxYMCRL1WIyiaSn5gb0ULCnX3a5GTsnBXfv2AJVj4ZIBiUQqRuv9SrhoGor2AIk # Change me!
+    api:
+      accessToken:
+        secret: 7jxYMCRL1WIyiaSn5gb0ULCnX3a5GTsnBXfv2AJVj4ZIBiUQqRuv9SrhoGor2AIk # Change me!
+      refreshToken:
+        secret: 7jxYMCRL1WIyiaSn5gb0ULCnX3a5GTsnBXfv2AJVj4ZIBiUQqRuv9SrhoGor2AIk # Change me!
+    session:
+      cookie:
+        secret: 7jxYMCRL1WIyiaSn5gb0ULCnX3a5GTsnBXfv2AJVj4ZIBiUQqRuv9SrhoGor2AIk # Change me!
+    flash:
+      cookie:
+        secret: 7jxYMCRL1WIyiaSn5gb0ULCnX3a5GTsnBXfv2AJVj4ZIBiUQqRuv9SrhoGor2AIk # Change me!
+    authentication:
+      cookie:
+        secret: 7jxYMCRL1WIyiaSn5gb0ULCnX3a5GTsnBXfv2AJVj4ZIBiUQqRuv9SrhoGor2AIk # Change me!
+    persistence:
+      username: filedpapers
+      password: filedpapers
