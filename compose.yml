@@ -1,38 +1,32 @@
 services:
-  filepapers-backend:
-    container_name: filedpapers-backend
-    image: ghcr.io/svenkubiak/filedpapers/filedpapers:1.0.0-alpha1
+  filedpapers-web:
+    container_name: filedpapers-web
+    image: ghcr.io/svenkubiak/filedpapers/filedpapers:1.0.0-alpha3
     ports:
       - "127.0.0.1:9090:9090"
     volumes:
       - ./config:/app/config
     environment:
       - JAVA_OPTS=-Dapplication.config=/app/config/config.yaml -Xms256m -Xmx1024m
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9090/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
     depends_on:
-      - filepapers-database
+      - filedpapers-database
     networks:
-      - app-network
+      - filedpapers-network
 
-  filepapers-database:
-    image: mongo:latest
+  filedpapers-database:
+    image: mongo:8.0.4
     container_name: filedpapers-database
     environment:
-      MONGO_INITDB_ROOT_USERNAME: filedpapers
-      MONGO_INITDB_ROOT_PASSWORD: filedpapers
-      MONGO_INITDB_DATABASE: filedpapers
-    command: ["mongod", "--bind_ip", "0.0.0.0"]
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
+      - MONGO_INITDB_DATABASE=${MONGO_INITDB_DATABASE}
     volumes:
       - mongodb_data:/data/db
     networks:
-     - app-network
+      - filedpapers-network
 
 networks:
-  app-network:
+  filedpapers-network:
     driver: bridge
 
 volumes:

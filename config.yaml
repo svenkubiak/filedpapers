@@ -1,18 +1,18 @@
-# Do not change anything _below_ this line unless you knw what you are doing
+# Do not change anything _BELOW_ this line unless you knw what you are doing
 
 default:
   application:
     name: filedpapers
     language: en
+  connector:
+    http:
+      host: filedpapers-web
+      port: 9090
   api:
     accessToken:
       expires: 1
     refreshToken:
-      expires: 20
-  connector:
-    http:
-      host: 0.0.0.0
-      port: 9090
+      expires: 168
   session:
     cookie:
       name: filedpapers-session
@@ -30,34 +30,36 @@ default:
     host: localhost
     port: 25
   persistence:
-    embedded: false
-    host: filedpapers-database
-    port: 27017
-    dbname: filedpapers
-    authdb: filedpapers
-    auth: true
-    package: models
+    mongo:
+      embedded: false
+      host: filedpapers-database
+      port: 27017
+      authdb: admin
+      auth: true
+      package: models
 
-# Do not change anything _above_ this line unless you know what you are doing
+# Do not change anything _ABOVE_ this line unless you know what you are doing
 
 environments:
   prod:
     application:
-      secret: 7jxYMCRL1WIyiaSn5gb0ULCnX3a5GTsnBXfv2AJVj4ZIBiUQqRuv9SrhoGor2AIk # Change me!
+      secret: 8HM7ClQLbYvz7IqhtZNAugWWvFziFzZ0vaLIwEvnBzcjMoAL6uOIKkS2NJOyBSd3 # Change Me!
     api:
       accessToken:
-        secret: 7jxYMCRL1WIyiaSn5gb0ULCnX3a5GTsnBXfv2AJVj4ZIBiUQqRuv9SrhoGor2AIk # Change me!
+        secret: LV4N4AHdbLZeoZN054qxkA7jIYLlvDuIuL7esQhaqTyGw6B54eAg41xcRYk3LKM0 # Change Me!
       refreshToken:
-        secret: 7jxYMCRL1WIyiaSn5gb0ULCnX3a5GTsnBXfv2AJVj4ZIBiUQqRuv9SrhoGor2AIk # Change me!
+        secret: lwbdHHcmWJhh5AGdT73HmgQdOhH59dfEHUnj5r1ftRNXeRiPHgE0jHFKPapcSkjp # Change Me!
     session:
       cookie:
-        secret: 7jxYMCRL1WIyiaSn5gb0ULCnX3a5GTsnBXfv2AJVj4ZIBiUQqRuv9SrhoGor2AIk # Change me!
+        secret: obSrezWochMsU3AanFAlpvAAlbxB27w31oYcxuMGsPfuDcVe8OqioLNS1V8lF8mE # Change Me!
     flash:
       cookie:
-        secret: 7jxYMCRL1WIyiaSn5gb0ULCnX3a5GTsnBXfv2AJVj4ZIBiUQqRuv9SrhoGor2AIk # Change me!
+        secret: XqbPFcT2HuqzefAZw4i014CheZfiXdJfiFA2ANZIBFSmkJCM3GVQByaANK9WYVz1 # Change Me!
     authentication:
       cookie:
-        secret: 7jxYMCRL1WIyiaSn5gb0ULCnX3a5GTsnBXfv2AJVj4ZIBiUQqRuv9SrhoGor2AIk # Change me!
+        secret: M5oVjau34smyDgo8rvpGL0m7Tjs6oXkfYH1TfzQQONpkjXrpGO2Dibp3ewVxszEY # Change Me!
     persistence:
-      username: filedpapers
-      password: filedpapers
+      mongo:
+        dbname: filedpapers # Must match your MONGO_INITDB_DATABASE in your .env file
+        username: filedpapers # Must match your MONGO_INITDB_ROOT_USERNAME in your .env file
+        password: filedpapers # Must match your MONGO_INITDB_ROOT_PASSWORD in your .env file

@@ -19,4 +19,61 @@ Why Choose Filed Papers?
 
 # Installation
 
-The backend comes with a ready to-use docker compose file.
+1. Create a directory where you want to install your server and change into that folder. We are assuming the folders is "filedpapers"
+
+```shell
+mkdir filedpapers
+cd filedpapers
+```
+
+2. Change into the newly created folder
+
+```shell
+cd filedpapers
+```
+
+3. Create an .env file and add the following variables. Feel free to change username, password and database
+
+```shell
+MONGO_INITDB_ROOT_USERNAME=filedpapers
+MONGO_INITDB_ROOT_PASSWORD=filedpapers
+MONGO_INITDB_DATABASE=filedpapers
+```
+
+4. Create a config folder and change into the newly created folder
+
+```shell
+mkdir config
+cd config
+```
+
+5. Grep the default config.yaml from the repository
+
+```shell
+curl -O https://.../config.yaml
+```
+
+6. Open the config.yaml file. There are a couple of secrets that needs to be replaced. Scroll to the bottom and change all secrents stating "Change Me!". Use at least 64 characters
+
+7. Change the dbname, username and password if you have change it in Step 3. in you .env file
+
+8. Go back into your install directory
+
+```shell
+cd ..
+```
+
+9. Grep the default compose.yaml from the repository
+
+```shell
+curl -O https://.../compose.yaml
+```
+
+10. By default the Webserver is exposed to 127.0.0.1 and expect you to have a frontend HTTP-Server where you do SSL termination, etc. Adopt the Host and Port section based on your needs.
+
+11. Start the docker containers
+
+```shell
+docker compose up -d
+```
+
