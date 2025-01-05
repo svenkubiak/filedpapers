@@ -10,9 +10,9 @@ default:
       port: 9090
   api:
     accessToken:
-      expires: 1
+      expires: 60
     refreshToken:
-      expires: 168
+      expires: 10080
   session:
     cookie:
       name: filedpapers-session
@@ -43,23 +43,23 @@ default:
 environments:
   prod:
     application:
-      secret: 8HM7ClQLbYvz7IqhtZNAugWWvFziFzZ0vaLIwEvnBzcjMoAL6uOIKkS2NJOyBSd3 # Change Me!
+      secret: 8HM7ClQLbYvz7IqhtZNAugWWvFziFzZ0vaLIwEvnBzcjMoAL6uOIKkS2NJOyBSd3 # Change me!
     api:
       accessToken:
-        secret: LV4N4AHdbLZeoZN054qxkA7jIYLlvDuIuL7esQhaqTyGw6B54eAg41xcRYk3LKM0 # Change Me!
+        secret: LV4N4AHdbLZeoZN054qxkA7jIYLlvDuIuL7esQhaqTyGw6B54eAg41xcRYk3LKM0 # Change me!
       refreshToken:
-        secret: lwbdHHcmWJhh5AGdT73HmgQdOhH59dfEHUnj5r1ftRNXeRiPHgE0jHFKPapcSkjp # Change Me!
+        secret: lwbdHHcmWJhh5AGdT73HmgQdOhH59dfEHUnj5r1ftRNXeRiPHgE0jHFKPapcSkjp # Change me!
     session:
       cookie:
-        secret: obSrezWochMsU3AanFAlpvAAlbxB27w31oYcxuMGsPfuDcVe8OqioLNS1V8lF8mE # Change Me!
+        secret: obSrezWochMsU3AanFAlpvAAlbxB27w31oYcxuMGsPfuDcVe8OqioLNS1V8lF8mE # Change me!
     flash:
       cookie:
-        secret: XqbPFcT2HuqzefAZw4i014CheZfiXdJfiFA2ANZIBFSmkJCM3GVQByaANK9WYVz1 # Change Me!
+        secret: XqbPFcT2HuqzefAZw4i014CheZfiXdJfiFA2ANZIBFSmkJCM3GVQByaANK9WYVz1 # Change me!
     authentication:
       cookie:
-        secret: M5oVjau34smyDgo8rvpGL0m7Tjs6oXkfYH1TfzQQONpkjXrpGO2Dibp3ewVxszEY # Change Me!
+        secret: M5oVjau34smyDgo8rvpGL0m7Tjs6oXkfYH1TfzQQONpkjXrpGO2Dibp3ewVxszEY # Change me!
     persistence:
       mongo:
-        dbname: filedpapers # Must match your MONGO_INITDB_DATABASE in your .env file
-        username: filedpapers # Must match your MONGO_INITDB_ROOT_USERNAME in your .env file
-        password: filedpapers # Must match your MONGO_INITDB_ROOT_PASSWORD in your .env file
+        dbname: filedpapers # Must match your MONGODB_INITDB_DATABASE in your .env file
+        username: filedpapers # Must match your MONGODB_INITDB_ROOT_USERNAME in your .env file
+        password: filedpapers # Must match your MONGODB_INITDB_ROOT_PASSWORD in your .env file
