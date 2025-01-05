@@ -14,14 +14,14 @@ services:
       - filedpapers-network
 
   filedpapers-database:
-    image: mongodb/mongodb-community-server:8.0.4
+    image: mongodb/mongodb-community-server:8.0.4-ubuntu2204
     container_name: filedpapers-database
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
-      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
-      - MONGO_INITDB_DATABASE=${MONGO_INITDB_DATABASE}
+      - MONGODB_INITDB_ROOT_USERNAME=${MONGODB_INITDB_ROOT_USERNAME}
+      - MONGODB_INITDB_ROOT_PASSWORD=${MONGODB_INITDB_ROOT_PASSWORD}
+      - MONGODB_INITDB_DATABASE=${MONGODB_INITDB_DATABASE}
     volumes:
-      - mongodb_data:/data/db
+      - fp_mongodb_data:/data/db
     networks:
       - filedpapers-network
 
@@ -30,4 +30,4 @@ networks:
     driver: bridge
 
 volumes:
-  mongodb_data:
+  fp_mongodb_data:
