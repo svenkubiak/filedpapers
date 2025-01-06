@@ -44,6 +44,7 @@ environments:
   prod:
     application:
       secret: 8HM7ClQLbYvz7IqhtZNAugWWvFziFzZ0vaLIwEvnBzcjMoAL6uOIKkS2NJOyBSd3 # Change me!
+      registration: true # If true, users can self register
     api:
       accessToken:
         secret: LV4N4AHdbLZeoZN054qxkA7jIYLlvDuIuL7esQhaqTyGw6B54eAg41xcRYk3LKM0 # Change me!

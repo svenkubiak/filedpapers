@@ -8,6 +8,7 @@ import io.mangoo.routing.bindings.Form;
 import io.mangoo.routing.bindings.Session;
 import io.mangoo.utils.CodecUtils;
 import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import models.Category;
 import models.User;
 import services.DataService;
@@ -16,14 +17,16 @@ import java.util.Objects;
 
 public class AuthenticationController {
     private final DataService dataService;
+    private final boolean registration;
 
     @Inject
-    public AuthenticationController(DataService dataService) {
+    public AuthenticationController(DataService dataService, @Named("application.registration") boolean registration) {
         this.dataService = Objects.requireNonNull(dataService, "dataService can not be null");
+        this.registration = registration;
     }
 
     public Response login() {
-        return Response.ok().render();
+        return Response.ok().render("registration", registration);
     }
 
     public Response logout(Authentication authentication, Session session) {
@@ -63,7 +66,11 @@ public class AuthenticationController {
     }
 
     public Response signup() {
-        return Response.ok().render();
+        if (registration) {
+            return Response.ok().render();
+        }
+
+        return Response.redirect("/auth/login");
     }
 
     public Response forgot() {
@@ -85,6 +92,10 @@ public class AuthenticationController {
     }
 
     public Response doSignup(Form form, Flash flash) {
+        if (!registration) {
+            return Response.redirect("/auth/login");
+        }
+
         form.expectValue("username", "Please enter an email address");
         form.expectValue("password", "Please enter a password");
         form.expectValue("confirm-password", "Please confirm your password");
