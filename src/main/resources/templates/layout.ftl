@@ -10,13 +10,13 @@
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
     <link rel="stylesheet" href="/assets/css/bulma.min.css">
     <link rel="stylesheet" href="/assets/css/fa.min.css">
-    <link rel="stylesheet" href="/assets/css/app.css">
+    <link rel="stylesheet" href="/assets/css/app.min.css">
 </head>
 <body>
 <aside class="sidebar">
     <div class="sidebar-content">
         <p class="menu-label menu-label-with-icon">
-            Bookmarks
+            Overview
             <span class="icon is-small" style="cursor: pointer;" id="add-category-button">
                 <i class="fas fa-plus"></i>
             </span>
@@ -60,12 +60,6 @@
                 </span>
                 <span>Import/Export</span>
             </a>
-            <a href="/dashboard/about" class="button is-light is-fullwidth mb-2<#if active == "about"> is-active</#if>">
-                <span class="icon">
-                    <i class="fas fa-info-circle"></i>
-                </span>
-                <span>About</span>
-            </a>
             <a href="/auth/logout" class="button is-danger is-light is-fullwidth">
                 <span class="icon">
                     <i class="fas fa-sign-out-alt"></i>
@@ -78,6 +72,12 @@
 
 <!-- Main Content -->
 <div class="main-content">
+    <button class="button is-primary is-rounded fab-button" id="fab-add-bookmark">
+            <span class="icon">
+                <i class="fas fa-plus"></i>
+            </span>
+        <span>Add Bookmark</span>
+    </button>
    <#nested/>
 </div>
 
@@ -86,7 +86,7 @@
     <div class="modal-background"></div>
     <div class="modal-card">
         <header class="modal-card-head">
-            <p class="modal-card-title">Add Category</p>
+            <p class="modal-card-title">Add category</p>
             <button class="delete" aria-label="close"></button>
         </header>
         <section class="modal-card-body">
@@ -166,7 +166,6 @@
     </div>
 </div>
 
-<!-- Add Bookmark Modal
 <div class="modal" id="add-bookmark-modal">
     <div class="modal-background"></div>
     <div class="modal-card">
@@ -178,31 +177,37 @@
             <div class="field">
                 <label class="label">URL</label>
                 <div class="control">
-                    <input class="input" type="url" placeholder="https://example.com">
+                    <input class="input" type="url" name="bookmark-url" id="bookmark-url" placeholder="https://example.com">
                 </div>
             </div>
             <div class="field">
                 <label class="label">Category</label>
                 <div class="control">
                     <div class="select is-fullwidth">
-                        <select>
-                            <option>Inbox</option>
-                            <option>Archive</option>
+                        <select name="bookmark-category" id="bookmark-category">
+                            <#list categories as category>
+                            <#assign slug = category.name?lower_case>
+                                <#if slug != "trash">
+                                    <option value="${category.uid}">${category.name}</option>
+                                </#if>
+                            </#list>
                         </select>
                     </div>
                 </div>
             </div>
         </section>
         <footer class="modal-card-foot">
-            <button class="button is-primary">Add</button>
-            <button class="button">Cancel</button>
+            <div class="is-flex is-justify-content-space-between" style="width: 100%">
+                <button class="button is-primary" id="confirm-add-bookmark">Add</button>
+                <button class="button">Cancel</button>
+            </div>
         </footer>
     </div>
 </div>
--->
+
 <div class="toast-container"></div>
 
-<script src="/assets/js/app.js"></script>
+<script src="/assets/js/app.min.js"></script>
 <#if flash.toastsuccess??>
 <script>showToast("${flash.toastsuccess}");</script>
 </#if>

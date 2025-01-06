@@ -2,8 +2,7 @@
 <@layout.myLayout "Layout">
 <nav class="breadcrumb" aria-label="breadcrumbs">
     <ul>
-        <li><a href="/dashboard"><span class="icon is-small"><i class="fas fa-bookmark"></i></span>Bookmarks</a></li>
-        <li class="is-active"><a aria-current="page">${breadcrumb}</a></li>
+        <li class="is-active"><a aria-current="page"><span class="icon is-small"><i class="fas fa-bookmark"></i></span>${breadcrumb}</a></li>
         <#if active == 'trash'>
         <li><span class="icon empty-trash"><i class="fas fa-trash-alt"></i></span></li>
         <#else>
@@ -15,31 +14,38 @@
 <div class="columns is-multiline">
     <#list items?sort_by("sort")?reverse as item>
         <div class="column is-one-quarter">
-            <div class="card" data-uid="${item.uid}">
+            <div class="card" data-uid="${item.uid}" data-category="${categoryUid}">
                 <a href="${item.url}" target="_blank" class="card-link">
                     <div class="card-image">
                         <img src="${item.image}" alt="Thumbnail">
                     </div>
+                </a>
                     <div class="card-content">
                         <div class="card-title-wrapper">
-                            <p class="card-title" draggable="true" data-uid="${item.uid}">${item.title}</p>
+                            <p class="card-title foo" draggable="true" data-uid="${item.uid}">${item.title}</p>
                             <span class="icon card-trash">
                                 <i class="fas fa-trash-alt"></i>
                             </span>
                         </div>
                         <div class="card-meta">
-                            <span class="card-domain"><a href="${item.url}" target="_blank">${item.url}</a></span>
+                            <span class="card-domain"><a href="${item.url}" target="_blank">${item.url?truncate(50, '...')}</a></span>
                             <span class="card-added">Added ${item.added}</span>
                         </div>
                     </div>
-                </a>
             </div>
         </div>
     <#else>
-    <div class="column is-half">
-            <h2 class="is-size-3">No bookmarks yet</h2>
-            <p>Bookmarks in this category will appear here</p>
-        </div>
+        <#if active?? && active == "trash">
+            <div class="column is-half">
+                <h2 class="is-size-3">Nothing in Trash</h2>
+                <p>Items you delete will appear here</p>
+            </div>
+        <#else>
+            <div class="column is-half">
+                <h2 class="is-size-3">No bookmarks yet</h2>
+                <p>Bookmarks in this category will appear here</p>
+            </div>
+        </#if>
     </#list>
 </div>
 </@layout.myLayout>

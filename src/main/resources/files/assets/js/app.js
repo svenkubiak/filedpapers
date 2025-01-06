@@ -21,6 +21,7 @@
 
     // Add click event on plus icon
     const $addButton = document.getElementById('add-category-button');
+    const $addBookmark = document.getElementById('add-bookmark-modal');
     const $modal = document.getElementById('add-category-modal');
     const $deleteModal = document.getElementById('delete-confirm-modal');
     const $deleteCategoryModal = document.getElementById('delete-category-confirm-modal');
@@ -46,7 +47,7 @@
     });
 
     // Get all draggable elements and category targets
-    const draggableItems = document.querySelectorAll('.card-title[draggable="true"]');
+    const draggableItems = document.querySelectorAll('.foo[draggable="true"]');
     const categoryTargets = document.querySelectorAll('.menu-list a[data-category]');
     let $cardToDelete = null;
 
@@ -109,10 +110,12 @@
             });
 
             if (response.ok) {
-                sessionStorage.setItem('toaster', "Bookmark succesfully moved!");
-                closeAllModals();
-                window.location.href = "/dashboard";
+                sessionStorage.setItem('toast-success', "Bookmark successfully moved!");
+            } else {
+                sessionStorage.setItem('toast-error', "Ops, something went wrong. Please try again.");
             }
+            closeAllModals();
+            window.location.href = "/dashboard";
         });
     });
 
@@ -154,27 +157,33 @@
             });
 
             if (response.ok) {
-                sessionStorage.setItem('toaster', "Category succesfully deleted!");
-                closeAllModals();
-                window.location.href = "/dashboard";
+                sessionStorage.setItem('toast-success', "Category successfully deleted!");
+            } else {
+                sessionStorage.setItem('toast-error', "Ops, something went wrong. Please try again.");
             }
+
+            closeAllModals();
+            window.location.href = "/dashboard";
         }
         closeModal($deleteCategoryModal);
     });
 
     document.getElementById('confirm-empty-trash').addEventListener('click', async () => {
-            const response = await fetch("/api/v1/items/trash", {
-                method: "DELETE",
-                headers: {
-                    "Content-type": "application/json"
-                }
-            });
+        const response = await fetch("/api/v1/items/trash", {
+            method: "DELETE",
+            headers: {
+                "Content-type": "application/json"
+            }
+        });
 
         if (response.ok) {
-            sessionStorage.setItem('toaster', "Trash succesfully emptied!");
-            closeAllModals();
-            window.location.href = "/dashboard";
+            sessionStorage.setItem('toast-success', "Trash successfully emptied!");
+        } else {
+            sessionStorage.setItem('toast-error', "Ops, something went wrong. Please try again.");
         }
+
+        closeAllModals();
+        window.location.href = "/dashboard";
     });
 
     // Handle item delete confirmation
@@ -187,6 +196,7 @@
             }, 300);
 
             const uid = $cardToDelete.dataset.uid;
+            const category = $cardToDelete.dataset.category;
             const response = await fetch("/api/v1/items/" + uid, {
                 method: "PUT",
                 headers: {
@@ -195,10 +205,13 @@
             });
 
             if (response.ok) {
-                sessionStorage.setItem('toaster', "Bookmark succesfully deleted!");
-                closeAllModals();
-                window.location.href = "/dashboard";
+                sessionStorage.setItem('toast-success', "Bookmark successfully deleted!");
+            } else {
+                sessionStorage.setItem('toast-error', "Ops, something went wrong. Please try again.");
             }
+
+            closeAllModals();
+            window.location.href = "/dashboard/" + category;
         }
     });
 
@@ -221,13 +234,15 @@
                 });
 
                 if (response.ok) {
-                    sessionStorage.setItem('toaster', "Category succesfully created!");
-                    document.getElementById('category').value = '';
-                    closeAllModals();
-                    window.location.href = "/dashboard";
+                    sessionStorage.setItem('toast-success', "Category successfully created!");
+                } else {
+                    sessionStorage.setItem('toast-error', "Ops, something went wrong. Please try again.");
                 }
+
+                document.getElementById('category').value = '';
+                closeAllModals();
+                window.location.href = "/dashboard";
             } else {
-                // Show error if URL is empty
                 document.getElementById('category').classList.add('is-danger');
             }
         });
@@ -287,9 +302,63 @@ function showLoading() {
 }
 
 window.addEventListener('load', () => {
-    const state = sessionStorage.getItem('toaster');
-    if (state) {
-        showToast(state);
-        sessionStorage.setItem('toaster', "");
+    const success = sessionStorage.getItem('toast-success');
+    if (success) {
+        showToast(success);
+        sessionStorage.setItem('toast-success', "");
+    }
+
+    const error = sessionStorage.getItem('toast-error');
+    if (error) {
+        showToast(error, "error");
+        sessionStorage.setItem('toast-error', "");
     }
 });
+
+const fabButton = document.getElementById('fab-add-bookmark');
+if (fabButton) {
+    fabButton.addEventListener('click', () => {
+        openModal($addBookmark);
+    });
+}
+
+    // Handle Add Bookmark submission
+    const $confirmAddBookmark = document.getElementById('confirm-add-bookmark');
+    if ($confirmAddBookmark) {
+        $confirmAddBookmark.addEventListener('click', async (e) => {
+            e.preventDefault();
+
+            const url = document.getElementById('bookmark-url').value;
+            const category = document.getElementById('bookmark-category').value;
+
+            if (url && category) {
+                // Show loading state on button
+                $confirmAddBookmark.classList.add('is-loading');
+                $confirmAddBookmark.disabled = true;
+
+                // Make POST request to API
+                const response = await fetch('/api/v1/items', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        url: url,
+                        category: category.toLowerCase()
+                    })
+                })
+
+                if (response.ok) {
+                    sessionStorage.setItem('toast-success', "Bookmark successfully created!");
+                } else {
+                    sessionStorage.setItem('toast-error', "Ops, something went wrong. Please try again.");
+                }
+
+                closeAllModals();
+                window.location.href = "/dashboard/" + category;
+
+                $addBookmarkSubmit.classList.remove('is-loading');
+                $addBookmarkSubmit.disabled = false;
+            }
+        });
+    }

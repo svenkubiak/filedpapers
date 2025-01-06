@@ -80,8 +80,10 @@
             </form>
 
             <div class="auth-links">
+                <#if registration>
                 <a href="/auth/signup">Sign Up</a>
                 <span>·</span>
+                </#if>
                 <a href="/auth/forgot">Forgot Password?</a>
             </div>
         </div>

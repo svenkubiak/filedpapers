@@ -7,11 +7,11 @@
     <title>Filed Papers</title>
     <link rel="stylesheet" href="/assets/css/bulma.min.css">
     <link rel="stylesheet" href="/assets/css/fa.min.css">
-    <link rel="stylesheet" href="/assets/css/auth.css">
+    <link rel="stylesheet" href="/assets/css/auth.min.css">
 </head>
 <body>
 <#nested/>
-<script src="/assets/js/auth.js"></script>
+<script src="/assets/js/auth.min.js"></script>
 </body>
 </html>
 </#macro>

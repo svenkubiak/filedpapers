@@ -8,11 +8,13 @@ function showLoading() {
 
 document.addEventListener('DOMContentLoaded', () => {
     const notification = document.querySelector('.notification');
-    const deleteButton = notification.querySelector('.delete');
+    if (notification) {
+        const deleteButton = notification.querySelector('.delete');
 
-    deleteButton.addEventListener('click', () => {
-        notification.remove();
-    });
+        deleteButton.addEventListener('click', () => {
+            notification.remove();
+        });
+    }
 });
 
 const username = document.getElementById("username");
