@@ -1,7 +1,7 @@
 services:
   filedpapers-web:
     container_name: filedpapers-web
-    image: ghcr.io/svenkubiak/filedpapers/filedpapers:1.0.0-alpha3
+    image: ghcr.io/svenkubiak/filedpapers/filedpapers:latest
     ports:
       - "127.0.0.1:9090:9090"
     volumes:
@@ -14,8 +14,8 @@ services:
       - filedpapers-network
 
   filedpapers-database:
-    image: mongodb/mongodb-community-server:8.0.4-ubuntu2204
     container_name: filedpapers-database
+    image: mongodb/mongodb-community-server:8.0.4-ubuntu2204
     environment:
       - MONGODB_INITDB_ROOT_USERNAME=${MONGODB_INITDB_ROOT_USERNAME}
       - MONGODB_INITDB_ROOT_PASSWORD=${MONGODB_INITDB_ROOT_PASSWORD}
