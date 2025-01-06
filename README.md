@@ -1,8 +1,11 @@
+[![Latest Release](https://img.shields.io/github/v/release/svenkubiak/filedpapers?label=Latest%20Release&logo=github)](https://github.com/svenkubiak/filedpapers/packages)
 
 Filed Papers
 ================
 
-Take charge of your bookmarks with Filed Papers, designed for those who value privacy and control. Unlike traditional bookmark managers, Filed Papers requires you to host the backend yourself, ensuring your data remains fully in your hands—private, secure, and free from third-party access.
+Filed Papers is built for those who value privacy and control. Unlike traditional bookmark managers, it requires a self-hosted backend, ensuring your data remains exclusively in your hands—secure, private, and free from third-party access.
+
+This repository includes the backend server, which powers the web interface, the iOS app, and the Google Chrome extension, providing a seamless, integrated experience.
 
 Key Features:
 

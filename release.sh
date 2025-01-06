@@ -24,22 +24,32 @@ mvn versions:set
 STATUS=$?
 IMAGE_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
 IMAGE_FULL_PATH="$GHCR_URL/$GHCR_USERNAME/$REPO_NAME/$IMAGE_NAME:$IMAGE_VERSION"
+IMAGE_LATEST_PATH="$GHCR_URL/$GHCR_USERNAME/$REPO_NAME/$IMAGE_NAME:latest"
 
 if [ $STATUS -ne 0 ]; then
   echo "Failed to set new version! Exiting..."
   exit 1
 else
   # Build Docker image
-  echo "Building Docker image..."
+  echo "Building Version Docker image..."
   docker build -t "$IMAGE_NAME:$IMAGE_VERSION" .
 
+    echo "Building Latest Docker image..."
+    docker build -t "$IMAGE_NAME:latest" .
+
   # Tag image for GHCR
-  echo "Tagging image as $IMAGE_FULL_PATH..."
+  echo "Tagging version as $IMAGE_FULL_PATH..."
   docker tag "$IMAGE_NAME:$IMAGE_VERSION" "$IMAGE_FULL_PATH"
 
+  echo "Tagging latest as $IMAGE_LATEST_PATH..."
+  docker tag "$IMAGE_NAME:latest" "$IMAGE_LATEST_PATH"
+
   # Push image to GHCR
-  echo "Pushing image to GitHub Container Registry..."
+  echo "Pushing version to GitHub Container Registry..."
   docker push "$IMAGE_FULL_PATH"
+
+  echo "Pushing latest to GitHub Container Registry..."
+  docker push "$IMAGE_LATEST_PATH"
 
   # Verify the push
   if [ $? -eq 0 ]; then
