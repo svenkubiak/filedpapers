@@ -54,4 +54,5 @@ else
   fi
 fi
 
+rm pom.xml.versionsBackup
 echo "Released!"

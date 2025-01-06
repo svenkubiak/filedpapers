@@ -28,9 +28,8 @@ public class Bootstrap implements MangooBootstrap {
                 On.post().to("/dashboard/profile/change-username").respondeWith("changeUsername"),
                 On.post().to("/dashboard/profile/change-password").respondeWith("changePassword"),
                 On.get().to("/dashboard/io").respondeWith("io"),
-                On.get().to("/dashboard/about").respondeWith("about"),
-                On.post().to("/dashboard/importer").respondeWith("importer"),
-                On.get().to("/dashboard/exporter").respondeWith("exporter")
+                On.post().to("/dashboard/io/importer").respondeWith("importer"),
+                On.post().to("/dashboard/io/exporter").respondeWith("exporter")
         );
 
         Bind.controller(AuthenticationController.class).withRoutes(

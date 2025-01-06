@@ -6,6 +6,7 @@ import io.mangoo.routing.bindings.Flash;
 import io.mangoo.routing.bindings.Form;
 import io.mangoo.utils.CodecUtils;
 import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import models.Category;
 import models.Item;
 import models.User;
@@ -16,7 +17,6 @@ import utils.Utils;
 import utils.io.Leaf;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
@@ -26,8 +26,9 @@ public class DashboardController {
     private final DataService dataService;
 
     @Inject
-    public DashboardController(DataService dataService) {
+    public DashboardController(DataService dataService, @Named("application.registration") boolean registration) {
         this.dataService = Objects.requireNonNull(dataService, "dataService can not be null");
+
     }
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     public Response dashboard(Authentication authentication, Optional<String> categoryUid) {
