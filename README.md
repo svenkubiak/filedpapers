@@ -26,6 +26,23 @@ Why Choose Filed Papers?
 > **Attention:**  
 > The backend is currently in active development, and the iOS and Chrome extensions are currently being tested. Please note that certain features may still be in progress and could change.
 
+## Resources
+
+**Homepage**   
+[https://svenkubiak.de/filed-papers](https://svenkubiak.de/filed-papers)
+
+**Changelog**   
+[https://github.com/svenkubiak/filedpapers/blob/main/CHANGELOG.md](https://github.com/svenkubiak/filedpapers/blob/main/CHANGELOG.md)
+
+**Support**   
+[https://github.com/svenkubiak/filedpapers/issues](https://github.com/svenkubiak/filedpapers/issues)
+
+**iOS App**  
+[https://github.com/svenkubiak/filedpapers/issues](https://github.com/svenkubiak/filedpapers/issues)
+
+**Google Chrome Extension**  
+[https://chrome.google.com/webstore/detail/your-extension-id](hhttps://chrome.google.com/webstore/detail/your-extension-id)
+
 # Installation Guide
 
 ### Prerequisites
