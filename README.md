@@ -1,4 +1,7 @@
-[![Latest Release](https://img.shields.io/github/v/release/svenkubiak/filedpapers?label=Latest%20Release&logo=github)](https://github.com/svenkubiak/filedpapers/packages)
+[![Latest Release](https://ghcr-badge.egpl.dev/svenkubiak/filedpapers/filedpapers/latest_tag?trim=major&label=Latest)](https://github.com/svenkubiak/filedpapers/pkgs/container/filedpapers%2Ffiledpapers/331704697?tag=latest)
+[![iOS App](https://img.shields.io/badge/iOS-App_Store-blue?logo=apple)](https://...)
+[![Chrome Web Store](https://img.shields.io/badge/Chrome-Extension-blue?logo=google-chrome)](https://chrome.google.com/webstore/detail/your-extension-id)
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-%F0%9F%8D%BA-yellow)](https://www.buymeacoffee.com/svenkubiak)
 
 Filed Papers
 ================
@@ -18,65 +21,100 @@ Why Choose Filed Papers?
 
 - Complete Privacy: With no reliance on third-party servers, your data stays completely under your control.
 - Focused Simplicity: A clean, intuitive interface designed to make managing bookmarks straightforward and effective.
-- Perfect for Professionals and Privacy-Conscious Users: Whether for research, work, or personal use, Filed Papers offers the ideal balance of organization and security.
+- Perfect for Professionals and Privacy-Conscious Users: Whether for research, work, or personal use, Filed Papers offers the ideal balance of organization and security. 
 
-# Installation
+> **Attention:**  
+> The backend is currently in active development, and the iOS and Chrome extensions are currently being tested. Please note that certain features may still be in progress and could change.
 
-1. Create a directory where you want to install your server and change into that folder. We are assuming the folders is "filedpapers"
+# Installation Guide
 
-```shell
-mkdir filedpapers
-cd filedpapers
-```
+### Prerequisites
 
-2. Change into the newly created folder
+Before starting the installation process, make sure you have the following prerequisites:
 
-```shell
-cd filedpapers
-```
+- **Docker**: Ensure Docker is installed and running on your system
+- **Docker Compose**: Make sure Docker Compose is installed to manage multi-container applications
+- **Web Frontend Server**: A frontend HTTP server (e.g., Nginx) to handle SSL termination and proxy requests to the backend. This is required for configuring the web server in step 10.
 
-3. Create an .env file and add the following variables. Feel free to change username, password and database
 
-```shell
-MONGODB_INITDB_ROOT_USERNAME=filedpapers
-MONGODB_INITDB_ROOT_PASSWORD=filedpapers
-MONGODB_INITDB_DATABASE=filedpapers
-```
+1. **Create the directory for your server installation:**
 
-4. Create a config folder and change into the newly created folder
+   First, create a folder where you want to install your server. For this example, we will use the folder name `filedpapers`.
 
-```shell
-mkdir config
-cd config
-```
+   ```shell
+   mkdir filedpapers
+   cd filedpapers
+   ```
 
-5. Grep the default config.yaml from the repository
+2. **Ensure you're in the correct directory:**
 
-```shell
-curl -O https://.../config.yaml
-```
+   You should now be in the newly created folder. If you aren't, navigate back to it.
 
-6. Open the config.yaml file. There are a couple of secrets that needs to be replaced. Scroll to the bottom and change all secrents stating "Change Me!". Use at least 64 characters
+   ```shell
+   cd filedpapers
+   ```
 
-7. Change the dbname, username and password if you have change it in Step 3. in you .env file
+3. **Create an `.env` file and add configuration variables:**
 
-8. Go back into your install directory
+   Create a `.env` file in the `filedpapers` directory and add the following variables. You can customize the `username`, `password`, and `database` fields as needed.
 
-```shell
-cd ..
-```
+   ```shell
+   MONGODB_INITDB_ROOT_USERNAME=filedpapers
+   MONGODB_INITDB_ROOT_PASSWORD=filedpapers
+   MONGODB_INITDB_DATABASE=filedpapers
+   ```
 
-9. Grep the default compose.yaml from the repository
+4. **Create the `config` folder:**
 
-```shell
-curl -O https://.../compose.yaml
-```
+   Next, create a `config` folder where configuration files will reside.
 
-10. By default the Webserver is exposed to 127.0.0.1 and expect you to have a frontend HTTP-Server where you do SSL termination, etc. Adopt the Host and Port section based on your needs.
+   ```shell
+   mkdir config
+   cd config
+   ```
 
-11. Start the docker containers
+5. **Download the default `config.yaml`:**
+
+   Fetch the default configuration file from the repository.
+
+   ```shell
+   curl -O https://.../config.yaml
+   ```
+
+6. **Edit the `config.yaml` file:**
+
+   Open the `config.yaml` file in a text editor. There are several placeholders marked as "Change Me!" which need to be replaced. Scroll to the bottom and update all secret values. It's recommended to use at least 64 characters for each secret.
+
+7. **Update database credentials:**
+
+   If you modified the database name, username, or password in Step 3, make sure to update the corresponding fields in the `config.yaml` file.
+
+8. **Return to the installation directory:**
+
+   Once you're done editing the configuration files, navigate back to the installation directory.
+
+   ```shell
+   cd ..
+   ```
+
+9. **Download the `compose.yaml`:**
+
+   Fetch the default `compose.yaml` file for Docker Compose from the repository.
+
+   ```shell
+   curl -O https://.../compose.yaml
+   ```
+
+10. **Configure the web server:**
+
+By default, the web server is exposed to `127.0.0.1`. This setup assumes that you have a frontend HTTP server where SSL termination, etc., is handled. Adjust the `Host` and `Port` sections in the `compose.yaml` file as necessary for your setup.
+
+11. **Start the Docker containers:**
+
+Finally, start the Docker containers using Docker Compose:
 
 ```shell
 docker compose up -d
 ```
+
 
