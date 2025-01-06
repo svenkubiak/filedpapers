@@ -36,7 +36,6 @@ Before starting the installation process, make sure you have the following prere
 - **Docker Compose**: Make sure Docker Compose is installed to manage multi-container applications
 - **Web Frontend Server**: A frontend HTTP server (e.g., Nginx) to handle SSL termination and proxy requests to the backend. This is required for configuring the web server in step 10.
 
-
 1. **Create the directory for your server installation:**
 
    First, create a folder where you want to install your server. For this example, we will use the folder name `filedpapers`.
@@ -78,7 +77,7 @@ Before starting the installation process, make sure you have the following prere
    Fetch the default configuration file from the repository.
 
    ```shell
-   curl -O https://.../config.yaml
+   curl -O https://raw.githubusercontent.com/svenkubiak/filedpapers/refs/heads/main/config.yaml
    ```
 
 6. **Edit the `config.yaml` file:**
@@ -102,19 +101,19 @@ Before starting the installation process, make sure you have the following prere
    Fetch the default `compose.yaml` file for Docker Compose from the repository.
 
    ```shell
-   curl -O https://.../compose.yaml
+   curl -O https://raw.githubusercontent.com/svenkubiak/filedpapers/refs/heads/main/compose.yml
    ```
 
 10. **Configure the web server:**
 
-By default, the web server is exposed to `127.0.0.1`. This setup assumes that you have a frontend HTTP server where SSL termination, etc., is handled. Adjust the `Host` and `Port` sections in the `compose.yaml` file as necessary for your setup.
+   By default, the web server is exposed to `127.0.0.1`. This setup assumes that you have a frontend HTTP server where SSL termination, etc., is handled. Adjust the `Host` and `Port` sections in the `compose.yaml` file as necessary for your setup.
 
 11. **Start the Docker containers:**
 
-Finally, start the Docker containers using Docker Compose:
+   Finally, start the Docker containers using Docker Compose:
 
-```shell
-docker compose up -d
-```
+   ```shell
+   docker compose up -d
+   ```
 
 
