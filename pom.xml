@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<artifactId>filedpapers</artifactId>
 	<groupId>de.svenkubiak</groupId>
-	<version>1.0.0-Alpha6-SNAPSHOT</version>
+	<version>1.0.0-Alpha7-SNAPSHOT</version>
 	<packaging>jar</packaging>
 	<url>https://github.com/svenkubiak/mangooio</url>
 	<properties>
