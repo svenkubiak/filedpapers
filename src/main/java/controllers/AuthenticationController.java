@@ -47,12 +47,12 @@ public class AuthenticationController {
         if (form.isValid()) {
             String username = form.get("username");
             String password = form.get("password");
-            boolean remember = form.getBoolean("rememberme").orElseGet(() -> false);
+            boolean rememberme = form.getBoolean("rememberme").orElseGet(() -> false);
 
             User user = dataService.findUser(username);
             if (user != null && authentication.validLogin(user.getUid(), password, user.getSalt(), user.getPassword())) {
                 authentication.login(user.getUid());
-                authentication.rememberMe(remember);
+                authentication.rememberMe(rememberme);
 
                 return Response.redirect("/dashboard");
             }

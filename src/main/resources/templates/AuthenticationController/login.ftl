@@ -64,7 +64,7 @@
                 <div class="field">
                     <div class="control">
                         <label class="checkbox">
-                            <input type="checkbox" name="rememberme">
+                            <input type="checkbox" value="1" name="rememberme">
                             Remember me
                         </label>
                     </div>

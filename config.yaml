@@ -15,16 +15,16 @@ default:
       expires: 10080
   session:
     cookie:
-      name: filedpapers-session
+      name: __Host-filedpapers-session
       secure: true
   authentication:
     redirect: /auth/login
     cookie:
-      name: filedpapers-authentication
+      name: __Host-filedpapers-authentication
       secure: true
   flash:
     cookie:
-      name: filedpapers-flash
+      name: __Host-filedpapers-flash
       secure: true
   smtp:
     host: localhost
