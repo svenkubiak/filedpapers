@@ -366,16 +366,16 @@ if ($confirmAddBookmark) {
 document.querySelectorAll('.image-container').forEach(container => {
     const img = container.querySelector('.image-with-fallback');
     const spinner = container.querySelector('.spinner');
-    const timeout = 5000; // 5 seconds timeout
+    const timeout = 4000; // 4 seconds timeout
     let timeoutReached = false;
 
     // Function to hide the spinner and show the image
     const showImage = () => {
-        spinner.style.display = 'none'; // Hide spinner
-        img.style.display = 'block';   // Show the image
+        spinner.style.display = 'none'; // Hide the spinner
+        img.style.display = 'block';    // Show the image
     };
 
-    // Function to handle the success case
+    // Function to handle the success case (image loaded successfully)
     const handleSuccess = () => {
         if (!timeoutReached) {
             timeoutReached = true;
@@ -383,13 +383,13 @@ document.querySelectorAll('.image-container').forEach(container => {
         }
     };
 
-    // Function to handle the fallback case (error or timeout)
+    // Function to handle the error case (image failed or timeout)
     const handleError = () => {
         if (!timeoutReached) {
             timeoutReached = true;
-            spinner.style.display = 'none'; // Hide spinner
-            img.style.display = 'block';   // Show the placeholder
-            img.src = '/assets/images/placeholder.svg';   // Set the fallback placeholder
+            spinner.style.display = 'none'; // Hide the spinner
+            img.style.display = 'block';    // Show the image
+            img.src = '/assets/images/placeholder.svg';    // Set the fallback placeholder
         }
     };
 
@@ -399,13 +399,14 @@ document.querySelectorAll('.image-container').forEach(container => {
     // Add error handling for failed image loading
     img.onerror = handleError;
 
-    // Handle cached images explicitly
+    // Explicitly handle cached images
     if (img.complete) {
+        // If the image is already complete (cached), check its natural width
         if (img.naturalWidth > 0) {
-            // Image is cached and successfully loaded
+            // Image has loaded successfully (cached or just loaded)
             handleSuccess();
         } else {
-            // Image is cached but failed to load
+            // Image failed to load (cached error or not found)
             handleError();
         }
     } else {
@@ -415,4 +416,5 @@ document.querySelectorAll('.image-container').forEach(container => {
         }, timeout);
     }
 });
+
 
