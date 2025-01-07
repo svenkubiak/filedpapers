@@ -143,12 +143,13 @@ Before starting the installation process, make sure you have the following prere
 
 10. **Configure the web server:**
 
-   By default, the web server is exposed to `127.0.0.1`. This setup assumes that you have a frontend HTTP server where SSL termination, etc., is handled. Adjust the `Host` and `Port` sections in the `compose.yaml` file as necessary for your setup.
+    By default, the web server is exposed to `127.0.0.1`. This setup assumes that you have a frontend HTTP server where SSL termination, etc., is handled. Adjust the `Host` and `Port` sections in the `compose.yaml` file as necessary for your setup.
+
 
 11. **Start the Docker containers:**
 
-   Finally, start the Docker containers using Docker Compose:
+     Finally, start the Docker containers using Docker Compose:
 
-   ```shell
-   docker compose up -d
-   ```
+     ```shell
+     docker compose up -d
+     ```
