@@ -53,6 +53,24 @@ Before starting the installation process, make sure you have the following prere
 - **Docker Compose**: Make sure Docker Compose is installed to manage multi-container applications
 - **Web Frontend Server**: A frontend HTTP server (e.g., Nginx) to handle SSL termination and proxy requests to the backend. This is required for configuring the web server in step 10.
 
+## Automatic installation
+
+1. **Create the directory for your server installation:**
+
+   First, create a folder where you want to install your server. For this example, we will use the folder name `filedpapers`.
+
+   ```shell
+   mkdir filedpapers
+   cd filedpapers
+   ```
+2. **Download and execute the installation script:**
+
+   ```shell
+   curl -sSL https://raw.githubusercontent.com/yourusername/yourrepo/main/your-script.sh | bash
+   ```
+
+## Manual installation
+
 1. **Create the directory for your server installation:**
 
    First, create a folder where you want to install your server. For this example, we will use the folder name `filedpapers`.
