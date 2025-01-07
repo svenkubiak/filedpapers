@@ -11,6 +11,44 @@
     <link rel="stylesheet" href="/assets/css/bulma.min.css">
     <link rel="stylesheet" href="/assets/css/fa.min.css">
     <link rel="stylesheet" href="/assets/css/app.min.css">
+    <style>
+        .image-container {
+            position: relative;
+            display: inline-block;
+            width: 370px; /* Adjust as needed */
+            height: 200px; /* Adjust as needed */
+            background: #f0f0f0; /* Background for better appearance */
+        }
+
+        .image-container img {
+            display: none; /* Initially hide the image */
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* Adjust fit as needed */
+        }
+
+        .spinner {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 40px;
+            height: 40px;
+            border: 4px solid #ccc;
+            border-top: 4px solid #007bff;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: translate(-50%, -50%) rotate(0deg);
+            }
+            100% {
+                transform: translate(-50%, -50%) rotate(360deg);
+            }
+        }
+    </style>
 </head>
 <body>
 <aside class="sidebar">

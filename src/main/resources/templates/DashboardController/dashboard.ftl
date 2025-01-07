@@ -17,7 +17,10 @@
             <div class="card" data-uid="${item.uid}" data-category="${categoryUid}">
                 <a href="${item.url}" target="_blank" class="card-link">
                     <div class="card-image">
-                        <img src="${item.image}" alt="Thumbnail">
+                        <div class="image-container">
+                            <div class="spinner"></div>
+                            <img src="${item.image}" class="image-with-fallback" alt="Thumbnail">
+                        </div>
                     </div>
                 </a>
                     <div class="card-content">

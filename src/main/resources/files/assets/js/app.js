@@ -322,43 +322,97 @@ if (fabButton) {
     });
 }
 
-    // Handle Add Bookmark submission
-    const $confirmAddBookmark = document.getElementById('confirm-add-bookmark');
-    if ($confirmAddBookmark) {
-        $confirmAddBookmark.addEventListener('click', async (e) => {
-            e.preventDefault();
+// Handle Add Bookmark submission
+const $confirmAddBookmark = document.getElementById('confirm-add-bookmark');
+if ($confirmAddBookmark) {
+    $confirmAddBookmark.addEventListener('click', async (e) => {
+        e.preventDefault();
 
-            const url = document.getElementById('bookmark-url').value;
-            const category = document.getElementById('bookmark-category').value;
+        const url = document.getElementById('bookmark-url').value;
+        const category = document.getElementById('bookmark-category').value;
 
-            if (url && category) {
-                // Show loading state on button
-                $confirmAddBookmark.classList.add('is-loading');
-                $confirmAddBookmark.disabled = true;
+        if (url && category) {
+            // Show loading state on button
+            $confirmAddBookmark.classList.add('is-loading');
+            $confirmAddBookmark.disabled = true;
 
-                // Make POST request to API
-                const response = await fetch('/api/v1/items', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        url: url,
-                        category: category.toLowerCase()
-                    })
+            // Make POST request to API
+            const response = await fetch('/api/v1/items', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    url: url,
+                    category: category.toLowerCase()
                 })
+            })
 
-                if (response.ok) {
-                    sessionStorage.setItem('toast-success', "Bookmark successfully created!");
-                } else {
-                    sessionStorage.setItem('toast-error', "Ops, something went wrong. Please try again.");
-                }
-
-                closeAllModals();
-                window.location.href = "/dashboard/" + category;
-
-                $addBookmarkSubmit.classList.remove('is-loading');
-                $addBookmarkSubmit.disabled = false;
+            if (response.ok) {
+                sessionStorage.setItem('toast-success', "Bookmark successfully created!");
+            } else {
+                sessionStorage.setItem('toast-error', "Ops, something went wrong. Please try again.");
             }
-        });
+
+            closeAllModals();
+            window.location.href = "/dashboard/" + category;
+
+            $addBookmarkSubmit.classList.remove('is-loading');
+            $addBookmarkSubmit.disabled = false;
+        }
+    });
+}
+
+document.querySelectorAll('.image-container').forEach(container => {
+    const img = container.querySelector('.image-with-fallback');
+    const spinner = container.querySelector('.spinner');
+    const timeout = 5000; // 5 seconds timeout
+    let timeoutReached = false;
+
+    // Function to hide the spinner and show the image
+    const showImage = () => {
+        spinner.style.display = 'none'; // Hide spinner
+        img.style.display = 'block';   // Show the image
+    };
+
+    // Function to handle the success case
+    const handleSuccess = () => {
+        if (!timeoutReached) {
+            timeoutReached = true;
+            showImage();
+        }
+    };
+
+    // Function to handle the fallback case (error or timeout)
+    const handleError = () => {
+        if (!timeoutReached) {
+            timeoutReached = true;
+            spinner.style.display = 'none'; // Hide spinner
+            img.style.display = 'block';   // Show the placeholder
+            img.src = '/assets/images/placeholder.svg';   // Set the fallback placeholder
+        }
+    };
+
+    // Add event listener for image load success
+    img.onload = handleSuccess;
+
+    // Add error handling for failed image loading
+    img.onerror = handleError;
+
+    // Handle cached images explicitly
+    if (img.complete) {
+        if (img.naturalWidth > 0) {
+            // Image is cached and successfully loaded
+            handleSuccess();
+        } else {
+            // Image is cached but failed to load
+            handleError();
+        }
+    } else {
+        // Set a timeout to handle fallback if the image takes too long
+        setTimeout(() => {
+            if (!timeoutReached) handleError();
+        }, timeout);
     }
+});
+
