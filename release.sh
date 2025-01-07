@@ -37,8 +37,12 @@ else
   echo "Building Version Docker image..."
   docker build -t "$IMAGE_NAME:$IMAGE_VERSION" .
 
-  echo "Building Latest Docker image..."
-  docker build -t "$IMAGE_NAME:latest" .
+  if is_stable_release; then
+    echo "Building Latest Docker image..."
+    docker build -t "$IMAGE_NAME:latest" .
+  else
+    echo "Skipping build of Latest Docker image as this is pre-release"
+  fi
 
   echo "Tagging version as $IMAGE_FULL_PATH..."
   docker tag "$IMAGE_NAME:$IMAGE_VERSION" "$IMAGE_FULL_PATH"
