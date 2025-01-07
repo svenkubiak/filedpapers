@@ -66,7 +66,7 @@ Before starting the installation process, make sure you have the following prere
 2. **Download and execute the installation script:**
 
    ```shell
-   curl -sSL https://raw.githubusercontent.com/yourusername/yourrepo/main/your-script.sh | bash
+   curl -sSL https://raw.githubusercontent.com/svenkubiak/filedpapers/refs/heads/main/install.sh | bash
    ```
 
 ## Manual installation
@@ -119,9 +119,11 @@ Before starting the installation process, make sure you have the following prere
 
    Open the `config.yaml` file in a text editor. There are several placeholders marked as "Change Me!" which need to be replaced. Scroll to the bottom and update all secret values. It's recommended to use at least 64 characters for each secret.
 
+
 7. **Update database credentials:**
 
    If you modified the database name, username, or password in Step 3, make sure to update the corresponding fields in the `config.yaml` file.
+
 
 8. **Return to the installation directory:**
 
@@ -150,5 +152,3 @@ Before starting the installation process, make sure you have the following prere
    ```shell
    docker compose up -d
    ```
-
-
