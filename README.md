@@ -1,7 +1,7 @@
 [![Latest Release](https://ghcr-badge.egpl.dev/svenkubiak/filedpapers/filedpapers/latest_tag?trim=major&label=Latest)](https://github.com/svenkubiak/filedpapers/pkgs/container/filedpapers%2Ffiledpapers/331704697?tag=latest)
 [![iOS App](https://img.shields.io/badge/iOS-App_Store-blue?logo=apple)](https://...)
 [![Chrome Web Store](https://img.shields.io/badge/Chrome-Extension-blue?logo=google-chrome)](https://chrome.google.com/webstore/detail/your-extension-id)
-[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-%F0%9F%8D%BA-yellow)](https://www.buymeacoffee.com/svenkubiak)
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-%F0%9F%8D%BA-yellow)](https://buymeacoffee.com/svenkubiak)
 
 Filed Papers
 ================
@@ -30,6 +30,9 @@ Why Choose Filed Papers?
 
 **Homepage**   
 [https://svenkubiak.de/filed-papers](https://svenkubiak.de/filed-papers)
+
+**Buy me a Coffee**   
+[https://buymeacoffee.com/svenkubiak](https://buymeacoffee.com/svenkubiak)
 
 **Changelog**   
 [https://github.com/svenkubiak/filedpapers/blob/main/CHANGELOG.md](https://github.com/svenkubiak/filedpapers/blob/main/CHANGELOG.md)
