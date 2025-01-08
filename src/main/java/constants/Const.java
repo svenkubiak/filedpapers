@@ -7,4 +7,6 @@ public class Const {
     public static final String ACCESS_TOKEN = "accessToken";
     public static final String REFRESH_TOKEN = "refreshToken";
     public static final String NONCE = "nonce";
+    public static final String MISSING_TITLE = "Missing title";
+    public static final String PLACEHOLDER_IMAGE = "/assets/images/placeholder.png";
 }

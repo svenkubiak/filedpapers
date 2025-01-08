@@ -17,12 +17,15 @@ import models.Item;
 import models.User;
 import org.apache.fury.util.StringUtils;
 import org.apache.logging.log4j.util.Strings;
+import utils.Utils;
 
 import java.time.ZoneOffset;
 import java.util.*;
 
 import static com.mongodb.client.model.Filters.and;
 import static com.mongodb.client.model.Filters.eq;
+import static constants.Const.MISSING_TITLE;
+import static constants.Const.PLACEHOLDER_IMAGE;
 
 public class DataService {
     public static final String USER_UID_CAN_NOT_BE_NULL = "userUid can not be null";
@@ -211,31 +214,33 @@ public class DataService {
         Objects.requireNonNull(userUid, USER_UID_CAN_NOT_BE_NULL);
         Objects.requireNonNull(url, URL_CAN_NOT_BE_NULL);
 
-        String previewImage = Strings.EMPTY;
-        String title = Strings.EMPTY;
-        List<LinkPreviewMatch> previews = LinkPreview.createPreviews(url);
-        for (LinkPreviewMatch o : previews) {
-            title = o.result().title();
-            Set<LinkPreviewMedia> images = o.result().images();
-            for (LinkPreviewMedia image : images) {
-                previewImage = image.uri().toString();
+        if (Utils.isValidURL(url)) {
+            String previewImage = PLACEHOLDER_IMAGE;
+            String title = MISSING_TITLE;
+            List<LinkPreviewMatch> previews = LinkPreview.createPreviews(url);
+            for (LinkPreviewMatch linkPreviewMatch : previews) {
+                title = linkPreviewMatch.result().title();
+                Set<LinkPreviewMedia> images = linkPreviewMatch.result().images();
+                for (LinkPreviewMedia image : images) {
+                    previewImage = image.uri().toString();
+                }
             }
+
+            Category category = null;
+            if (StringUtils.isNotBlank(categoryUid)) {
+                category = findCategory(categoryUid, userUid);
+            }
+
+            if (category == null) {
+                category = findInbox(userUid);
+            }
+
+            category.setCount(category.getCount() + 1);
+            datastore.save(category);
+
+            Item item = new Item(userUid, category.getUid(), url, previewImage, title);
+            datastore.save(item);
         }
-
-        Category category = null;
-        if (StringUtils.isNotBlank(categoryUid)) {
-            category = findCategory(categoryUid, userUid);
-        }
-
-        if (category == null) {
-            category = findInbox(userUid);
-        }
-
-        category.setCount(category.getCount() + 1);
-        datastore.save(category);
-
-        Item item = new Item(userUid, category.getUid(), url, previewImage, title);
-        datastore.save(item);
     }
 
     public void addCategory(String userUid, String name) {

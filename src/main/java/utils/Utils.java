@@ -8,6 +8,7 @@ import io.mangoo.utils.paseto.PasetoParser;
 import io.mangoo.utils.paseto.Token;
 import org.apache.commons.lang3.StringUtils;
 
+import java.net.URI;
 import java.time.LocalDateTime;
 import java.util.*;
 
@@ -63,7 +64,6 @@ public final class Utils {
         return Optional.empty();
     }
 
-
     public static void sortCategories(Optional<List<Map<String, Object>>> categories) {
         Objects.requireNonNull(categories, "categories can not be null");
         
@@ -77,8 +77,16 @@ public final class Utils {
             if ("Trash".equals(name1)) return 1;  // Trash goes last
             if ("Trash".equals(name2)) return -1; // Trash goes last
 
-            // Otherwise, sort alphabetically
             return name1.compareToIgnoreCase(name2);
         });
+    }
+
+    public static boolean isValidURL(String url) {
+        try {
+            URI uri = new URI(url);
+            return uri.getScheme() != null && uri.getHost() != null;
+        } catch (Exception e) {
+            return false;
+        }
     }
 }
