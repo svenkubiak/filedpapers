@@ -9,6 +9,7 @@ import io.mangoo.utils.JsonUtils;
 import jakarta.inject.Inject;
 import services.DataService;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
@@ -21,15 +22,12 @@ public class ItemsControllerV1 {
         this.dataService = Objects.requireNonNull(dataService, "dataService can not be null");
     }
 
-    public Response add(Request request) {
-        String userUid = request.getAttribute(Const.USER_UID);
-        String json = request.getBody();
-
-        Map<String, String> data = JsonUtils.toFlatMap(json);
-        String url = data.get("url");
-        String category = data.get("category");
-
-        dataService.addItem(userUid, url, category);
+    public Response add(Request request, boolean async, HashMap<String, String> data) {
+        if (async) {
+            Thread.ofVirtual().start(() -> addItem(request, data));
+        } else {
+            addItem(request, data);
+        }
 
         return Response.ok();
     }
@@ -56,11 +54,8 @@ public class ItemsControllerV1 {
         return Response.ok();
     }
 
-    public Response move(Request request) {
+    public Response move(Request request, HashMap<String, String> data) {
         String userUid = request.getAttribute(Const.USER_UID);
-        String json = request.getBody();
-
-        Map<String, String> data = JsonUtils.toFlatMap(json);
 
         String categoryUid = data.get("category");
         String uid = data.get("uid");
@@ -68,5 +63,14 @@ public class ItemsControllerV1 {
         dataService.moveItem(uid, userUid, categoryUid);
 
         return Response.ok();
+    }
+
+    private void addItem(Request request, HashMap<String, String> data) {
+        String userUid = request.getAttribute(Const.USER_UID);
+
+        String url = data.get("url");
+        String category = data.get("category");
+
+        dataService.addItem(userUid, url, category);
     }
 }
