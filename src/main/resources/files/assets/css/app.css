@@ -96,10 +96,9 @@
     opacity: 0.5;
     position: relative;
     z-index: 3;
-    cursor: grab;
+    cursor: grab !important;
     pointer-events: all;
 }
-
 
 .card:hover .card-trash {
     opacity: 1;
@@ -591,4 +590,12 @@
     100% {
         transform: translate(-50%, -50%) rotate(360deg);
     }
+}
+
+.card-link-no-decoration:link,
+.card-link-no-decoration:visited,
+.card-link-no-decoration:hover,
+.card-link-no-decoration:active {
+    color: black;
+    text-decoration: none;
 }

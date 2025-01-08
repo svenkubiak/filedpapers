@@ -26,7 +26,7 @@
                 </a>
                     <div class="card-content">
                         <div class="card-title-wrapper">
-                            <p class="card-title">${item.title}</p>
+                            <p class="card-title"><a href="${item.url}" target="_blank" class="card-link-no-decoration">${item.title}</a></p>
                             <span class="icon card-move" data-tooltip="Move bookmark to another category">
                                 <i class="fas fa-folder-open dragging" draggable="true" data-uid="${item.uid}"></i>
                             </span>
