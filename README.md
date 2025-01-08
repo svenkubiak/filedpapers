@@ -24,7 +24,7 @@ Why Choose Filed Papers?
 - Perfect for Professionals and Privacy-Conscious Users: Whether for research, work, or personal use, Filed Papers offers the ideal balance of organization and security. 
 
 > **Attention:**  
-> The backend is currently in active development, and the iOS and Chrome extensions are currently being tested. Please note that certain features may still be in progress and could change.
+> The backend is currently in active development (beta stage), and the iOS and Chrome extensions are currently being tested. Please note that certain features may still be in progress and could change.
 
 ## Resources
 
