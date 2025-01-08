@@ -71,7 +71,6 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
     text-decoration: none;
-    cursor: grab;
     height: 2.8em;
 }
 
@@ -90,12 +89,32 @@
     pointer-events: all;
 }
 
+.card-move {
+    color: #666;
+    transition: all 0.2s ease;
+    z-index: 2;
+    opacity: 0.5;
+    position: relative;
+    z-index: 3;
+    cursor: grab;
+    pointer-events: all;
+}
+
+
 .card:hover .card-trash {
     opacity: 1;
 }
 
 .card-trash:hover {
     color: #ff3860;
+}
+
+.card:hover .card-move {
+    opacity: 1;
+}
+
+.card-move:hover {
+    color: #024efa;
 }
 
 .content {
@@ -369,11 +388,6 @@
     z-index: 1;
 }
 
-.card-link .card-image,
-.card-link .card-title {
-    pointer-events: all;
-}
-
 .card-trash {
     position: relative;
     z-index: 2;
@@ -384,7 +398,6 @@
     pointer-events: none;
 }
 
-/* Toast styles */
 .toast-container {
     position: fixed;
     top: 20px;
@@ -513,4 +526,69 @@
 .fab-button:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+[data-tooltip] {
+    position: relative;
+    cursor: pointer;
+}
+
+[data-tooltip]:before {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    right: 0;
+    transform: translateY(-10px);
+    padding: 5px 10px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    border-radius: 4px;
+    font-size: 14px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s;
+    z-index: 1000;
+}
+
+[data-tooltip]:hover:before {
+    opacity: 1;
+    visibility: visible;
+}
+
+.image-container {
+    position: relative;
+    display: inline-block;
+    width: 370px; /* Adjust as needed */
+    height: 200px; /* Adjust as needed */
+    background: #f0f0f0; /* Background for better appearance */
+}
+
+.image-container img {
+    display: none; /* Initially hide the image */
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Adjust fit as needed */
+}
+
+.spinner {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 40px;
+    height: 40px;
+    border: 4px solid #ccc;
+    border-top: 4px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% {
+        transform: translate(-50%, -50%) rotate(0deg);
+    }
+    100% {
+        transform: translate(-50%, -50%) rotate(360deg);
+    }
 }

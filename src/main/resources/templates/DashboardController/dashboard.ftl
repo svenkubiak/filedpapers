@@ -5,8 +5,9 @@
         <li class="is-active"><a aria-current="page"><span class="icon is-small"><i class="fas fa-bookmark"></i></span>${breadcrumb}</a></li>
         <#if active == 'trash'>
         <li><span class="icon empty-trash"><i class="fas fa-trash-alt"></i></span></li>
+        <#elseif active == 'inbox'>
         <#else>
-        <li><span class="icon category-trash" data-uid="${categoryUid}"><i class="fas fa-trash-alt"></i></span></li>
+        <li><span class="icon category-trash" data-uid="${categoryUid}"><i class="fas fa-folder-minus"></i></span></li>
         </#if>
     </ul>
 </nav>
@@ -25,12 +26,15 @@
                 </a>
                     <div class="card-content">
                         <div class="card-title-wrapper">
-                            <p class="card-title foo" draggable="true" data-uid="${item.uid}">${item.title}</p>
-                            <span class="icon card-trash">
+                            <p class="card-title">${item.title}</p>
+                            <span class="icon card-move" data-tooltip="Move bookmark to another category">
+                                <i class="fas fa-folder-open dragging" draggable="true" data-uid="${item.uid}"></i>
+                            </span>
+                            <span class="icon card-trash" data-tooltip="Delete bookmark">
                                 <i class="fas fa-trash-alt"></i>
                             </span>
                         </div>
-                        <div class="card-meta">
+                        <div class="card-meta" >
                             <span class="card-domain"><a href="${item.url}" target="_blank">${item.url?truncate(50, '...')}</a></span>
                             <span class="card-added">Added ${item.added}</span>
                         </div>

@@ -47,7 +47,7 @@
     });
 
     // Get all draggable elements and category targets
-    const draggableItems = document.querySelectorAll('.foo[draggable="true"]');
+    const draggableItems = document.querySelectorAll('.dragging[draggable="true"]');
     const categoryTargets = document.querySelectorAll('.menu-list a[data-category]');
     let $cardToDelete = null;
 
