@@ -3,7 +3,7 @@
     <div class="auth-container">
         <div class="auth-box">
             <span class="icon auth-logo">
-                <i class="fas fa-bookmark fa-8x"></i>
+                <i class="fa-solid fa-bookmark fa-8x"></i>
             </span>
             <h1 class="auth-title">Welcome to Filed Papers</h1>
             <p class="auth-subtitle">Please login to proceed.</p>
