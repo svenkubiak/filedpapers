@@ -4,7 +4,6 @@ import constants.Const;
 import io.mangoo.exceptions.MangooTokenException;
 import io.mangoo.routing.Response;
 import io.mangoo.routing.bindings.Request;
-import io.mangoo.utils.JsonUtils;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import org.apache.fury.util.StringUtils;
@@ -34,14 +33,11 @@ public class UserControllerV1 {
         this.refreshTokenExpires = refreshTokenExpires;
     }
 
-    public Response login(Request request) {
-        String json = request.getBody();
-        if (StringUtils.isNotBlank(json)) {
-            Map<String, String> credentials = JsonUtils.toFlatMap(json);
+    public Response login(Request request, Map<String, String> credentials) {
+        String username = credentials.get("username");
+        String password = credentials.get("password");
 
-            String username = credentials.get("username");
-            String password = credentials.get("password");
-
+        if (StringUtils.isNotBlank(username) || StringUtils.isNotBlank(password)) {
             return dataService.authenticateUser(username, password)
                     .map(userUid -> {
                         try {
@@ -51,34 +47,30 @@ public class UserControllerV1 {
                             return Response.unauthorized();
                         }
                     })
-                    .orElse(Response.unauthorized());
+                    .orElseGet(Response::unauthorized);
         }
 
         return Response.unauthorized();
     }
 
-    public Response refresh(Request request) {
-        String json = request.getBody();
-        if (StringUtils.isNotBlank(json)) {
-            Map<String, String> credentials = JsonUtils.toFlatMap(json);
-            String refreshToken = credentials.get(Const.REFRESH_TOKEN);
-            if (StringUtils.isNotBlank(refreshToken)) {
-                try {
-                    var token = Utils.parsePaseto(refreshToken, refreshTokenSecret);
-                    if (token != null) {
-                        return Utils.validateToken(token).map(userUid -> {
-                            Map<String, String> tokens = null;
-                            try {
-                                tokens = Utils.getTokens(userUid, accessTokenSecret, refreshTokenSecret, accessTokenExpires, refreshTokenExpires);
-                                return Response.ok().bodyJson(tokens);
-                            } catch (MangooTokenException e) {
-                                return Response.unauthorized();
-                            }
-                        }).orElseGet(Response::unauthorized);
-                    }
-                } catch (MangooTokenException e) {
-                    return Response.unauthorized();
+    public Response refresh(Request request, Map<String, String> credentials) {
+        String refreshToken = credentials.get(Const.REFRESH_TOKEN);
+        if (StringUtils.isNotBlank(refreshToken)) {
+            try {
+                var token = Utils.parsePaseto(refreshToken, refreshTokenSecret);
+                if (token != null) {
+                    return Utils.validateToken(token).map(userUid -> {
+                        Map<String, String> tokens = null;
+                        try {
+                            tokens = Utils.getTokens(userUid, accessTokenSecret, refreshTokenSecret, accessTokenExpires, refreshTokenExpires);
+                            return Response.ok().bodyJson(tokens);
+                        } catch (MangooTokenException e) {
+                            return Response.unauthorized();
+                        }
+                    }).orElseGet(Response::unauthorized);
                 }
+            } catch (MangooTokenException e) {
+                return Response.unauthorized();
             }
         }
 
