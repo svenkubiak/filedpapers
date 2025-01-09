@@ -7,21 +7,34 @@ services:
     volumes:
       - ./config:/app/config
     environment:
-      - JAVA_OPTS=-Dapplication.config=/app/config/config.yaml -Xms256m -Xmx1024m
+      JAVA_OPTS: >
+        -Dapplication.config=/app/config/config.yaml
+        -Dapplication.secret=${APPLICATION_SECRET}
+        -Dapi.accessToken.secret=${ACCESS_TOKEN_SECRET}
+        -Dapi.refreshToken.secret=${REFRESH_TOKEN_SECRET}
+        -Dsession.cookie.secret=${SESSION_SECRET}
+        -Dauthentication.cookie.secret=${AUTHENTICATION_SECRET}
+        -Dflash.cookie.secret=${FLASH_SECRET}
+        -Dapplication.registration=${ALLOW_REGISTRATION}
+        -Dpersistence.mongo.dbname=${MONGODB_INITDB_DATABASE}
+        -Dpersistence.mongo.username=${MONGODB_INITDB_ROOT_USERNAME}
+        -Dpersistence.mongo.password=${MONGODB_INITDB_ROOT_PASSWORD}
+        -Xms256m
+        -Xmx1024m
     depends_on:
       - filedpapers-database
     networks:
       - filedpapers-network
 
   filedpapers-database:
-    container_name: filedpapers-database
     image: mongodb/mongodb-community-server:8.0.4-ubuntu2204
+    container_name: filedpapers-database
     environment:
       - MONGODB_INITDB_ROOT_USERNAME=${MONGODB_INITDB_ROOT_USERNAME}
       - MONGODB_INITDB_ROOT_PASSWORD=${MONGODB_INITDB_ROOT_PASSWORD}
       - MONGODB_INITDB_DATABASE=${MONGODB_INITDB_DATABASE}
     volumes:
-      - fp_mongodb_data:/data/db
+      - filed_papers_mongodb_data:/data/db
     networks:
       - filedpapers-network
 
@@ -30,4 +43,4 @@ networks:
     driver: bridge
 
 volumes:
-  fp_mongodb_data:
+  filed_papers_mongodb_data:

@@ -1,30 +1,36 @@
-# Do not change anything _BELOW_ this line unless you knw what you are doing
+### Do not change anything unless you know what you are doing ###
 
 default:
   application:
-    name: filedpapers
     language: en
+    secret: arg{}
+    registration: arg{}
   connector:
     http:
       host: filedpapers-web
       port: 9090
   api:
     accessToken:
+      secret: arg{}
       expires: 60
     refreshToken:
+      secret: arg{}
       expires: 10080
   session:
     cookie:
       name: __Host-filedpapers-session
+      secret: arg{}
       secure: true
   authentication:
     redirect: /auth/login
     cookie:
       name: __Host-filedpapers-authentication
+      secret: arg{}
       secure: true
   flash:
     cookie:
       name: __Host-filedpapers-flash
+      secret: arg{}
       secure: true
   smtp:
     host: localhost
@@ -34,33 +40,16 @@ default:
       embedded: false
       host: filedpapers-database
       port: 27017
+      dbname: filedpapers
+      username: arg{}
+      password: arg{}
       authdb: admin
       auth: true
       package: models
 
-# Do not change anything _ABOVE_ this line unless you know what you are doing
-
 environments:
   prod:
     application:
-      secret: 8HM7ClQLbYvz7IqhtZNAugWWvFziFzZ0vaLIwEvnBzcjMoAL6uOIKkS2NJOyBSd3 # Change me!
-      registration: true # If true, users can self register
-    api:
-      accessToken:
-        secret: LV4N4AHdbLZeoZN054qxkA7jIYLlvDuIuL7esQhaqTyGw6B54eAg41xcRYk3LKM0 # Change me!
-      refreshToken:
-        secret: lwbdHHcmWJhh5AGdT73HmgQdOhH59dfEHUnj5r1ftRNXeRiPHgE0jHFKPapcSkjp # Change me!
-    session:
-      cookie:
-        secret: obSrezWochMsU3AanFAlpvAAlbxB27w31oYcxuMGsPfuDcVe8OqioLNS1V8lF8mE # Change me!
-    flash:
-      cookie:
-        secret: XqbPFcT2HuqzefAZw4i014CheZfiXdJfiFA2ANZIBFSmkJCM3GVQByaANK9WYVz1 # Change me!
-    authentication:
-      cookie:
-        secret: M5oVjau34smyDgo8rvpGL0m7Tjs6oXkfYH1TfzQQONpkjXrpGO2Dibp3ewVxszEY # Change me!
-    persistence:
-      mongo:
-        dbname: filedpapers # Must match your MONGODB_INITDB_DATABASE in your .env file
-        username: filedpapers # Must match your MONGODB_INITDB_ROOT_USERNAME in your .env file
-        password: filedpapers # Must match your MONGODB_INITDB_ROOT_PASSWORD in your .env file
+      name: filedpapers
+
+### Do not change anything unless you know what you are doing ###

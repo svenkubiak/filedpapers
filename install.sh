@@ -14,12 +14,18 @@ generate_secret() {
 
 # Step 1: Create an .env file and add configuration variables
 echo "1. Creating .env file..."
-PASSWORD=$(generate_secret)  # Generate a secret password
 
 cat > .env <<EOL
-MONGODB_INITDB_ROOT_USERNAME=filedpapers
-MONGODB_INITDB_ROOT_PASSWORD=$PASSWORD
 MONGODB_INITDB_DATABASE=filedpapers
+MONGODB_INITDB_ROOT_USERNAME=filedpapers
+MONGODB_INITDB_ROOT_PASSWORD=$(generate_secret)
+ALLOW_REGISTRATION=true
+APPLICATION_SECRET=$(generate_secret)
+ACCESS_TOKEN_SECRET=$(generate_secret)
+REFRESH_TOKEN_SECRET=$(generate_secret)
+SESSION_SECRET=$(generate_secret)
+AUTHENTICATION_SECRET=$(generate_secret)
+FLASH_SECRET=$(generate_secret)
 EOL
 
 # Step 2: Create the config folder
@@ -31,12 +37,6 @@ cd config || { echo "Failed to enter config directory."; exit 1; }
 echo "3. Downloading config.yaml..."
 curl -s -O "$CONFIG_URL"
 
-# Step 4: Replace the password in the config.yaml file with the generated secret
-echo "4. Replacing 'password: filedpapers' with the new secret in config.yaml..."
-
-# Using sed to replace the password in the YAML file (Linux-compatible)
-sed -i "s/password: filedpapers/password: $PASSWORD/" config.yaml
-
 # Step 5: Return to the installation directory
 cd .. || { echo "Failed to return to installation directory."; exit 1; }
 
@@ -44,7 +44,6 @@ cd .. || { echo "Failed to return to installation directory."; exit 1; }
 echo "7. Downloading compose.yaml..."
 curl -s -O "$COMPOSE_URL"
 
-echo "Installation complete. Please configure your environment and run the Docker containers manually."
+echo "Installation complete. Please configure your environment in your compose.yaml if required."
 echo "----------------------------"
 echo "Reminder: Remove this shell script"
-echo "!!!IMPORTANT Update all secrets in config/config.yaml with at least 64 characters IMPORTANT!!!!"
