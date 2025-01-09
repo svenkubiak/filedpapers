@@ -35,11 +35,11 @@ if [ $STATUS -ne 0 ]; then
   exit 1
 else
   echo "Building Version Docker image..."
-  docker build -t "$IMAGE_NAME:$IMAGE_VERSION" .
+  docker build --no-cache -t "$IMAGE_NAME:$IMAGE_VERSION" .
 
   if is_stable_release; then
     echo "Building Latest Docker image..."
-    docker build -t "$IMAGE_NAME:latest" .
+    docker build --no-cache -t "$IMAGE_NAME:latest" .
   else
     echo "Skipping build of Latest Docker image as this is pre-release"
   fi
