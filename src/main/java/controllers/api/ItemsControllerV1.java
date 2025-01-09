@@ -28,7 +28,13 @@ public class ItemsControllerV1 {
         if (async) {
             Thread.ofVirtual().start(() -> addItem(request, data));
         } else {
-            addItem(request, data);
+            try {
+                addItem(request, data);
+            } catch (Exception e) {
+                LOG.error("Error while adding item", e);
+
+                return Response.badRequest();
+            }
         }
 
         return Response.ok();
@@ -88,14 +94,9 @@ public class ItemsControllerV1 {
 
     private void addItem(Request request, HashMap<String, String> data) {
         String userUid = request.getAttribute(Const.USER_UID);
+        String url = data.get("url");
+        String category = data.get("category");
 
-        try {
-            String url = data.get("url");
-            String category = data.get("category");
-
-            dataService.addItem(userUid, url, category);
-        } catch (Exception e) {
-            LOG.error("Failed to add item", e);
-        }
+        dataService.addItem(userUid, url, category);
     }
 }
