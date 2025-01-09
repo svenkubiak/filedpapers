@@ -48,5 +48,6 @@ curl -s -O "$COMPOSE_URL"
 echo "Installation complete!"
 curl -s -O "$COMPOSE_URL"
 
-echo "Please configure your environment in your compose.yaml if required and remove this shell script"
+echo ""
+echo "Please configure your specific environment in your compose.yaml and remove this shell script."
 echo "Enjoy Filed Papers!"
