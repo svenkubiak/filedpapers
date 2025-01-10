@@ -70,18 +70,16 @@
     </div>
 </aside>
 
-<!-- Main Content -->
 <div class="main-content">
     <button class="button is-primary is-rounded fab-button" id="fab-add-bookmark">
-            <span class="icon">
-                <i class="fas fa-plus"></i>
-            </span>
+        <span class="icon">
+            <i class="fas fa-plus"></i>
+        </span>
         <span>Add Bookmark</span>
     </button>
    <#nested/>
 </div>
 
-<!-- Add Category Modal -->
 <div class="modal" id="add-category-modal">
     <div class="modal-background"></div>
     <div class="modal-card">
@@ -99,14 +97,13 @@
         </section>
         <footer class="modal-card-foot">
             <div class="is-flex is-justify-content-space-between" style="width: 100%">
-                <button class="button is-primary" id="add-category-submit">Add</button>
                 <button class="button">Cancel</button>
+                <button class="button is-primary" id="add-category-submit">Add</button>
             </div>
         </footer>
     </div>
 </div>
 
-<!-- Delete Confirmation Modal -->
 <div class="modal" id="delete-confirm-modal">
     <div class="modal-background"></div>
     <div class="modal-card">
@@ -115,18 +112,17 @@
             <button class="delete" aria-label="close"></button>
         </header>
         <section class="modal-card-body">
-            <p>Are you sure you want to delete this bookmark?</p>
+            <p>Are you sure you want to delete this bookmark? Deleted bookmarks will be moves to trash.</p>
         </section>
         <footer class="modal-card-foot">
             <div class="is-flex is-justify-content-space-between" style="width: 100%">
-                <button class="button is-danger" id="confirm-delete">Delete</button>
                 <button class="button">Cancel</button>
+                <button class="button is-danger" id="confirm-delete">Delete</button>
             </div>
         </footer>
     </div>
 </div>
 
-<!-- Delete category Confirmation Modal -->
 <div class="modal" id="delete-category-confirm-modal">
     <div class="modal-background"></div>
     <div class="modal-card">
@@ -139,14 +135,13 @@
         </section>
         <footer class="modal-card-foot">
             <div class="is-flex is-justify-content-space-between" style="width: 100%">
-                <button class="button is-danger" id="confirm-category-delete">Delete</button>
                 <button class="button">Cancel</button>
+                <button class="button is-danger" id="confirm-category-delete">Delete</button>
             </div>
         </footer>
     </div>
 </div>
 
-<!-- Empty trash Confirmation Modal -->
 <div class="modal" id="empty-trash-confirm-modal">
     <div class="modal-background"></div>
     <div class="modal-card">
@@ -159,8 +154,8 @@
         </section>
         <footer class="modal-card-foot">
             <div class="is-flex is-justify-content-space-between" style="width: 100%">
-                <button class="button is-danger" id="confirm-empty-trash">Empty</button>
                 <button class="button">Cancel</button>
+                <button class="button is-danger" id="confirm-empty-trash">Empty</button>
             </div>
         </footer>
     </div>
@@ -198,8 +193,8 @@
         </section>
         <footer class="modal-card-foot">
             <div class="is-flex is-justify-content-space-between" style="width: 100%">
-                <button class="button is-primary" id="confirm-add-bookmark">Add</button>
                 <button class="button">Cancel</button>
+                <button class="button is-primary" id="confirm-add-bookmark">Add</button>
             </div>
         </footer>
     </div>
