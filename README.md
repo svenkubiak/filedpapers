@@ -72,4 +72,10 @@ Before starting the installation process, make sure you have the following prere
    curl -sSL https://raw.githubusercontent.com/svenkubiak/filedpapers/refs/heads/main/install.sh | bash
    ```
 
-Once the installation is complete, you can configure your environment in the compose.yml and .env files as required.
+3. **Start the containers**
+
+   ```shell
+   docker compose up -d
+   ```
+
+By default, the container with the application runs at 127.0.0.1 on port 9090. Adopt this as required in the compose.yaml file.
