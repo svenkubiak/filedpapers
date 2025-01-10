@@ -1,6 +1,6 @@
-[![Latest Release](https://ghcr-badge.egpl.dev/svenkubiak/filedpapers/filedpapers/latest_tag?trim=major&label=Latest)](https://github.com/svenkubiak/filedpapers/pkgs/container/filedpapers%2Ffiledpapers/331704697?tag=latest)
-[![iOS App](https://img.shields.io/badge/iOS-App_Store-blue?logo=apple)](https://...)
-[![Chrome Web Store](https://img.shields.io/badge/Chrome-Extension-blue?logo=google-chrome)](https://chrome.google.com/webstore/detail/your-extension-id)
+[![Latest Release](https://ghcr-badge.egpl.dev/svenkubiak/filedpapers/filedpapers/latest_tag?trim=major&label=Latest)](https://github.com/svenkubiak/filedpapers/pkgs/container/filedpapers%2Ffiledpapers?tag=latest)
+[![iOS App](https://img.shields.io/badge/iOS-App_Store-blue?logo=apple)](https://apps.apple.com/de/app/filed-papers/id6740149712)
+[![Chrome Web Store](https://img.shields.io/badge/Chrome-Extension-blue?logo=google-chrome)](https://chromewebstore.google.com/detail/filed-papers/dncigabekkedeannldbaggakellmkpmm)
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-%F0%9F%8D%BA-yellow)](https://buymeacoffee.com/svenkubiak)
 
 Filed Papers
@@ -23,13 +23,10 @@ Why Choose Filed Papers?
 - Focused Simplicity: A clean, intuitive interface designed to make managing bookmarks straightforward and effective.
 - Perfect for Professionals and Privacy-Conscious Users: Whether for research, work, or personal use, Filed Papers offers the ideal balance of organization and security. 
 
-> **Attention:**  
-> The backend is currently in active development (beta stage), and the iOS and Chrome extensions are currently being tested. Please note that certain features may still be in progress and could change.
-
 ## Resources
 
 **Homepage**   
-[https://svenkubiak.de/filed-papers](https://svenkubiak.de/filed-papers)
+[https://svenkubiak.de/apps/ios/filed-papers](https://svenkubiak.de/apps/ios/filed-papers)
 
 **Buy me a Coffee**   
 [https://buymeacoffee.com/svenkubiak](https://buymeacoffee.com/svenkubiak)
@@ -44,7 +41,7 @@ Why Choose Filed Papers?
 [https://github.com/svenkubiak/filedpapers/issues](https://github.com/svenkubiak/filedpapers/issues)
 
 **iOS App**  
-[https://github.com/svenkubiak/filedpapers/issues](https://github.com/svenkubiak/filedpapers/issues)
+[https://apps.apple.com/de/app/filed-papers/id6740149712](https://apps.apple.com/de/app/filed-papers/id6740149712)
 
 **Google Chrome Extension**  
 [https://chromewebstore.google.com/detail/filed-papers/dncigabekkedeannldbaggakellmkpmm](https://chromewebstore.google.com/detail/filed-papers/dncigabekkedeannldbaggakellmkpmm)
@@ -75,4 +72,4 @@ Before starting the installation process, make sure you have the following prere
    curl -sSL https://raw.githubusercontent.com/svenkubiak/filedpapers/refs/heads/main/install.sh | bash
    ```
 
-Once the installation is complete, you can configure your environment in the compose.yml and .env files as requied.
+Once the installation is complete, you can configure your environment in the compose.yml and .env files as required.
