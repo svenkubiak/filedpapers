@@ -16,7 +16,13 @@ jobs:
     - name: Get tags from GHCR
       run: |
         # Fetch all tags from GHCR
-        TAGS=$(curl -s "https://ghcr.io/v2/OWNER/REPOSITORY/tags/list" | jq -r '.tags[]')
+        response=$(curl -s "https://ghcr.io/v2/OWNER/REPOSITORY/tags/list")
+        
+        # Ensure the response is a valid JSON before proceeding
+        echo "GHCR Response: $response"
+        
+        # Parse tags from the JSON response
+        TAGS=$(echo "$response" | jq -r '.tags[]')
 
         # Filter out alpha, beta, and rc versions for the stable version (case-insensitive)
         STABLE_VERSION=$(echo "$TAGS" | grep -viE 'alpha|beta|rc' | sort -V | tail -n 1)
@@ -35,14 +41,14 @@ jobs:
         DEV_BADGE_URL="https://img.shields.io/badge/version-$DEV_VERSION-blue"
 
         # Generate GHCR URLs for stable and dev versions
-        STABLE_GHCR_URL="https://ghcr.io/OWNER/REPOSITORY:$STABLE_VERSION"
-        DEV_GHCR_URL="https://ghcr.io/OWNER/REPOSITORY:$DEV_VERSION"
+        STABLE_GHCR_URL="https://github.com/svenkubiak/filedpapers/pkgs/container/filedpapers%2Ffiledpapers?tag=$STABLE_VERSION"
+        DEV_GHCR_URL="https://github.com/svenkubiak/filedpapers/pkgs/container/filedpapers%2Ffiledpapers?tag=$DEV_VERSION"
 
         # Update the README with both badges and GHCR links
         sed -i "s|https://img.shields.io/badge/version-.*stable|$STABLE_BADGE_URL|g" README.md
         sed -i "s|https://img.shields.io/badge/version-.*dev|$DEV_BADGE_URL|g" README.md
-        sed -i "s|https://ghcr.io/OWNER/REPOSITORY:stable|$STABLE_GHCR_URL|g" README.md
-        sed -i "s|https://ghcr.io/OWNER/REPOSITORY:dev|$DEV_GHCR_URL|g" README.md
+        sed -i "s|https://github.com/svenkubiak/filedpapers/pkgs/container/filedpapers%2Ffiledpapers?tag=latest|$STABLE_GHCR_URL|g" README.md
+        sed -i "s|https://github.com/svenkubiak/filedpapers/pkgs/container/filedpapers%2Ffiledpapers?tag=latest|$DEV_GHCR_URL|g" README.md
 
     - name: Commit changes to README
       run: |
@@ -51,4 +57,3 @@ jobs:
         git add README.md
         git commit -m "Update version badges and GHCR links"
         git push
-
