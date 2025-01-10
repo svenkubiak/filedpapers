@@ -15,32 +15,34 @@ jobs:
 
     - name: Get tags from GHCR
       run: |
-        # Fetch all tags from GHCR with authentication
-        response=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" "https://ghcr.io/v2/svenkubiak/filedpapers/tags/list")
+        # Fetch all tags from GHCR with authentication and capture both output and HTTP status
+        response=$(curl -s -w "%{http_code}" -H "Authorization: Bearer $GITHUB_TOKEN" "https://ghcr.io/v2/svenkubiak/filedpapers/tags/list")
+        http_code=$(echo "$response" | tail -n 1)  # Extract the HTTP status code
+        body=$(echo "$response" | head -n -1)     # Extract the response body (without the status code)
 
-        # Print the raw response for debugging
-        echo "Raw GHCR Response: $response"
+        # Print the raw response and the status code for debugging
+        echo "HTTP Status Code: $http_code"
+        echo "Raw GHCR Response: $body"
 
-        # Check if the response is valid JSON before proceeding
-        if echo "$response" | jq empty; then
-          echo "Valid JSON response."
+        # Check if the status code is 200 (OK)
+        if [ "$http_code" -eq 200 ]; then
+          echo "Request succeeded, processing tags..."
+          # Parse tags from the JSON response
+          TAGS=$(echo "$body" | jq -r '.tags[]')
+
+          # Filter out alpha, beta, and rc versions for the stable version (case-insensitive)
+          STABLE_VERSION=$(echo "$TAGS" | grep -viE 'alpha|beta|rc' | sort -V | tail -n 1)
+
+          # Include alpha, beta, and rc versions for the development version (case-insensitive)
+          DEV_VERSION=$(echo "$TAGS" | grep -iE 'alpha|beta|rc' | sort -V | tail -n 1)
+
+          # Set the versions as environment variables
+          echo "STABLE_VERSION=$STABLE_VERSION" >> $GITHUB_ENV
+          echo "DEV_VERSION=$DEV_VERSION" >> $GITHUB_ENV
         else
-          echo "Invalid JSON response."
+          echo "Request failed with HTTP code $http_code"
           exit 1
         fi
-
-        # Parse tags from the JSON response
-        TAGS=$(echo "$response" | jq -r '.tags[]')
-
-        # Filter out alpha, beta, and rc versions for the stable version (case-insensitive)
-        STABLE_VERSION=$(echo "$TAGS" | grep -viE 'alpha|beta|rc' | sort -V | tail -n 1)
-
-        # Include alpha, beta, and rc versions for the development version (case-insensitive)
-        DEV_VERSION=$(echo "$TAGS" | grep -iE 'alpha|beta|rc' | sort -V | tail -n 1)
-
-        # Set the versions as environment variables
-        echo "STABLE_VERSION=$STABLE_VERSION" >> $GITHUB_ENV
-        echo "DEV_VERSION=$DEV_VERSION" >> $GITHUB_ENV
 
     - name: Update README with badges and GHCR links
       run: |
