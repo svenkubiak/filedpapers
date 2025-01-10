@@ -15,12 +15,20 @@ jobs:
 
     - name: Get tags from GHCR
       run: |
-        # Fetch all tags from GHCR
+        # Fetch all tags from GHCR with authentication
         response=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" "https://ghcr.io/v2/svenkubiak/filedpapers/tags/list")
-        
-        # Ensure the response is a valid JSON before proceeding
-        echo "GHCR Response: $response"
-        
+
+        # Print the raw response for debugging
+        echo "Raw GHCR Response: $response"
+
+        # Check if the response is valid JSON before proceeding
+        if echo "$response" | jq empty; then
+          echo "Valid JSON response."
+        else
+          echo "Invalid JSON response."
+          exit 1
+        fi
+
         # Parse tags from the JSON response
         TAGS=$(echo "$response" | jq -r '.tags[]')
 
