@@ -30,7 +30,7 @@
                             <a href="${item.url}" target="_blank" class="card-link-no-decoration">${item.title}</a>
                         </p>
                         <div class="is-flex">
-                            <span class="icon card-move" data-tooltip="Move bookmark to another category">
+                            <span class="icon card-move" data-tooltip="Drag&Drop bookmark to another category">
                                 <i class="fas fa-folder-open dragging" draggable="true" data-uid="${item.uid}"></i>
                             </span>
                                 <span class="icon card-trash" data-tooltip="Delete bookmark">
