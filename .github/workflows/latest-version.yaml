@@ -16,7 +16,7 @@ jobs:
     - name: Get tags from GHCR
       run: |
         # Fetch all tags from GHCR
-        response=$(curl -s "https://ghcr.io/v2/svenkubiak/filedpapers/tags/list")
+        response=$(curl -s -H "Authorization: Bearer $GITHUB_TOKEN" "https://ghcr.io/v2/svenkubiak/filedpapers/tags/list")
         
         # Ensure the response is a valid JSON before proceeding
         echo "GHCR Response: $response"
