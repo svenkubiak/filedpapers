@@ -24,21 +24,25 @@
                         </div>
                     </div>
                 </a>
-                    <div class="card-content">
-                        <div class="card-title-wrapper">
-                            <p class="card-title"><a href="${item.url}" target="_blank" class="card-link-no-decoration">${item.title}</a></p>
+                <div class="card-content">
+                    <div class="card-title-wrapper is-flex is-justify-content-space-between is-align-items-flex-start">
+                        <p class="card-title">
+                            <a href="${item.url}" target="_blank" class="card-link-no-decoration">${item.title}</a>
+                        </p>
+                        <div class="is-flex">
                             <span class="icon card-move" data-tooltip="Move bookmark to another category">
                                 <i class="fas fa-folder-open dragging" draggable="true" data-uid="${item.uid}"></i>
                             </span>
-                            <span class="icon card-trash" data-tooltip="Delete bookmark">
+                                <span class="icon card-trash" data-tooltip="Delete bookmark">
                                 <i class="fas fa-trash-alt"></i>
                             </span>
                         </div>
-                        <div class="card-meta" >
-                            <span class="card-domain"><a href="${item.url}" target="_blank">${item.url?truncate(50, '...')}</a></span>
-                            <span class="card-added">Added ${item.added}</span>
-                        </div>
                     </div>
+                    <div class="card-meta" >
+                        <span class="card-domain"><a href="${item.url}" target="_blank">${item.url?truncate(50, '...')}</a></span>
+                        <span class="card-added">Added ${item.added}</span>
+                    </div>
+                </div>
             </div>
         </div>
     <#else>
