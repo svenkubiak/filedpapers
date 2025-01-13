@@ -1,4 +1,3 @@
-[![Latest Release](https://ghcr-badge.egpl.dev/svenkubiak/filedpapers/filedpapers/latest_tag?trim=major&label=Latest)](https://github.com/svenkubiak/filedpapers/pkgs/container/filedpapers%2Ffiledpapers?tag=latest)
 [![iOS App](https://img.shields.io/badge/iOS-App_Store-blue?logo=apple)](https://apps.apple.com/de/app/filed-papers/id6740149712)
 [![Chrome Web Store](https://img.shields.io/badge/Chrome-Extension-blue?logo=google-chrome)](https://chromewebstore.google.com/detail/filed-papers/dncigabekkedeannldbaggakellmkpmm)
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20Me%20A%20Coffee-%F0%9F%8D%BA-yellow)](https://buymeacoffee.com/svenkubiak)
