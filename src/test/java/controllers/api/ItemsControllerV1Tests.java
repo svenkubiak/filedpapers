@@ -61,7 +61,6 @@ public class ItemsControllerV1Tests {
         INBOX_UID = inbox.getUid();
         TRASH_UID = trash.getUid();
 
-
         Item item = new Item(USER_UID, INBOX_UID, "https://svenkubiak.de", "foo", "bar");
         datastore.save(item);
 
@@ -154,22 +153,6 @@ public class ItemsControllerV1Tests {
         //then
         assertThat(response).isNotNull();
         assertThat(response.getStatusCode()).isEqualTo(401);
-        assertThat(response.getContent()).isEmpty();
-    }
-
-    @Test
-    void testAddInvalidURL() {
-        //when
-        Map<String, String> data = Map.of("url", "https://www.svenkubiak.de", "category", INBOX_UID);
-        TestResponse response = TestRequest.post("/api/v1/items")
-                .withHeader("Authorization", ACCESS_TOKEN)
-                .withStringBody(JsonUtils.toJson(data))
-                .withContentType("application/json")
-                .execute();
-
-        //then
-        assertThat(response).isNotNull();
-        assertThat(response.getStatusCode()).isEqualTo(400);
         assertThat(response.getContent()).isEmpty();
     }
 

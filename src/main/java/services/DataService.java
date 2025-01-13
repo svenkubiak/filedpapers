@@ -235,11 +235,13 @@ public class DataService {
                 category = findInbox(userUid);
             }
 
-            category.setCount(category.getCount() + 1);
-            datastore.save(category);
+            if (category != null) {
+                category.setCount(category.getCount() + 1);
+                datastore.save(category);
 
-            Item item = new Item(userUid, category.getUid(), url, previewImage, title);
-            datastore.save(item);
+                Item item = new Item(userUid, category.getUid(), url, previewImage, title);
+                datastore.save(item);
+            }
         }
     }
 
