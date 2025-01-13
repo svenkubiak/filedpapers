@@ -78,6 +78,14 @@
     cursor: grabbing;
 }
 
+.category-trash {
+    opacity: 0.5;
+}
+
+.empty-trash {
+    opacity: 0.5;
+}
+
 .card-trash {
     color: #666;
     cursor: pointer;
@@ -88,6 +96,7 @@
     z-index: 3;
     pointer-events: all;
 }
+
 
 .card-move {
     color: #666;
@@ -102,6 +111,22 @@
 
 .card:hover .card-trash {
     opacity: 1;
+}
+
+.card:hover .category-trash {
+    opacity: 1;
+}
+
+.category-trash:hover {
+    color: #ff3860;
+    opacity: 1;
+    cursor: pointer !important;
+}
+
+.empty-trash:hover {
+    color: #ff3860;
+    opacity: 1;
+    cursor: pointer !important;
 }
 
 .card-trash:hover {
