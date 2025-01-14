@@ -1,11 +1,8 @@
 services:
   filedpapers-web:
-    container_name: filedpapers-web
     image: ghcr.io/svenkubiak/filedpapers/filedpapers:latest
-    ports:
-      - "127.0.0.1:9090:9090"
-    volumes:
-      - ./config:/app/config
+    container_name: filedpapers-web
+    restart: always
     environment:
       JAVA_OPTS: >
         -Dapplication.config=/app/config/config.yaml
@@ -21,6 +18,10 @@ services:
         -Dpersistence.mongo.password=${MONGODB_INITDB_ROOT_PASSWORD}
         -Xms256m
         -Xmx1024m
+    ports:
+      - "127.0.0.1:9090:9090"
+    volumes:
+      - ./config:/app/config
     depends_on:
       - filedpapers-database
     networks:
@@ -29,6 +30,7 @@ services:
   filedpapers-database:
     image: mongodb/mongodb-community-server:8.0.4-ubuntu2204
     container_name: filedpapers-database
+    restart: always
     environment:
       - MONGODB_INITDB_ROOT_USERNAME=${MONGODB_INITDB_ROOT_USERNAME}
       - MONGODB_INITDB_ROOT_PASSWORD=${MONGODB_INITDB_ROOT_PASSWORD}
