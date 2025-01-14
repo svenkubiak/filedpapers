@@ -10,4 +10,8 @@ public final class Required {
     public static final String PASSWORD = "password can not be null";
     public static final String DATA_SERVICE = "dataService can not be null";
     public static final String AUTH_REDIRECT = "authRedirect can not be null";
+    public static final String ACCESS_TOKEN_SECRET = "accessTokenSecret can not be null";
+    public static final String REFRESH_TOKEN_SECRET = "refreshTokenSecret can not be null";
+
+    private Required() {}
 }

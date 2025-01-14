@@ -1,6 +1,7 @@
 package controllers.api;
 
 import constants.Const;
+import constants.Required;
 import filters.ApiFilter;
 import io.mangoo.annotations.FilterWith;
 import io.mangoo.routing.Response;
@@ -21,7 +22,7 @@ public class ItemsControllerV1 {
 
     @Inject
     public ItemsControllerV1(DataService dataService) {
-        this.dataService = Objects.requireNonNull(dataService, "dataService can not be null");
+        this.dataService = Objects.requireNonNull(dataService, Required.DATA_SERVICE);
     }
 
     public Response add(Request request, boolean async, HashMap<String, String> data) {
@@ -31,7 +32,7 @@ public class ItemsControllerV1 {
             try {
                 addItem(request, data);
             } catch (Exception e) {
-                LOG.error("Error while adding item", e);
+                LOG.error("Failed to add item", e);
 
                 return Response.badRequest();
             }

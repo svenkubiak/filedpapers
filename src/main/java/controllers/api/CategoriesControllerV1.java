@@ -1,6 +1,7 @@
 package controllers.api;
 
 import constants.Const;
+import constants.Required;
 import filters.ApiFilter;
 import io.mangoo.annotations.FilterWith;
 import io.mangoo.routing.Response;
@@ -20,7 +21,7 @@ public class CategoriesControllerV1 {
 
     @Inject
     public CategoriesControllerV1(DataService dataService) {
-        this.dataService = Objects.requireNonNull(dataService, "dataService can not be null");
+        this.dataService = Objects.requireNonNull(dataService, Required.DATA_SERVICE);
     }
 
     public Response list(Request request) {

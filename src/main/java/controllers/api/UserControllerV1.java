@@ -1,6 +1,7 @@
 package controllers.api;
 
 import constants.Const;
+import constants.Required;
 import io.mangoo.exceptions.MangooTokenException;
 import io.mangoo.routing.Response;
 import io.mangoo.routing.bindings.Request;
@@ -26,9 +27,9 @@ public class UserControllerV1 {
                             @Named("api.refreshToken.secret") String refreshTokenSecret,
                             @Named("api.accessToken.expires") int accessTokenExpires,
                             @Named("api.refreshToken.expires") int refreshTokenExpires) {
-        this.dataService = Objects.requireNonNull(dataService, "dataService can not be null");
-        this.accessTokenSecret = Objects.requireNonNull(accessTokenSecret, "accessTokenSecret can not be null");
-        this.refreshTokenSecret = Objects.requireNonNull(refreshTokenSecret, "refreshTokenSecret can not be null");
+        this.dataService = Objects.requireNonNull(dataService, Required.DATA_SERVICE);
+        this.accessTokenSecret = Objects.requireNonNull(accessTokenSecret, Required.ACCESS_TOKEN_SECRET);
+        this.refreshTokenSecret = Objects.requireNonNull(refreshTokenSecret, Required.REFRESH_TOKEN_SECRET);
         this.accessTokenExpires = accessTokenExpires;
         this.refreshTokenExpires = refreshTokenExpires;
     }

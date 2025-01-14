@@ -41,7 +41,7 @@ public class DashboardController {
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     public Response dashboard(Authentication authentication, Optional<String> categoryUid) {
         String userUid = authentication.getSubject();
-        Category category = categoryUid
+        var category = categoryUid
                 .map(uid -> dataService.findCategory(uid, userUid))
                 .orElseGet(() -> dataService.findInbox(userUid));
 
@@ -186,7 +186,7 @@ public class DashboardController {
                 .header("Content-Disposition", "attachment; filename=\"filed-papers-export.html\"");
     }
 
-    public Response doChangeUsername(Form form, Authentication authentication, Flash flash) throws InterruptedException {
+    public Response doChangeUsername(Form form, Authentication authentication, Flash flash) {
         String userUid = authentication.getSubject();
         form.expectValue("username", "Please enter an email address");
         form.expectEmail("username", "Please enter a valid email address");

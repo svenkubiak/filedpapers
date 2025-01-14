@@ -301,7 +301,7 @@ public class DataService {
         Objects.requireNonNull(password, Required.PASSWORD);
         Objects.requireNonNull(userUid, Required.USER_UID);
 
-        User user = findUserByUid(userUid);
+        var user = findUserByUid(userUid);
         if (user != null && user.getPassword().equals(CodecUtils.hashArgon2(password, user.getSalt()))) {
             DeleteResult deleteCategories = datastore.query(Category.class).deleteMany(eq("userUid", userUid));
             DeleteResult deleteItems = datastore.query(Item.class).deleteMany(eq("userUid", userUid));
