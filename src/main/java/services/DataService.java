@@ -4,7 +4,7 @@ import com.mongodb.client.model.Updates;
 import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 import constants.Const;
-import io.mangoo.constants.NotNull;
+import constants.Required;
 import io.mangoo.persistence.interfaces.Datastore;
 import io.mangoo.utils.CodecUtils;
 import io.mangoo.utils.DateUtils;
@@ -28,13 +28,6 @@ import static constants.Const.MISSING_TITLE;
 import static constants.Const.PLACEHOLDER_IMAGE;
 
 public class DataService {
-    public static final String USER_UID_CAN_NOT_BE_NULL = "userUid can not be null";
-    public static final String CATEGORY_UID_CAN_NOT_BE_NULL = "categoryUid can not be null";
-    public static final String NAME_CAN_NOT_BE_NULL = "name can not be null";
-    public static final String URL_CAN_NOT_BE_NULL = "url can not be null";
-    public static final String UID_CAN_NOT_BE_NULL = "uid can not be null";
-    public static final String USERNAME_CAN_NOT_BE_NULL = "username can not be null";
-    public static final String PASSWORD_CAN_NOT_BE_NULL = "password can not be null";
     private final Datastore datastore;
 
     @Inject
@@ -44,7 +37,7 @@ public class DataService {
 
     @SuppressWarnings("unchecked")
     public Optional<List<Map<String, Object>>> findCategories(String userUid) {
-        Objects.requireNonNull(userUid, USER_UID_CAN_NOT_BE_NULL);
+        Objects.requireNonNull(userUid, Required.USER_UID);
 
         List<Category> categories = new ArrayList<>();
         datastore
@@ -67,13 +60,13 @@ public class DataService {
     }
 
     public boolean userExists(String userUid) {
-        Objects.requireNonNull(userUid, USER_UID_CAN_NOT_BE_NULL);
+        Objects.requireNonNull(userUid, Required.USER_UID);
         return datastore.find(User.class, eq("uid", userUid)) != null;
     }
 
     public Optional<String> authenticateUser(String username, String password) {
-        Objects.requireNonNull(username, USERNAME_CAN_NOT_BE_NULL);
-        Objects.requireNonNull(password, PASSWORD_CAN_NOT_BE_NULL);
+        Objects.requireNonNull(username, Required.USERNAME);
+        Objects.requireNonNull(password, Required.PASSWORD);
 
         User user = datastore.find(User.class, eq("username", username));
         if (user != null && user.getPassword().equals(CodecUtils.hashArgon2(password, user.getSalt()))) {
@@ -85,8 +78,8 @@ public class DataService {
 
     @SuppressWarnings("unchecked")
     public Optional<List<Map<String, Object>>> findItems(String userUid, String categoryUid) {
-        Objects.requireNonNull(userUid, USER_UID_CAN_NOT_BE_NULL);
-        Objects.requireNonNull(categoryUid, CATEGORY_UID_CAN_NOT_BE_NULL);
+        Objects.requireNonNull(userUid, Required.USER_UID);
+        Objects.requireNonNull(categoryUid, Required.CATEGORY_UID);
 
         List<Item> items = new ArrayList<>();
         datastore
@@ -110,8 +103,8 @@ public class DataService {
     }
 
     public boolean deleteItem(String uid, String userUid) {
-        Objects.requireNonNull(uid, UID_CAN_NOT_BE_NULL);
-        Objects.requireNonNull(userUid, USER_UID_CAN_NOT_BE_NULL);
+        Objects.requireNonNull(uid, Required.UID);
+        Objects.requireNonNull(userUid, Required.USER_UID);
 
         Item item = findItem(uid, userUid);
         Category category = findCategory(item.getCategoryUid(), userUid);
@@ -131,7 +124,7 @@ public class DataService {
     }
 
     public boolean emptyTrash(String userUid) {
-        Objects.requireNonNull(userUid, USER_UID_CAN_NOT_BE_NULL);
+        Objects.requireNonNull(userUid, Required.USER_UID);
 
         Category trash = findTrash(userUid);
         trash.setCount(0);
@@ -145,7 +138,7 @@ public class DataService {
     }
 
     private Category findTrash(String userUid) {
-        Objects.requireNonNull(userUid, USER_UID_CAN_NOT_BE_NULL);
+        Objects.requireNonNull(userUid, Required.USER_UID);
 
         return datastore.find(Category.class,
                 and(
@@ -154,7 +147,7 @@ public class DataService {
     }
 
     public Category findInbox(String userUid) {
-        Objects.requireNonNull(userUid, USER_UID_CAN_NOT_BE_NULL);
+        Objects.requireNonNull(userUid, Required.USER_UID);
 
         return datastore.find(Category.class,
                 and(
@@ -163,8 +156,8 @@ public class DataService {
     }
 
     public Category findCategory(String uid, String userUid) {
-        Objects.requireNonNull(uid, UID_CAN_NOT_BE_NULL);
-        Objects.requireNonNull(userUid, USER_UID_CAN_NOT_BE_NULL);
+        Objects.requireNonNull(uid, Required.UID);
+        Objects.requireNonNull(userUid, Required.USER_UID);
 
         return datastore.find(Category.class,
                 and(
@@ -173,8 +166,8 @@ public class DataService {
     }
 
     public Item findItem(String uid, String userUid) {
-        Objects.requireNonNull(uid, UID_CAN_NOT_BE_NULL);
-        Objects.requireNonNull(userUid, USER_UID_CAN_NOT_BE_NULL);
+        Objects.requireNonNull(uid, Required.UID);
+        Objects.requireNonNull(userUid, Required.USER_UID);
 
         return datastore.find(Item.class,
                 and(
@@ -183,9 +176,9 @@ public class DataService {
     }
 
     public boolean moveItem(String uid, String userUid, String categoryUid) {
-        Objects.requireNonNull(uid, UID_CAN_NOT_BE_NULL);
-        Objects.requireNonNull(userUid, USER_UID_CAN_NOT_BE_NULL);
-        Objects.requireNonNull(categoryUid, CATEGORY_UID_CAN_NOT_BE_NULL);
+        Objects.requireNonNull(uid, Required.UID);
+        Objects.requireNonNull(userUid, Required.USER_UID);
+        Objects.requireNonNull(categoryUid, Required.CATEGORY_UID);
 
         Item item = findItem(uid, userUid);
         Category sourceCategory = findCategory(item.getCategoryUid(), userUid);
@@ -211,8 +204,8 @@ public class DataService {
     }
 
     public void addItem(String userUid, String url, String categoryUid) {
-        Objects.requireNonNull(userUid, USER_UID_CAN_NOT_BE_NULL);
-        Objects.requireNonNull(url, URL_CAN_NOT_BE_NULL);
+        Objects.requireNonNull(userUid, Required.USER_UID);
+        Objects.requireNonNull(url, Required.URL);
 
         if (Utils.isValidURL(url)) {
             String previewImage = PLACEHOLDER_IMAGE;
@@ -246,15 +239,15 @@ public class DataService {
     }
 
     public void addCategory(String userUid, String name) {
-        Objects.requireNonNull(userUid, USER_UID_CAN_NOT_BE_NULL);
-        Objects.requireNonNull(name, NAME_CAN_NOT_BE_NULL);
+        Objects.requireNonNull(userUid, Required.USER_UID);
+        Objects.requireNonNull(name, Required.CATEGORY_NAME);
 
         datastore.save(new Category(name, userUid));
     }
 
     public void deleteCategory(String userUid, String uid) {
-        Objects.requireNonNull(userUid, USER_UID_CAN_NOT_BE_NULL);
-        Objects.requireNonNull(uid, UID_CAN_NOT_BE_NULL);
+        Objects.requireNonNull(userUid, Required.USER_UID);
+        Objects.requireNonNull(uid, Required.UID);
 
         Category inbox = findInbox(userUid);
         Category trash = findTrash(userUid);
@@ -280,7 +273,7 @@ public class DataService {
     }
 
     public User findUser(String username) {
-        Objects.requireNonNull(username, NotNull.USERNAME);
+        Objects.requireNonNull(username, Required.USERNAME);
 
         return datastore.find(User.class, eq("username", username));
     }
@@ -298,9 +291,25 @@ public class DataService {
     }
 
     public Category findCategoryByName(String name, String userUid) {
-        Objects.requireNonNull(name, NotNull.NAME);
-        Objects.requireNonNull(userUid, USER_UID_CAN_NOT_BE_NULL);
+        Objects.requireNonNull(name, Required.CATEGORY_NAME);
+        Objects.requireNonNull(userUid, Required.USER_UID);
 
         return datastore.find(Category.class, and(eq("name", name), eq("userUid", userUid)));
+    }
+
+    public boolean deleteAccount(String password, String userUid) {
+        Objects.requireNonNull(password, Required.PASSWORD);
+        Objects.requireNonNull(userUid, Required.USER_UID);
+
+        User user = findUserByUid(userUid);
+        if (user != null && user.getPassword().equals(CodecUtils.hashArgon2(password, user.getSalt()))) {
+            DeleteResult deleteCategories = datastore.query(Category.class).deleteMany(eq("userUid", userUid));
+            DeleteResult deleteItems = datastore.query(Item.class).deleteMany(eq("userUid", userUid));
+            DeleteResult deleteUser = datastore.query(User.class).deleteOne(eq("uid", userUid));
+
+            return deleteCategories.wasAcknowledged() && deleteItems.wasAcknowledged() && deleteUser.wasAcknowledged();
+        }
+
+        return false;
     }
 }

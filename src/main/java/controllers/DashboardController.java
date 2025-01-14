@@ -1,9 +1,11 @@
 package controllers;
 
+import constants.Required;
 import io.mangoo.routing.Response;
 import io.mangoo.routing.bindings.Authentication;
 import io.mangoo.routing.bindings.Flash;
 import io.mangoo.routing.bindings.Form;
+import io.mangoo.routing.bindings.Session;
 import io.mangoo.utils.CodecUtils;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
@@ -24,10 +26,14 @@ import java.util.*;
 
 public class DashboardController {
     private final DataService dataService;
+    private final String authRedirect;
 
     @Inject
-    public DashboardController(DataService dataService, @Named("application.registration") boolean registration) {
-        this.dataService = Objects.requireNonNull(dataService, "dataService can not be null");
+    public DashboardController(DataService dataService,
+                               @Named("application.registration") boolean registration,
+                               @Named("authentication.redirect") String authRedirect) {
+        this.dataService = Objects.requireNonNull(dataService, Required.DATA_SERVICE);
+        this.authRedirect = Objects.requireNonNull(authRedirect, Required.AUTH_REDIRECT);
 
     }
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
@@ -119,15 +125,20 @@ public class DashboardController {
         return Response.redirect("/dashboard");
     }
 
-    public Response about(Authentication authentication) {
+    public Response doDeleteAccount(Authentication authentication, Form form, Session session, Flash flash) {
         String userUid = authentication.getSubject();
-        Optional<List<Map<String, Object>>> categories = dataService.findCategories(userUid);
+        form.expectValue("confirmPassword");
 
-        Utils.sortCategories(categories);
+        if (form.isValid() && dataService.deleteAccount(form.get("confirmPassword"), userUid)) {
+            authentication.logout();
+            session.clear();
 
-        return Response.ok()
-                .render("active", "about")
-                .render("categories", categories.orElseThrow());
+            return Response.redirect(authRedirect);
+        }
+
+        flash.put("toasterror", "Ops, something went wrong");
+
+        return Response.redirect("/dashboard/profile");
     }
 
     public Response exporter(Authentication authentication) {

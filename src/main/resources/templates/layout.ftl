@@ -104,6 +104,35 @@
     </div>
 </div>
 
+<div class="modal" id="delete-account-modal">
+    <div class="modal-background"></div>
+    <div class="modal-card">
+        <header class="modal-card-head">
+            <p class="modal-card-title">Delete account</p>
+            <button class="delete" aria-label="close"></button>
+        </header>
+        <section class="modal-card-body">
+            <p>Are you sure you want to delete your account? All your data will be permanently deleted, and this action cannot be undone.</p>
+        </section>
+        <form action="/dashboard/profile/delete-account" method="POST">
+        <section class="modal-card-body">
+            <div class="field">
+                <label class="label">Password</label>
+                <div class="control">
+                    <input class="input" type="password" name="confirmPassword" placeholder="To delete your account, type in your password">
+                </div>
+            </div>
+        </section>
+        <footer class="modal-card-foot">
+            <div class="is-flex is-justify-content-space-between" style="width: 100%">
+                <button class="button">Cancel</button>
+                <input type="submit" class="button is-danger" id="add-category-submit" value="Delete account">
+            </div>
+        </footer>
+        </form>
+    </div>
+</div>
+
 <div class="modal" id="delete-confirm-modal">
     <div class="modal-background"></div>
     <div class="modal-card">

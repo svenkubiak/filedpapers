@@ -24,6 +24,7 @@
     const $addBookmark = document.getElementById('add-bookmark-modal');
     const $modal = document.getElementById('add-category-modal');
     const $deleteModal = document.getElementById('delete-confirm-modal');
+    const $deleteAccountModal = document.getElementById('delete-account-modal');
     const $deleteCategoryModal = document.getElementById('delete-category-confirm-modal');
     const $emptyTrashModal = document.getElementById('empty-trash-confirm-modal');
 
@@ -119,7 +120,6 @@
         });
     });
 
-    // Add click events to all trash icons
     document.querySelectorAll('.card-trash').forEach(trashIcon => {
         trashIcon.addEventListener('click', (e) => {
             e.preventDefault();
@@ -127,6 +127,12 @@
             $cardToDelete = e.currentTarget.closest('.card');
             openModal($deleteModal);
         });
+    });
+
+    document.getElementById('delete-account').addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        openModal($deleteAccountModal);
     });
 
     document.querySelectorAll('.category-trash').forEach(trashIcon => {

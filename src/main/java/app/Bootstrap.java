@@ -27,6 +27,7 @@ public class Bootstrap implements MangooBootstrap {
                 On.get().to("/dashboard/profile").respondeWith("profile"),
                 On.post().to("/dashboard/profile/change-username").respondeWith("changeUsername"),
                 On.post().to("/dashboard/profile/change-password").respondeWith("changePassword"),
+                On.post().to("/dashboard/profile/delete-account").respondeWith("doDeleteAccount"),
                 On.get().to("/dashboard/io").respondeWith("io"),
                 On.post().to("/dashboard/io/importer").respondeWith("importer"),
                 On.post().to("/dashboard/io/exporter").respondeWith("exporter")
