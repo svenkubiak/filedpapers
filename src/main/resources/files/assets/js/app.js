@@ -129,11 +129,14 @@
         });
     });
 
-    document.getElementById('delete-account').addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        openModal($deleteAccountModal);
-    });
+    const deleteAccount = document.getElementById('delete-account');
+    if (deleteAccount) {
+        deleteAccount.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            openModal($deleteAccountModal);
+        });
+    }
 
     document.querySelectorAll('.category-trash').forEach(trashIcon => {
         trashIcon.addEventListener('click', (e) => {

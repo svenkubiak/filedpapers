@@ -1,67 +1,88 @@
+:root {
+    --primary-color: #3273dc;
+    --secondary-color: #666;
+    --background-color: #ebeef2;
+    --light-gray: #999;
+    --white: #ffffff;
+    --box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    --radius-large: 12px; /* Adjust as per your variable */
+    --font-size-small: 0.9rem;
+    --font-size-large: 1.75rem;
+    --spacing-small: 0.5rem;
+    --spacing-medium: 1.5rem;
+    --spacing-large: 2rem;
+}
+
 .auth-container {
     min-height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: #ebeef2;
+    background-color: var(--background-color);
 }
 
 .auth-box {
     width: 100%;
     max-width: 400px;
-    padding: 2rem;
-    background: white;
+    padding: var(--spacing-large);
+    background: var(--white);
     border-radius: var(--radius-large);
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    box-shadow: var(--box-shadow);
 }
 
 .auth-logo {
-    width: 150px !important;
-    height: 150px !important;
-    margin: 0 auto 2rem;
-    display: block;
-    color: #3273dc;
+    width: 150px;
+    height: 150px;
+    margin: 0 auto var(--spacing-large);
+    color: var(--primary-color);
     display: flex;
     align-items: center;
     justify-content: center;
 }
 
 .auth-title {
-    font-size: 1.75rem;
+    font-size: var(--font-size-large);
     font-weight: 600;
     text-align: center;
-    margin-bottom: 0.5rem;
+    margin-bottom: var(--spacing-small);
 }
 
 .auth-subtitle {
-    color: #666;
+    color: var(--secondary-color);
     text-align: center;
-    margin-bottom: 2rem;
+    margin-bottom: var(--spacing-large);
 }
 
 .auth-links {
     text-align: center;
-    margin-top: 1.5rem;
-    font-size: 0.9rem;
+    margin-top: var(--spacing-medium);
+    font-size: var(--font-size-small);
 }
 
 .auth-links a {
-    color: #3273dc;
+    color: var(--primary-color);
+    text-decoration: none;
+    transition: color 0.3s ease;
+}
+
+.auth-links a:hover {
+    color: darken(var(--primary-color), 10%);
 }
 
 .auth-links span {
-    color: #999;
-    margin: 0 0.5rem;
+    color: var(--light-gray);
+    margin: 0 var(--spacing-small);
 }
 
 .button.is-loading {
-    color: transparent !important;
+    color: transparent;
     pointer-events: none;
+    position: relative; /* Added for proper alignment of loading spinner */
 }
 
 .button.is-loading::after {
     animation: spinAround 500ms infinite linear;
-    border: 2px solid #dbdbdb;
+    border: 2px solid var(--light-gray);
     border-radius: 50%;
     border-right-color: transparent;
     border-top-color: transparent;
@@ -70,8 +91,9 @@
     height: 1em;
     width: 1em;
     position: absolute;
-    left: calc(50% - (1em / 2));
-    top: calc(50% - (1em / 2));
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
 }
 
 @keyframes spinAround {
@@ -79,6 +101,6 @@
         transform: rotate(0deg);
     }
     to {
-        transform: rotate(359deg);
+        transform: rotate(360deg);
     }
 }
