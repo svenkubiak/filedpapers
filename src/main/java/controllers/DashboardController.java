@@ -1,5 +1,6 @@
 package controllers;
 
+import constants.Const;
 import constants.Required;
 import io.mangoo.routing.Response;
 import io.mangoo.routing.bindings.Authentication;
@@ -24,14 +25,15 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.*;
 
+import static constants.Const.SOMETHING_WENT_WRONG;
+import static constants.Const.TOAST_ERROR;
+
 public class DashboardController {
     private final DataService dataService;
     private final String authRedirect;
 
     @Inject
-    public DashboardController(DataService dataService,
-                               @Named("application.registration") boolean registration,
-                               @Named("authentication.redirect") String authRedirect) {
+    public DashboardController(DataService dataService, @Named("authentication.redirect") String authRedirect) {
         this.dataService = Objects.requireNonNull(dataService, Required.DATA_SERVICE);
         this.authRedirect = Objects.requireNonNull(authRedirect, Required.AUTH_REDIRECT);
 
@@ -136,7 +138,7 @@ public class DashboardController {
             return Response.redirect(authRedirect);
         }
 
-        flash.put("toasterror", "Ops, something went wrong");
+        flash.put(TOAST_ERROR, SOMETHING_WENT_WRONG);
 
         return Response.redirect("/dashboard/profile");
     }
@@ -184,7 +186,7 @@ public class DashboardController {
                 .header("Content-Disposition", "attachment; filename=\"filed-papers-export.html\"");
     }
 
-    public Response changeUsername(Form form, Authentication authentication, Flash flash) throws InterruptedException {
+    public Response doChangeUsername(Form form, Authentication authentication, Flash flash) throws InterruptedException {
         String userUid = authentication.getSubject();
         form.expectValue("username", "Please enter an email address");
         form.expectEmail("username", "Please enter a valid email address");
@@ -202,9 +204,9 @@ public class DashboardController {
                 user.setUsername(username);
                 dataService.save(user);
 
-                flash.put("toastsuccess", "Username successfully changed");
+                flash.put(Const.TOAST_SUCCESS, "Username successfully changed");
             } else {
-                flash.put("toasterror", "Ops, something went wrong");
+                flash.put(Const.TOAST_ERROR, SOMETHING_WENT_WRONG);
             }
         }
 
@@ -213,7 +215,7 @@ public class DashboardController {
         return Response.redirect("/dashboard/profile");
     }
 
-    public Response changePassword(Form form, Authentication authentication, Flash flash) {
+    public Response doChangePassword(Form form, Authentication authentication, Flash flash) {
         String userUid = authentication.getSubject();
         form.expectValue("password", "Please enter your current password");
         form.expectValue("new-password", "Please enter a new password");
@@ -233,9 +235,9 @@ public class DashboardController {
                 user.setPassword(CodecUtils.hashArgon2(newPassword, user.getSalt()));
                 dataService.save(user);
 
-                flash.put("toastsuccess", "Password successfully changed");
+                flash.put(Const.TOAST_SUCCESS, "Password successfully changed");
             } else {
-                flash.put("toasterror", "Ops, something went wrong");
+                flash.put(Const.TOAST_ERROR, Const.SOMETHING_WENT_WRONG);
             }
         }
 

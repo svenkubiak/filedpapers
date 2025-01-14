@@ -8,22 +8,18 @@
             <h1 class="auth-title">Welcome to Filed Papers</h1>
             <p class="auth-subtitle">Please login to proceed.</p>
 
-            <#if flash.signup?? && flash.signup == "success">
-
-            <div class="notification is-success is-light mb-5">
-                <button class="delete"></button>
-                Your account has been created!
-            </div>
-
+            <#if flash.success??>
+                <div class="notification is-success is-light mb-5">
+                    <button class="delete"></button>
+                    ${flash.success}
+                </div>
             </#if>
 
-            <#if flash.login?? && flash.login == "error">
-
+            <#if flash.error??>
                 <div class="notification is-danger is-light mb-5">
                     <button class="delete"></button>
-                    Invalid Username/Password!
+                    ${flash.error}
                 </div>
-
             </#if>
 
             <form action="/auth/login" method="POST" onsubmit="showLoading()">

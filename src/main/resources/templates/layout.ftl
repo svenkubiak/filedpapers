@@ -69,7 +69,6 @@
         </div>
     </div>
 </aside>
-
 <div class="main-content">
     <button class="button is-primary is-rounded fab-button" id="fab-add-bookmark">
         <span class="icon">
@@ -79,7 +78,6 @@
     </button>
    <#nested/>
 </div>
-
 <div class="modal" id="add-category-modal">
     <div class="modal-background"></div>
     <div class="modal-card">
@@ -103,7 +101,6 @@
         </footer>
     </div>
 </div>
-
 <div class="modal" id="delete-account-modal">
     <div class="modal-background"></div>
     <div class="modal-card">
@@ -132,7 +129,6 @@
         </form>
     </div>
 </div>
-
 <div class="modal" id="delete-confirm-modal">
     <div class="modal-background"></div>
     <div class="modal-card">
@@ -151,7 +147,6 @@
         </footer>
     </div>
 </div>
-
 <div class="modal" id="delete-category-confirm-modal">
     <div class="modal-background"></div>
     <div class="modal-card">
@@ -170,7 +165,6 @@
         </footer>
     </div>
 </div>
-
 <div class="modal" id="empty-trash-confirm-modal">
     <div class="modal-background"></div>
     <div class="modal-card">
@@ -189,7 +183,6 @@
         </footer>
     </div>
 </div>
-
 <div class="modal" id="add-bookmark-modal">
     <div class="modal-background"></div>
     <div class="modal-card">
@@ -228,9 +221,7 @@
         </footer>
     </div>
 </div>
-
 <div class="toast-container"></div>
-
 <script src="/assets/js/app.min.js"></script>
 <#if flash.toastsuccess??>
 <script>showToast("${flash.toastsuccess}");</script>

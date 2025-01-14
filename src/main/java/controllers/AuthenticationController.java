@@ -1,6 +1,7 @@
 package controllers;
 
 import constants.Const;
+import constants.Required;
 import io.mangoo.routing.Response;
 import io.mangoo.routing.bindings.Authentication;
 import io.mangoo.routing.bindings.Flash;
@@ -18,11 +19,13 @@ import java.util.Objects;
 public class AuthenticationController {
     private final DataService dataService;
     private final boolean registration;
+    private final String authRedirect;
 
     @Inject
-    public AuthenticationController(DataService dataService, @Named("application.registration") boolean registration) {
-        this.dataService = Objects.requireNonNull(dataService, "dataService can not be null");
+    public AuthenticationController(DataService dataService, @Named("application.registration") boolean registration, @Named("authentication.redirect") String authRedirect) {
+        this.dataService = Objects.requireNonNull(dataService, Required.DATA_SERVICE);
         this.registration = registration;
+        this.authRedirect = Objects.requireNonNull(authRedirect, Required.AUTH_REDIRECT);
     }
 
     public Response login() {
@@ -33,7 +36,7 @@ public class AuthenticationController {
         authentication.logout();
         session.clear();
 
-        return Response.redirect("/auth/login");
+        return Response.redirect(authRedirect);
     }
 
     public Response doLogin(Flash flash, Form form, Authentication authentication) {
@@ -56,10 +59,9 @@ public class AuthenticationController {
 
                 return Response.redirect("/dashboard");
             }
-            flash.put("login", "error");
         }
 
-        flash.put("login", "error");
+        flash.setError("Invalid Username or Password!");
         form.keep();
 
         return Response.redirect("/auth/login");
@@ -83,7 +85,7 @@ public class AuthenticationController {
         form.expectMaxLength("username", 256, "Email address must not be longer than 256 characters");
 
         if (form.isValid()) {
-            flash.put("forgot", "success");
+            flash.setSuccess("If your email address exists, you will receive an email shortly.");
         }
 
         form.keep();
@@ -118,7 +120,7 @@ public class AuthenticationController {
                 dataService.save(new Category(Const.INBOX, user.getUid()));
                 dataService.save(new Category(Const.TRASH, user.getUid()));
 
-                flash.put("signup", "success");
+                flash.setSuccess("Your account has been created!");
 
                 return Response.redirect("/auth/login");
             }
