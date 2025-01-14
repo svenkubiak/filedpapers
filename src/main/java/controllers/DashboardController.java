@@ -10,7 +10,6 @@ import io.mangoo.routing.bindings.Session;
 import io.mangoo.utils.CodecUtils;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
-import models.Category;
 import models.Item;
 import models.User;
 import org.apache.logging.log4j.util.Strings;
@@ -64,7 +63,7 @@ public class DashboardController {
 
         Utils.sortCategories(categories);
 
-        User user = dataService.findUserByUid(userUid);
+        var user = dataService.findUserByUid(userUid);
 
         return Response.ok()
                 .render("username", user.getUsername())

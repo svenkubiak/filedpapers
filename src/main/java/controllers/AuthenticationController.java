@@ -112,7 +112,7 @@ public class AuthenticationController {
             String username = form.get("username");
             String password = form.get("password");
 
-            User user = dataService.findUser(username);
+            var user = dataService.findUser(username);
             if (user == null) {
                 user = new User(username);
                 user.setPassword(CodecUtils.hashArgon2(password, user.getSalt()));
