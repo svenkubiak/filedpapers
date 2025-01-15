@@ -229,7 +229,7 @@ public class DashboardController {
             String password = form.get("password");
             String newPassword = form.get("new-password");
 
-            User user = dataService.findUserByUid(userUid);
+            var user = dataService.findUserByUid(userUid);
             if (user.getPassword().equals(CodecUtils.hashArgon2(password, user.getSalt()))) {
                 user.setPassword(CodecUtils.hashArgon2(newPassword, user.getSalt()));
                 dataService.save(user);

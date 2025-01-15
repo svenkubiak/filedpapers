@@ -15,6 +15,9 @@ import java.util.*;
 
 public final class Utils {
 
+    private Utils() {
+    }
+
     public static boolean isValidUserUid(String userUid) {
         return StringUtils.isNotBlank(userUid) && UUID.fromString(userUid).version() == 6;
     }
@@ -24,7 +27,7 @@ public final class Utils {
         Objects.requireNonNull(accessTokenSecret, Required.ACCESS_TOKEN_SECRET);
         Objects.requireNonNull(refreshTokenSecret, Required.REFRESH_TOKEN_SECRET);
 
-        LocalDateTime now = LocalDateTime.now();
+        var now = LocalDateTime.now();
 
         String accessToken = PasetoBuilder.create()
                 .withSecret(accessTokenSecret)
@@ -84,7 +87,7 @@ public final class Utils {
 
     public static boolean isValidURL(String url) {
         try {
-            URI uri = new URI(url);
+            var uri = new URI(url);
             return uri.getScheme() != null && uri.getHost() != null;
         } catch (Exception e) {
             return false;

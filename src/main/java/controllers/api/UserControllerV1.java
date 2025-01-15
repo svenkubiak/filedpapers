@@ -34,7 +34,7 @@ public class UserControllerV1 {
         this.refreshTokenExpires = refreshTokenExpires;
     }
 
-    public Response login(Request request, Map<String, String> credentials) {
+    public Response login(Map<String, String> credentials) {
         String username = credentials.get("username");
         String password = credentials.get("password");
 
@@ -54,7 +54,7 @@ public class UserControllerV1 {
         return Response.unauthorized();
     }
 
-    public Response refresh(Request request, Map<String, String> credentials) {
+    public Response refresh(Map<String, String> credentials) {
         String refreshToken = credentials.get(Const.REFRESH_TOKEN);
         if (StringUtils.isNotBlank(refreshToken)) {
             try {
