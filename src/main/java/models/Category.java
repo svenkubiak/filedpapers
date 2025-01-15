@@ -3,7 +3,6 @@ package models;
 import constants.Required;
 import io.mangoo.annotations.Collection;
 import io.mangoo.annotations.Indexed;
-import io.mangoo.constants.NotNull;
 import io.mangoo.persistence.Entity;
 import io.mangoo.utils.CodecUtils;
 

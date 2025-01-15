@@ -47,7 +47,7 @@ public class DashboardController {
         Optional<List<Map<String, Object>>> categories = dataService.findCategories(userUid);
         Optional<List<Map<String, Object>>> items = dataService.findItems(userUid, category.getUid());
 
-        Utils.sortCategories(categories);
+        categories.ifPresent(Utils::sortCategories);
 
         return Response.ok()
                 .render("active", category.getName().toLowerCase(Locale.ENGLISH))
@@ -61,7 +61,7 @@ public class DashboardController {
         String userUid = authentication.getSubject();
         Optional<List<Map<String, Object>>> categories = dataService.findCategories(userUid);
 
-        Utils.sortCategories(categories);
+        categories.ifPresent(Utils::sortCategories);
 
         var user = dataService.findUserByUid(userUid);
 
@@ -75,7 +75,7 @@ public class DashboardController {
         String userUid = authentication.getSubject();
         Optional<List<Map<String, Object>>> categories = dataService.findCategories(userUid);
 
-        Utils.sortCategories(categories);
+        categories.ifPresent(Utils::sortCategories);
 
         return Response.ok()
                 .render("active", "io")

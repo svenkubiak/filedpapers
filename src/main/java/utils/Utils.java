@@ -65,10 +65,10 @@ public final class Utils {
         return Optional.empty();
     }
 
-    public static void sortCategories(Optional<List<Map<String, Object>>> categories) {
+    public static void sortCategories(List<Map<String, Object>> categories) {
         Objects.requireNonNull(categories, Required.CATEGORIES);
         
-        categories.orElseThrow().sort((map1, map2) -> {
+        categories.sort((map1, map2) -> {
             String name1 = (String) map1.get("name");
             String name2 = (String) map2.get("name");
 
