@@ -32,7 +32,7 @@ public class DataService {
 
     @Inject
     public DataService(Datastore datastore) {
-        this.datastore = Objects.requireNonNull(datastore, "datastore can not be null");
+        this.datastore = Objects.requireNonNull(datastore, Required.DATASTORE);
     }
 
     @SuppressWarnings("unchecked")
@@ -279,13 +279,13 @@ public class DataService {
     }
 
     public User findUserByUid(String uid) {
-        Objects.requireNonNull(uid, "uid can not be null");
+        Objects.requireNonNull(uid, Required.UID);
 
         return datastore.find(User.class, eq("uid", uid));
     }
 
     public void save(Object object) {
-        Objects.requireNonNull(object, "object can not be null");
+        Objects.requireNonNull(object, Required.OBJECT);
 
         datastore.save(object);
     }

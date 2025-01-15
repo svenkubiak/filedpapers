@@ -1,5 +1,6 @@
 package models;
 
+import constants.Required;
 import io.mangoo.annotations.Collection;
 import io.mangoo.annotations.Indexed;
 import io.mangoo.persistence.Entity;
@@ -20,7 +21,7 @@ public class User extends Entity implements Serializable  {
     private String salt;
 
     public User(String username) {
-        this.username = Objects.requireNonNull(username, "username can not be null");
+        this.username = Objects.requireNonNull(username, Required.USERNAME);
         this.uid = CodecUtils.uuid();
         this.salt = MangooUtils.randomString(64);
     }

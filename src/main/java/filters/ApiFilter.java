@@ -1,6 +1,7 @@
 package filters;
 
 import constants.Const;
+import constants.Required;
 import io.mangoo.constants.Key;
 import io.mangoo.exceptions.MangooTokenException;
 import io.mangoo.interfaces.filters.PerRequestFilter;
@@ -26,10 +27,10 @@ public class ApiFilter implements PerRequestFilter {
                      @Named("api.accessToken.secret") String apiSecret,
                      @Named(Key.AUTHENTICATION_COOKIE_NAME) String cookieName,
                      @Named(Key.AUTHENTICATION_COOKIE_SECRET) String cookieSecret) {
-        this.dataService = Objects.requireNonNull(dataService, "dataService can not be null");
-        this.apiSecret = Objects.requireNonNull(apiSecret, "api secret can not be null");
-        this.cookieName = Objects.requireNonNull(cookieName, "cookieName can not be null");
-        this.cookieSecret = Objects.requireNonNull(cookieSecret, "cookieSecret can be null");
+        this.dataService = Objects.requireNonNull(dataService, Required.DATA_SERVICE);
+        this.apiSecret = Objects.requireNonNull(apiSecret, Required.API_SECRET);
+        this.cookieName = Objects.requireNonNull(cookieName, Required.COOKIE_NAME);
+        this.cookieSecret = Objects.requireNonNull(cookieSecret, Required.COOKIE_SECRET);
     }
 
     @Override

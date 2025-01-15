@@ -1,5 +1,6 @@
 package models;
 
+import constants.Required;
 import io.mangoo.annotations.Collection;
 import io.mangoo.annotations.Indexed;
 import io.mangoo.constants.NotNull;
@@ -20,8 +21,8 @@ public class Category extends Entity implements Serializable {
     private int count;
 
     public Category(String name, String userUid) {
-        this.name = Objects.requireNonNull(name, NotNull.NAME);
-        this.userUid = Objects.requireNonNull(userUid, "userUid can not be null");
+        this.name = Objects.requireNonNull(name, Required.NAME);
+        this.userUid = Objects.requireNonNull(userUid, Required.USER_UID);
         this.uid = CodecUtils.uuid();
         this.count = 0;
     }

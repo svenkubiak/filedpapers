@@ -1,5 +1,6 @@
 package models;
 
+import constants.Required;
 import io.mangoo.annotations.Collection;
 import io.mangoo.annotations.Indexed;
 import io.mangoo.persistence.Entity;
@@ -24,11 +25,11 @@ public class Item extends Entity implements Serializable {
     private String title;
 
     public Item(String userUid, String categoryUid, String url, String image, String title) {
-        this.userUid = Objects.requireNonNull(userUid, "userUid can not be null");
-        this.categoryUid = Objects.requireNonNull(categoryUid, "categoryUid can not be null");
-        this.url = Objects.requireNonNull(url, "url can not be null");
-        this.image = Objects.requireNonNull(image, "image can not be null");
-        this.title = Objects.requireNonNull(title, "title can not be null");
+        this.userUid = Objects.requireNonNull(userUid, Required.USER_UID);
+        this.categoryUid = Objects.requireNonNull(categoryUid, Required.CATEGORY_UID);
+        this.url = Objects.requireNonNull(url, Required.URL);
+        this.image = Objects.requireNonNull(image, Required.IMAGE);
+        this.title = Objects.requireNonNull(title, Required.TITLE);
         this.uid = CodecUtils.uuid();
         this.timestamp = LocalDateTime.now();
     }
