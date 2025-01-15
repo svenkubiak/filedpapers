@@ -9,6 +9,7 @@ import io.mangoo.test.http.TestResponse;
 import io.mangoo.utils.CodecUtils;
 import io.mangoo.utils.JsonUtils;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import models.Category;
@@ -28,8 +29,8 @@ public class ItemsControllerV1Tests {
     private static String TRASH_UID;
     private static String ITEM_UID;
 
-    @BeforeAll
-    public static void init() {
+    @BeforeEach
+    public void init() {
         Datastore datastore = Application.getInstance(Datastore.class);
         datastore.dropCollection(Category.class);
         datastore.dropCollection(Item.class);
@@ -105,6 +106,22 @@ public class ItemsControllerV1Tests {
         assertThat(response).isNotNull();
         assertThat(response.getStatusCode()).isEqualTo(401);
         assertThat(response.getContent()).isEmpty();
+    }
+
+    @Test
+    @SuppressWarnings("OptionalGetWithoutIsPresent")
+    void testTrash() {
+        //when
+        TestResponse response = TestRequest.delete("/api/v1/items/trash")
+                .withHeader("Authorization", ACCESS_TOKEN)
+                .withContentType("application/json")
+                .execute();
+
+        //then
+        assertThat(response).isNotNull();
+        assertThat(response.getStatusCode()).isEqualTo(200);
+        assertThat(response.getContent()).isEmpty();
+        assertThat(Application.getInstance(DataService.class).findItems(USER_UID, TRASH_UID).get().isEmpty()).isTrue();
     }
 
     @Test
@@ -199,5 +216,24 @@ public class ItemsControllerV1Tests {
         assertThat(response).isNotNull();
         assertThat(response.getStatusCode()).isEqualTo(401);
         assertThat(response.getContent()).isEmpty();
+    }
+
+    @Test
+    void testMove() {
+        //given
+        Map<String, String> data = Map.of("uid", ITEM_UID, "category", TRASH_UID);
+
+        //when
+        TestResponse response = TestRequest.put("/api/v1/items")
+                .withHeader("Authorization", ACCESS_TOKEN)
+                .withStringBody(JsonUtils.toJson(data))
+                .withContentType("application/json")
+                .execute();
+
+        //then
+        assertThat(response).isNotNull();
+        assertThat(response.getStatusCode()).isEqualTo(200);
+        assertThat(response.getContent()).isEmpty();
+        assertThat(Application.getInstance(DataService.class).findItem(ITEM_UID, USER_UID).getCategoryUid()).isEqualTo(TRASH_UID);
     }
 }
