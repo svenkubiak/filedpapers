@@ -109,7 +109,6 @@ public class ItemsControllerV1Tests {
     }
 
     @Test
-    @SuppressWarnings("OptionalGetWithoutIsPresent")
     void testTrash() {
         //when
         TestResponse response = TestRequest.delete("/api/v1/items/trash")
@@ -121,7 +120,7 @@ public class ItemsControllerV1Tests {
         assertThat(response).isNotNull();
         assertThat(response.getStatusCode()).isEqualTo(200);
         assertThat(response.getContent()).isEmpty();
-        assertThat(Application.getInstance(DataService.class).findItems(USER_UID, TRASH_UID).get().isEmpty()).isTrue();
+        assertThat(Application.getInstance(DataService.class).findItems(USER_UID, TRASH_UID).orElseThrow().isEmpty()).isTrue();
     }
 
     @Test
