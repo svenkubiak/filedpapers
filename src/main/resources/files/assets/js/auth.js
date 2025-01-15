@@ -1,5 +1,5 @@
-function showLoading() {
-    const button = document.getElementById('loading-button');
+function showLoading(element) {
+    const button = document.getElementById(element);
     if (button) {
         button.classList.add('is-loading');
         button.disabled = true;

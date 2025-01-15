@@ -52,7 +52,8 @@ public class DataService {
                         "uid", category.getUid(),
                         "count", String.valueOf(category.getCount())
                 ));
-            };
+            }
+
             return Optional.of(output);
         }
 

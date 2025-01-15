@@ -8,7 +8,7 @@
 <div class="columns is-multiline">
     <div class="column is-half">
         <div class="profile-form">
-            <form action="/dashboard/profile/change-username" method="POST" class="profile-section" onsubmit="showLoading()">
+            <form action="/dashboard/profile/change-username" method="POST" class="profile-section" onsubmit="showLoading('update-email-button')">
                 <h2 class="section-title">Change email</h2>
                 <div class="form-field">
                     <label class="label">Current email</label>
@@ -47,13 +47,13 @@
                 </div>
                 <div class="form-field">
                     <div class="control">
-                        <button type="submit" class="button is-link is-fullwidth" id="loading-button">
+                        <button type="submit" class="button is-link is-fullwidth" id="update-email-button">
                             Update Email
                         </button>
                     </div>
                 </div>
             </form>
-            <form action="/dashboard/profile/change-password" method="post" class="profile-section" onsubmit="showLoading()">
+            <form action="/dashboard/profile/change-password" method="post" class="profile-section" onsubmit="showLoading('update-password-button')">
                 <h2 class="section-title">Change password</h2>
                 <div class="form-field">
                     <label class="label">Current password</label>
@@ -100,7 +100,7 @@
                 </div>
                 <div class="form-field">
                     <div class="control">
-                        <button type="submit" class="button is-link is-fullwidth" id="loading-button2">
+                        <button type="submit" class="button is-link is-fullwidth" id="update-password-button">
                             Update Password
                         </button>
                     </div>

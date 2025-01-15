@@ -7,7 +7,7 @@
         </span>
         <h1 class="auth-title">Sign Up</h1>
         <p class="auth-subtitle">Create your account to get started.</p>
-        <form action="/auth/signup" method="POST" onsubmit="showLoading()">
+        <form action="/auth/signup" method="POST" onsubmit="showLoading('signup-button')">
             <div class="field">
                 <div class="control has-icons-left<#if form.hasError("username")> has-icons-right</#if>">
                     <input class="input<#if form.hasError("username")> is-danger</#if>" type="email" placeholder="Your Email" id="username" value="<#if form.username??>${form.username}</#if>"  name="username" required>
@@ -59,7 +59,7 @@
             </div>
             <div class="field">
                 <div class="control">
-                    <button type="submit" class="button is-link is-fullwidth" id="loading-button">
+                    <button type="submit" class="button is-link is-fullwidth" id="signup-button">
                         Create Account
                     </button>
                 </div>

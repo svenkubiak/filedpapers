@@ -65,35 +65,9 @@
     transition: color 0.3s ease;
 }
 
-.auth-links a:hover {
-    color: darken(var(--primary-color), 10%);
-}
-
 .auth-links span {
     color: var(--light-gray);
     margin: 0 var(--spacing-small);
-}
-
-.button.is-loading {
-    color: transparent;
-    pointer-events: none;
-    position: relative; /* Added for proper alignment of loading spinner */
-}
-
-.button.is-loading::after {
-    animation: spinAround 500ms infinite linear;
-    border: 2px solid var(--light-gray);
-    border-radius: 50%;
-    border-right-color: transparent;
-    border-top-color: transparent;
-    content: "";
-    display: block;
-    height: 1em;
-    width: 1em;
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
 }
 
 @keyframes spinAround {

@@ -22,7 +22,7 @@
                 </div>
             </#if>
 
-            <form action="/auth/login" method="POST" onsubmit="showLoading()">
+            <form action="/auth/login" method="POST" onsubmit="showLoading('login-button')">
                 <div class="field">
                     <div class="control has-icons-left<#if form.hasError("username")> has-icons-right</#if>">
                         <input class="input<#if form.hasError("username")> is-danger</#if>" type="email" placeholder="Your Email" id="username" value="<#if form.username??>${form.username}</#if>" name="username" required>
@@ -68,9 +68,7 @@
 
                 <div class="field">
                     <div class="control">
-                        <button type="submit" class="button is-link is-fullwidth" id="loading-button">
-                            Login
-                        </button>
+                        <button type="submit" class="button is-link is-fullwidth" id="login-button">Login</button>
                     </div>
                 </div>
             </form>
