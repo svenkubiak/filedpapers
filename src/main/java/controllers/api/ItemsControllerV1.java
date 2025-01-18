@@ -6,6 +6,8 @@ import filters.ApiFilter;
 import io.mangoo.annotations.FilterWith;
 import io.mangoo.routing.Response;
 import io.mangoo.routing.bindings.Request;
+import io.mangoo.utils.CodecUtils;
+import io.mangoo.utils.JsonUtils;
 import jakarta.inject.Inject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -43,10 +45,20 @@ public class ItemsControllerV1 {
 
     public Response list(Request request, String categoryUid) {
         String userUid = request.getAttribute(Const.USER_UID);
+        String ifNoneMatch = request.getHeader("If-None-Match");
 
         try {
             return dataService.findItems(userUid, categoryUid)
-                    .map(items -> Response.ok().bodyJson(Map.of("items", items)))
+                    .map(items -> {
+                        String json = JsonUtils.toJson(Map.of("items", items));
+                        String hash = CodecUtils.hexSHA512(json);
+
+                        if (hash.equals(ifNoneMatch)) {
+                            return Response.status(304);
+                        } else {
+                            return Response.ok().header("ETag", hash).bodyJson(json);
+                        }
+                    })
                     .orElseGet(Response::badRequest);
         } catch (NullPointerException e) {
             LOG.error("Failed to find items", e);
