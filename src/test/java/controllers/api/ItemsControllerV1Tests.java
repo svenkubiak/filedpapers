@@ -96,6 +96,35 @@ public class ItemsControllerV1Tests {
     }
 
     @Test
+    void testETag() {
+        //when
+        TestResponse response = TestRequest.get("/api/v1/items/" + INBOX_UID)
+                .withHeader("Authorization", ACCESS_TOKEN)
+                .withContentType("application/json")
+                .execute();
+
+        //then
+        assertThat(response).isNotNull();
+        assertThat(response.getStatusCode()).isEqualTo(200);
+        assertThat(response.getContent()).isNotEmpty();
+        assertThat(response.getHeader("ETag")).isNotEmpty();
+
+        String etag = response.getHeader("ETag");
+
+        //when
+        response = TestRequest.get("/api/v1/items/" + INBOX_UID)
+                .withHeader("Authorization", ACCESS_TOKEN)
+                .withHeader("If-None-Match", etag)
+                .withContentType("application/json")
+                .execute();
+
+        //then
+        assertThat(response).isNotNull();
+        assertThat(response.getStatusCode()).isEqualTo(304);
+        assertThat(response.getContent()).isEmpty();
+    }
+
+    @Test
     void testTrashUnauthorized() {
         //when
         TestResponse response = TestRequest.delete("/api/v1/items/trash")
