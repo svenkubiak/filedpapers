@@ -14,16 +14,23 @@ import java.util.Objects;
 public class User extends Entity implements Serializable  {
     @Indexed(unique = true)
     private String uid;
+
     @Indexed(unique = true)
     private String username;
+
     @Indexed
     private String password;
+
     private String salt;
+    private String mfaSecret;
+    private String mfaFallback;
+    private boolean mfa;
 
     public User(String username) {
         this.username = Objects.requireNonNull(username, Required.USERNAME);
         this.uid = CodecUtils.uuid();
         this.salt = MangooUtils.randomString(64);
+        this.mfaSecret = MangooUtils.randomString(64);
     }
 
     public User() {
@@ -59,5 +66,29 @@ public class User extends Entity implements Serializable  {
 
     public void setSalt(String salt) {
         this.salt = salt;
+    }
+
+    public String getMfaSecret() {
+        return mfaSecret;
+    }
+
+    public void setMfaSecret(String mfaSecret) {
+        this.mfaSecret = mfaSecret;
+    }
+
+    public boolean isMfa() {
+        return mfa;
+    }
+
+    public void setMfa(boolean mfa) {
+        this.mfa = mfa;
+    }
+
+    public String getMfaFallback() {
+        return mfaFallback;
+    }
+
+    public void setMfaFallback(String mfaFallback) {
+        this.mfaFallback = mfaFallback;
     }
 }

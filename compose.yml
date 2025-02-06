@@ -9,6 +9,7 @@ services:
         -Dapplication.secret=${APPLICATION_SECRET}
         -Dapi.accessToken.secret=${ACCESS_TOKEN_SECRET}
         -Dapi.refreshToken.secret=${REFRESH_TOKEN_SECRET}
+        -Dapi.challengeToken.secret=${CHALLENGE_TOKEN_SECRET}
         -Dsession.cookie.secret=${SESSION_SECRET}
         -Dauthentication.cookie.secret=${AUTHENTICATION_SECRET}
         -Dflash.cookie.secret=${FLASH_SECRET}

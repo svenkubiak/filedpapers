@@ -21,3 +21,8 @@ const username = document.getElementById("username");
 if (username) {
     username.focus();
 }
+
+const mfa = document.getElementById("mfa");
+if (mfa) {
+    mfa.focus();
+}

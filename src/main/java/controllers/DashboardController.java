@@ -2,16 +2,19 @@ package controllers;
 
 import constants.Const;
 import constants.Required;
+import io.mangoo.constants.Hmac;
 import io.mangoo.routing.Response;
 import io.mangoo.routing.bindings.Authentication;
 import io.mangoo.routing.bindings.Flash;
 import io.mangoo.routing.bindings.Form;
 import io.mangoo.routing.bindings.Session;
 import io.mangoo.utils.CodecUtils;
+import io.mangoo.utils.totp.TotpUtils;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import models.Item;
 import models.User;
+import org.apache.fury.util.StringUtils;
 import org.apache.logging.log4j.util.Strings;
 import services.DataService;
 import utils.IOUtils;
@@ -32,7 +35,8 @@ public class DashboardController {
     private final String authRedirect;
 
     @Inject
-    public DashboardController(DataService dataService, @Named("authentication.redirect") String authRedirect) {
+    public DashboardController(DataService dataService,
+                               @Named("authentication.redirect.login") String authRedirect) {
         this.dataService = Objects.requireNonNull(dataService, Required.DATA_SERVICE);
         this.authRedirect = Objects.requireNonNull(authRedirect, Required.AUTH_REDIRECT);
 
@@ -57,18 +61,42 @@ public class DashboardController {
                 .render("items", items.orElseThrow() );
     }
 
-    public Response profile(Authentication authentication) {
+    public Response profile(Authentication authentication, Flash flash) {
         String userUid = authentication.getSubject();
         Optional<List<Map<String, Object>>> categories = dataService.findCategories(userUid);
 
         categories.ifPresent(Utils::sortCategories);
 
         var user = dataService.findUserByUid(userUid);
+        String qrCode = null;
+        if (user.isMfa()) {
+            qrCode = TotpUtils.getQRCode(user.getUsername(), "Filed Papers", user.getMfaSecret(), Hmac.SHA512, "6", "30");
+        }
+
+        String fallback = null;
+        if (StringUtils.isNotBlank(flash.get(Const.MFA_FALLBACK))) {
+            fallback = flash.get(Const.MFA_FALLBACK);
+            flash.put(Const.MFA_FALLBACK, Strings.EMPTY);
+        }
 
         return Response.ok()
+                .render("mfaFallback", fallback)
                 .render("username", user.getUsername())
+                .render("mfa", user.isMfa())
+                .render("qrCode", qrCode)
                 .render("active", "profile")
                 .render("categories", categories.orElseThrow());
+    }
+
+    public Response doMfa(Authentication authentication, Form form, Flash flash) {
+        String userUid = authentication.getSubject();
+        String mfa = form.get("mfa");
+
+        String fallback = dataService.changeMfa(userUid, ("on").equals(mfa));
+        flash.put(Const.TOAST_SUCCESS, "Two-Factor authentication " + (("on").equals(mfa) ? "enabled" : "disabled"));
+        flash.put(Const.MFA_FALLBACK, fallback);
+
+        return Response.redirect("/dashboard/profile");
     }
 
     public Response io(Authentication authentication) {

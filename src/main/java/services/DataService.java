@@ -8,6 +8,8 @@ import constants.Required;
 import io.mangoo.persistence.interfaces.Datastore;
 import io.mangoo.utils.CodecUtils;
 import io.mangoo.utils.DateUtils;
+import io.mangoo.utils.MangooUtils;
+import io.mangoo.utils.totp.TotpUtils;
 import it.auties.linkpreview.LinkPreview;
 import it.auties.linkpreview.LinkPreviewMatch;
 import it.auties.linkpreview.LinkPreviewMedia;
@@ -98,7 +100,7 @@ public class DataService {
                     "title", item.getTitle(),
                     "sort", item.getTimestamp().toEpochSecond(ZoneOffset.UTC),
                     "added", DateUtils.getPrettyTime(item.getTimestamp())));
-        };
+        }
 
         return Optional.of(output);
     }
@@ -312,5 +314,37 @@ public class DataService {
         }
 
         return false;
+    }
+
+    public boolean userHasMfa(String userUid) {
+        Objects.requireNonNull(userUid, Required.USER_UID);
+
+        var user = findUserByUid(userUid);
+        return user != null && user.isMfa();
+    }
+
+    public boolean isValidMfa(String userUid, String otp) {
+        Objects.requireNonNull(userUid, Required.USER_UID);
+        Objects.requireNonNull(otp, Required.OTP);
+
+        User user = findUserByUid(userUid);
+        return user != null && user.isMfa() && ( TotpUtils.verifiedTotp(user.getMfaSecret(), otp) || CodecUtils.matchArgon2(otp, user.getSalt(), user.getMfaFallback()));
+    }
+
+    public String changeMfa(String userUid, boolean mfa) {
+        Objects.requireNonNull(userUid, Required.USER_UID);
+
+        String fallaback = null;
+        User user = findUserByUid(userUid);
+        if (mfa) {
+            fallaback = MangooUtils.randomString(32);
+            user.setMfaSecret(MangooUtils.randomString(64));
+            user.setMfaFallback(CodecUtils.hashArgon2(fallaback, user.getSalt()));
+        }
+        user.setMfa(mfa);
+
+        datastore.save(user);
+
+        return fallaback;
     }
 }

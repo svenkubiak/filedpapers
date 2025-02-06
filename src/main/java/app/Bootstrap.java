@@ -28,6 +28,7 @@ public class Bootstrap implements MangooBootstrap {
                 On.post().to("/dashboard/profile/change-username").respondeWith("doChangeUsername"),
                 On.post().to("/dashboard/profile/change-password").respondeWith("doChangePassword"),
                 On.post().to("/dashboard/profile/delete-account").respondeWith("doDeleteAccount"),
+                On.post().to("/dashboard/profile/enable-mfa").respondeWith("doMfa"),
                 On.get().to("/dashboard/io").respondeWith("io"),
                 On.post().to("/dashboard/io/importer").respondeWith("importer"),
                 On.post().to("/dashboard/io/exporter").respondeWith("exporter")
@@ -36,6 +37,8 @@ public class Bootstrap implements MangooBootstrap {
         Bind.controller(AuthenticationController.class).withRoutes(
                 On.get().to("/auth/login").respondeWith("login"),
                 On.post().to("/auth/login").respondeWith("doLogin"),
+                On.get().to("/auth/mfa").respondeWith("mfa"),
+                On.post().to("/auth/mfa").respondeWith("doMfa"),
                 On.get().to("/auth/logout").respondeWith("logout"),
                 On.get().to("/auth/signup").respondeWith("signup"),
                 On.post().to("/auth/signup").respondeWith("doSignup"),
@@ -59,6 +62,7 @@ public class Bootstrap implements MangooBootstrap {
 
         Bind.controller(UserControllerV1.class).withRoutes(
                 On.post().to("/api/v1/users/login").respondeWith("login"),
+                On.post().to("/api/v1/users/mfa").respondeWith("mfa"),
                 On.post().to("/api/v1/users/refresh").respondeWith("refresh")
         );
         

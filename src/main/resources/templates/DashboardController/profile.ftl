@@ -8,6 +8,33 @@
 <div class="columns is-multiline">
     <div class="column is-half">
         <div class="profile-form">
+            <form action="/dashboard/profile/enable-mfa" method="POST" class="profile-section">
+                <h2 class="section-title">Security</h2>
+                <div class="form-field">
+                    <div class="control has-icons-left">
+                        <input class="checkbox" type="checkbox" name="mfa" <#if mfa>checked</#if>> Enable Two-Factor Authentication
+                    </div>
+                </div>
+                <#if qrCode??>
+                    <img src="data:image/png;base64,${qrCode}"/>
+                </#if>
+                <div class="form-field">
+                    <div class="control">
+                        <button type="submit" class="button is-link is-fullwidth">
+                            Save
+                        </button>
+                    </div>
+                </div>
+                <#if mfaFallback??>
+                    <div class="notification is-warning">
+                        You have successfully enabled multi-factor authentication (MFA) on your account. In case you lose access to your primary authentication method, use the fallback code below to regain access:
+                        <br><br>
+                        🔒 Fallback Code: <code>${mfaFallback}</code>
+                        <br><br>
+                        This code is <b>only displayed once</b> — make sure to store it in a secure place.
+                    </div>
+                </#if>
+            </form>
             <form action="/dashboard/profile/change-username" method="POST" class="profile-section" onsubmit="showLoading('update-email-button')">
                 <h2 class="section-title">Change email</h2>
                 <div class="form-field">

@@ -22,7 +22,23 @@ public final class Utils {
         return StringUtils.isNotBlank(userUid) && UUID.fromString(userUid).version() == 6;
     }
 
-    public static Map<String, String> getTokens(String userUid, String accessTokenSecret, String refreshTokenSecret, int accessTokenExpires, int refreshTokenExpires) throws MangooTokenException {
+    public static Map<String, String> getChallengeToken(String userUid, String challengeTokenSecret) throws MangooTokenException {
+        Objects.requireNonNull(userUid, Required.USER_UID);
+        Objects.requireNonNull(challengeTokenSecret, Required.ACCESS_TOKEN_SECRET);
+
+        var now = LocalDateTime.now();
+
+        String challengeToken = PasetoBuilder.create()
+                .withSecret(challengeTokenSecret)
+                .withExpires(now.plusMinutes(5))
+                .withClaim(Const.NONCE, MangooUtils.randomString(32))
+                .withSubject(userUid)
+                .build();
+
+        return Map.of(Const.CHALLENGE_TOKEN, challengeToken);
+    }
+
+    public static Map<String, String> getAccessTokens(String userUid, String accessTokenSecret, String refreshTokenSecret, int accessTokenExpires, int refreshTokenExpires) throws MangooTokenException {
         Objects.requireNonNull(userUid, Required.USER_UID);
         Objects.requireNonNull(accessTokenSecret, Required.ACCESS_TOKEN_SECRET);
         Objects.requireNonNull(refreshTokenSecret, Required.REFRESH_TOKEN_SECRET);

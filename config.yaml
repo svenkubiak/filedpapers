@@ -16,13 +16,17 @@ default:
     refreshToken:
       secret: arg{}
       expires: 10080
+    challengeToken:
+      secret: arg{}
   session:
     cookie:
       name: __Host-filedpapers-session
       secret: arg{}
       secure: true
   authentication:
-    redirect: /auth/login
+    redirect:
+      login: /auth/login
+      mfa: /auth/mfa
     cookie:
       name: __Host-filedpapers-authentication
       secret: arg{}

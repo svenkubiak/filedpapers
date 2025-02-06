@@ -24,6 +24,8 @@ public final class Required {
     public static final String API_SECRET = "apiSecret can not be null";
     public static final String COOKIE_NAME = "cookieName can not be null";
     public static final String COOKIE_SECRET = "cookieSecret can not be null";
+    public static final String OTP = "otp can not be null";
+    public static final String CHALLENGE_TOKEN_SECRET = "challengeTokenSecret can not be null";
 
     private Required() {}
 }

@@ -8,10 +8,12 @@ import io.mangoo.routing.bindings.Flash;
 import io.mangoo.routing.bindings.Form;
 import io.mangoo.routing.bindings.Session;
 import io.mangoo.utils.CodecUtils;
+import io.mangoo.utils.totp.TotpUtils;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import models.Category;
 import models.User;
+import org.apache.commons.lang3.math.NumberUtils;
 import services.DataService;
 
 import java.util.Objects;
@@ -22,7 +24,9 @@ public class AuthenticationController {
     private final String authRedirect;
 
     @Inject
-    public AuthenticationController(DataService dataService, @Named("application.registration") boolean registration, @Named("authentication.redirect") String authRedirect) {
+    public AuthenticationController(DataService dataService,
+                                    @Named("application.registration") boolean registration,
+                                    @Named("authentication.redirect.login") String authRedirect) {
         this.dataService = Objects.requireNonNull(dataService, Required.DATA_SERVICE);
         this.registration = registration;
         this.authRedirect = Objects.requireNonNull(authRedirect, Required.AUTH_REDIRECT);
@@ -30,6 +34,10 @@ public class AuthenticationController {
 
     public Response login() {
         return Response.ok().render("registration", registration);
+    }
+
+    public Response mfa() {
+        return Response.ok().render();
     }
 
     public Response logout(Authentication authentication, Session session) {
@@ -56,6 +64,7 @@ public class AuthenticationController {
             if (user != null && authentication.validLogin(user.getUid(), password, user.getSalt(), user.getPassword())) {
                 authentication.login(user.getUid());
                 authentication.rememberMe(rememberme);
+                authentication.twoFactorAuthentication(user.isMfa());
 
                 return Response.redirect("/dashboard");
             }
@@ -65,6 +74,28 @@ public class AuthenticationController {
         form.keep();
 
         return Response.redirect("/auth/login");
+    }
+
+    public Response doMfa(Flash flash, Form form, Authentication authentication) {
+        form.expectValue("mfa", "Please enter a TOTP value");
+
+        if (form.isValid()) {
+            String userUid = authentication.getSubject();
+            String mfa = form.get("mfa");
+
+            var user = dataService.findUserByUid(userUid);
+            if (user != null && ( TotpUtils.verifiedTotp(user.getMfaSecret(), mfa) || CodecUtils.matchArgon2(mfa, user.getSalt(), user.getMfaFallback())) ) {
+                authentication.twoFactorAuthentication(false);
+                authentication.update();
+
+                return Response.redirect("/dashboard");
+            }
+        }
+
+        flash.setError("Invalid TOTP!");
+        form.keep();
+
+        return Response.redirect("/auth/mfa");
     }
 
     public Response signup() {

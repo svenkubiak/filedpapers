@@ -54,7 +54,7 @@ public class ItemsControllerV1 {
                         String hash = CodecUtils.hexSHA512(json);
 
                         if (hash.equals(ifNoneMatch)) {
-                            return Response.status(304);
+                            return Response.notModified();
                         } else {
                             return Response.ok().header("ETag", hash).bodyJson(json);
                         }

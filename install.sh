@@ -23,6 +23,7 @@ ALLOW_REGISTRATION=true
 APPLICATION_SECRET=$(generate_secret)
 ACCESS_TOKEN_SECRET=$(generate_secret)
 REFRESH_TOKEN_SECRET=$(generate_secret)
+CHALLENGE_TOKEN_SECRET=$(generate_secret)
 SESSION_SECRET=$(generate_secret)
 AUTHENTICATION_SECRET=$(generate_secret)
 FLASH_SECRET=$(generate_secret)
