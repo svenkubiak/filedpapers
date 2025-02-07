@@ -17,7 +17,7 @@ import models.Action;
 import models.Item;
 import models.User;
 import models.enums.Type;
-import org.apache.fury.util.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.util.Strings;
 import services.DataService;
 import services.NotificationService;

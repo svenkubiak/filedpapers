@@ -6,8 +6,8 @@ import io.mangoo.exceptions.MangooTokenException;
 import io.mangoo.routing.Response;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
-import org.apache.fury.util.StringUtils;
 import services.DataService;
 import utils.Utils;
 
@@ -41,7 +41,7 @@ public class UserControllerV1 {
         String username = credentials.get("username");
         String password = credentials.get("password");
 
-        if (StringUtils.isBlank(username) && StringUtils.isBlank(password)) {
+        if (StringUtils.isNoneBlank(username, password)) {
             return Response.unauthorized();
         }
 
@@ -65,7 +65,7 @@ public class UserControllerV1 {
         String challengeToken = credentials.get(Const.CHALLENGE_TOKEN);
         String otp = credentials.get(Const.OTP);
 
-        if (StringUtils.isBlank(challengeToken) || StringUtils.isBlank(otp) || !NumberUtils.isCreatable(otp)) {
+        if (StringUtils.isAnyBlank(challengeToken, otp) || !NumberUtils.isCreatable(otp)) {
             return Response.forbidden();
         }
 

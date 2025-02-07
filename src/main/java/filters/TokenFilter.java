@@ -7,7 +7,7 @@ import io.mangoo.routing.Response;
 import io.mangoo.routing.bindings.Request;
 import jakarta.inject.Inject;
 import models.enums.Type;
-import org.apache.fury.util.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import services.DataService;
 
 import java.time.LocalDateTime;
@@ -32,7 +32,7 @@ public class TokenFilter implements PerRequestFilter {
         String uri = request.getURI();
         String token = request.getParameter("token");
 
-        if (StringUtils.isNotBlank(token) && StringUtils.isNotBlank(uri)) {
+        if (StringUtils.isNoneBlank(token, uri)) {
             return dataService.findAction(token)
                     .filter(action -> LocalDateTime.now().isBefore(action.getExpires()))
                     .filter(action -> uri.startsWith(allowed.get(action.getType())))

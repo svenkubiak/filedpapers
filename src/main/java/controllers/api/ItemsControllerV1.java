@@ -9,7 +9,7 @@ import io.mangoo.routing.bindings.Request;
 import io.mangoo.utils.CodecUtils;
 import io.mangoo.utils.JsonUtils;
 import jakarta.inject.Inject;
-import org.apache.fury.util.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import services.DataService;
 
 import java.util.HashMap;
@@ -30,7 +30,7 @@ public class ItemsControllerV1 {
         String url = data.get("url");
         String category = data.get("category");
 
-        if (StringUtils.isNotBlank(url) && StringUtils.isNotBlank(category)) {
+        if (StringUtils.isNoneBlank(url, category)) {
             if (async) {
                 Thread.ofVirtual().start(() -> dataService.addItem(userUid, url, category));
                 return Response.ok();
@@ -90,9 +90,7 @@ public class ItemsControllerV1 {
         String categoryUid = data.get("category");
         String uid = data.get("uid");
 
-        if (StringUtils.isNotBlank(categoryUid) &&
-                StringUtils.isNotBlank(uid) &&
-                dataService.moveItem(uid, userUid, categoryUid)) {
+        if (StringUtils.isNoneBlank(categoryUid, uid) && dataService.moveItem(uid, userUid, categoryUid)) {
             return Response.ok();
         }
 

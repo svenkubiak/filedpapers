@@ -18,7 +18,7 @@ import models.Action;
 import models.Category;
 import models.Item;
 import models.User;
-import org.apache.fury.util.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.util.Strings;
 import utils.Utils;
 
@@ -239,7 +239,7 @@ public class DataService {
                 Item item = new Item(userUid, category.getUid(), url, previewImage, title);
                 String itemResult = datastore.save(item);
 
-                return StringUtils.isNotBlank(categoryResult) && StringUtils.isNotBlank(itemResult);
+                return StringUtils.isNoneBlank(categoryResult, itemResult);
             }
         }
 

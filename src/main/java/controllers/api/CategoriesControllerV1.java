@@ -7,7 +7,7 @@ import io.mangoo.annotations.FilterWith;
 import io.mangoo.routing.Response;
 import io.mangoo.routing.bindings.Request;
 import jakarta.inject.Inject;
-import org.apache.fury.util.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import services.DataService;
 
 import java.util.Map;
