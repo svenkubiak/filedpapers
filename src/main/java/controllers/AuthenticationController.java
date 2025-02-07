@@ -2,32 +2,37 @@ package controllers;
 
 import constants.Const;
 import constants.Required;
+import filters.TokenFilter;
+import io.mangoo.annotations.FilterWith;
 import io.mangoo.routing.Response;
-import io.mangoo.routing.bindings.Authentication;
-import io.mangoo.routing.bindings.Flash;
-import io.mangoo.routing.bindings.Form;
-import io.mangoo.routing.bindings.Session;
+import io.mangoo.routing.bindings.*;
 import io.mangoo.utils.CodecUtils;
+import io.mangoo.utils.MangooUtils;
 import io.mangoo.utils.totp.TotpUtils;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
+import models.Action;
 import models.Category;
 import models.User;
-import org.apache.commons.lang3.math.NumberUtils;
+import models.enums.Type;
 import services.DataService;
+import services.NotificationService;
 
 import java.util.Objects;
 
 public class AuthenticationController {
     private final DataService dataService;
+    private final NotificationService notificationService;
     private final boolean registration;
     private final String authRedirect;
 
     @Inject
     public AuthenticationController(DataService dataService,
+                                    NotificationService notificationService,
                                     @Named("application.registration") boolean registration,
                                     @Named("authentication.redirect.login") String authRedirect) {
         this.dataService = Objects.requireNonNull(dataService, Required.DATA_SERVICE);
+        this.notificationService = Objects.requireNonNull(notificationService, Required.NOTIFICATION_SERVICE);
         this.registration = registration;
         this.authRedirect = Objects.requireNonNull(authRedirect, Required.AUTH_REDIRECT);
     }
@@ -110,12 +115,50 @@ public class AuthenticationController {
         return Response.ok().render();
     }
 
+    @FilterWith(TokenFilter.class)
+    public Response resetPassword(Request request) {
+        Action action = request.getAttribute(Const.ACTION);
+        return Response.ok().render("token", action.getToken());
+    }
+
+    @FilterWith(TokenFilter.class)
+    public Response doResetPassword(Request request, Form form) {
+        Action action = request.getAttribute(Const.ACTION);
+        form.expectValue("password", "Please enter your current password");
+        form.expectValue("confirm-password", "Please confirm your password");
+        form.expectMinLength("confirm-password", 12, "Password must be at least 12 characters");
+        form.expectMaxLength("confirm-password", 256, "Password must not be longer than 256 characters");
+
+        if (form.isValid()) {
+            dataService.setPassword(action.getUserUid(), form.get("password"));
+            dataService.deleteAction(action);
+            return Response.redirect("/success");
+        }
+
+        return Response.redirect("/auth/reset-password/" + action.getToken());
+    }
+
+    @FilterWith(TokenFilter.class)
+    public Response confirm(Request request) {
+        Action action = request.getAttribute(Const.ACTION);
+        dataService.confirmEmail(action.getUserUid());
+        dataService.deleteAction(action);
+
+        return Response.redirect("/success");
+    }
+
     public Response doForgot(Form form, Flash flash) {
         form.expectValue("username", "Please enter an email address");
         form.expectEmail("username", "Please enter a valid email address");
         form.expectMaxLength("username", 256, "Email address must not be longer than 256 characters");
 
         if (form.isValid()) {
+            User user = dataService.findUser(form.get("username"));
+            if (user != null) {
+                String token = MangooUtils.randomString(64);
+                dataService.save(new Action(user.getUid(), token, Type.RESET_PASSWORD));
+                notificationService.forgotPassword(form.get("username"), token);
+            }
             flash.setSuccess("If your email address exists, you will receive an email shortly.");
         }
 
@@ -151,7 +194,11 @@ public class AuthenticationController {
                 dataService.save(new Category(Const.INBOX, user.getUid()));
                 dataService.save(new Category(Const.TRASH, user.getUid()));
 
-                flash.setSuccess("Your account has been created!");
+                String token = MangooUtils.randomString(64);
+                dataService.save(new Action(user.getUid(), token, Type.CONFIRM_EMAIL));
+                notificationService.confirmEmail(username, token);
+
+                flash.setSuccess("Your account has been created! You will receive an email shortly.");
 
                 return Response.redirect("/auth/login");
             }

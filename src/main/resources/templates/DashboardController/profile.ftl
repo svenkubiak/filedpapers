@@ -37,6 +37,11 @@
             </form>
             <form action="/dashboard/profile/change-username" method="POST" class="profile-section" onsubmit="showLoading('update-email-button')">
                 <h2 class="section-title">Change email</h2>
+                <#if !confirmed>
+                <div class="notification is-warning">
+                    Your email address is unconfirmed. Without a valid email, you won’t be able to reset your password. If you haven’t received a confirmation email, click <a href="/dashboard/profile/confirm-email">here</a> to resend it.
+                </div>
+                </#if>
                 <div class="form-field">
                     <label class="label">Current email</label>
                     <div class="control has-icons-left">

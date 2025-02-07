@@ -14,12 +14,16 @@ import java.util.Objects;
 public class Item extends Entity implements Serializable {
     @Indexed
     private String uid;
+
     @Indexed
     private String userUid;
+
     @Indexed
     private String categoryUid;
+
     @Indexed
     private LocalDateTime timestamp;
+
     private String url;
     private String image;
     private String title;

@@ -14,6 +14,7 @@ import it.auties.linkpreview.LinkPreview;
 import it.auties.linkpreview.LinkPreviewMatch;
 import it.auties.linkpreview.LinkPreviewMedia;
 import jakarta.inject.Inject;
+import models.Action;
 import models.Category;
 import models.Item;
 import models.User;
@@ -21,11 +22,11 @@ import org.apache.fury.util.StringUtils;
 import org.apache.logging.log4j.util.Strings;
 import utils.Utils;
 
+import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
 
-import static com.mongodb.client.model.Filters.and;
-import static com.mongodb.client.model.Filters.eq;
+import static com.mongodb.client.model.Filters.*;
 import static constants.Const.MISSING_TITLE;
 import static constants.Const.PLACEHOLDER_IMAGE;
 
@@ -346,5 +347,44 @@ public class DataService {
         datastore.save(user);
 
         return fallaback;
+    }
+
+    public Optional<Action> findAction(String token) {
+        Objects.requireNonNull(token, Required.TOKEN);
+
+        return Optional.ofNullable(datastore.find(Action.class, eq("token", token)));
+    }
+
+    public void setPassword(String userUid, String password) {
+        Objects.requireNonNull(userUid, Required.USER_UID);
+        Objects.requireNonNull(password, Required.PASSWORD);
+
+        User user = findUserByUid(userUid);
+        if (user != null) {
+            user.setPassword(CodecUtils.hashArgon2(password, user.getSalt()));
+            datastore.save(user);
+        }
+    }
+
+    public void deleteAction(Action action) {
+        Objects.requireNonNull(action, Required.ACTION);
+
+        datastore.delete(action);
+    }
+
+    public void confirmEmail(String userUid) {
+        Objects.requireNonNull(userUid, Required.USER_UID);
+
+        User user = findUserByUid(userUid);
+        if (user != null) {
+            user.setConfirmed(true);
+            datastore.save(user);
+        }
+    }
+
+    public void cleanActions() {
+        datastore
+                .query(Action.class)
+                .deleteMany(lt("expires", LocalDateTime.now()));
     }
 }

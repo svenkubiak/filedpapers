@@ -3,6 +3,7 @@
 default:
   application:
     language: en
+    url: arg{}
     secret: arg{}
     registration: arg{}
   connector:
@@ -37,8 +38,14 @@ default:
       secret: arg{}
       secure: true
   smtp:
-    host: localhost
-    port: 25
+    host: arg{}
+    port: arg{}
+    authentication: arg{}
+    username: arg{}
+    password: arg{}
+    from: arg{}
+    protocol: arg{}
+    debug: arg{}
   persistence:
     mongo:
       embedded: false

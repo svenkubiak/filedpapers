@@ -26,6 +26,9 @@ public final class Required {
     public static final String COOKIE_SECRET = "cookieSecret can not be null";
     public static final String OTP = "otp can not be null";
     public static final String CHALLENGE_TOKEN_SECRET = "challengeTokenSecret can not be null";
+    public static final String NOTIFICATION_SERVICE = "notificationService can not be null";
+    public static final String ACTION = "action can not be null";
+    public static final String FROM = "from can not be null";
 
     private Required() {}
 }

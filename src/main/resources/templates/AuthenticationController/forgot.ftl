@@ -17,7 +17,7 @@
         <form action="/auth/forgot" method="POST">
             <div class="field">
                 <div class="control has-icons-left<#if form.hasError("username")> has-icons-right</#if>">
-                    <input class="input<#if form.hasError("username")> is-danger</#if>" type="email" placeholder="Your Email" name="username" id="username" value="<#if form.username??>${form.username}</#if>" required>
+                    <input class="input<#if form.hasError("username")> is-danger</#if>" type="email" placeholder="Your Email" name="username" id="username" value="" required>
                     <span class="icon is-small is-left">
                         <i class="fas fa-envelope"></i>
                     </span>

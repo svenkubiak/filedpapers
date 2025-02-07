@@ -25,6 +25,7 @@ public class User extends Entity implements Serializable  {
     private String mfaSecret;
     private String mfaFallback;
     private boolean mfa;
+    private boolean confirmed;
 
     public User(String username) {
         this.username = Objects.requireNonNull(username, Required.USERNAME);
@@ -90,5 +91,13 @@ public class User extends Entity implements Serializable  {
 
     public void setMfaFallback(String mfaFallback) {
         this.mfaFallback = mfaFallback;
+    }
+
+    public boolean isConfirmed() {
+        return confirmed;
+    }
+
+    public void setConfirmed(boolean confirmed) {
+        this.confirmed = confirmed;
     }
 }

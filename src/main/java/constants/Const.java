@@ -15,6 +15,7 @@ public class Const {
     public static final String PLACEHOLDER_IMAGE = "/assets/images/placeholder.png";
     public static final String OTP = "otp";
     public static final String MFA_FALLBACK = "mfa-fallback";
+    public static final String ACTION = "action";
 
     private Const() {}
 }

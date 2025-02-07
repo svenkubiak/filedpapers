@@ -18,6 +18,8 @@ public class Bootstrap implements MangooBootstrap {
     public void initializeRoutes() {
         Bind.controller(ApplicationController.class).withRoutes(
                 On.get().to("/").respondeWith("index"),
+                On.get().to("/error").respondeWith("error"),
+                On.get().to("/success").respondeWith("success"),
                 On.get().to("/health").respondeWith("health")
         );
 
@@ -29,6 +31,7 @@ public class Bootstrap implements MangooBootstrap {
                 On.post().to("/dashboard/profile/change-password").respondeWith("doChangePassword"),
                 On.post().to("/dashboard/profile/delete-account").respondeWith("doDeleteAccount"),
                 On.post().to("/dashboard/profile/enable-mfa").respondeWith("doMfa"),
+                On.get().to("/dashboard/profile/confirm-email").respondeWith("confirmEmail"),
                 On.get().to("/dashboard/io").respondeWith("io"),
                 On.post().to("/dashboard/io/importer").respondeWith("importer"),
                 On.post().to("/dashboard/io/exporter").respondeWith("exporter")
@@ -43,7 +46,10 @@ public class Bootstrap implements MangooBootstrap {
                 On.get().to("/auth/signup").respondeWith("signup"),
                 On.post().to("/auth/signup").respondeWith("doSignup"),
                 On.get().to("/auth/forgot").respondeWith("forgot"),
-                On.post().to("/auth/forgot").respondeWith("doForgot")
+                On.post().to("/auth/forgot").respondeWith("doForgot"),
+                On.get().to("/auth/confirm/{token}").respondeWith("confirm"),
+                On.get().to("/auth/reset-password/{token}").respondeWith("resetPassword"),
+                On.post().to("/auth/reset-password/{token}").respondeWith("doResetPassword")
         );
 
         Bind.controller(ItemsControllerV1.class).withRoutes(

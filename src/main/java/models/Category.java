@@ -13,10 +13,13 @@ import java.util.Objects;
 public class Category extends Entity implements Serializable {
     @Indexed(unique = true)
     private String uid;
+
     @Indexed
     private String userUid;
+
     @Indexed
     private String name;
+
     private int count;
 
     public Category(String name, String userUid) {

@@ -9,14 +9,18 @@ import io.mangoo.routing.bindings.Flash;
 import io.mangoo.routing.bindings.Form;
 import io.mangoo.routing.bindings.Session;
 import io.mangoo.utils.CodecUtils;
+import io.mangoo.utils.MangooUtils;
 import io.mangoo.utils.totp.TotpUtils;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
+import models.Action;
 import models.Item;
 import models.User;
+import models.enums.Type;
 import org.apache.fury.util.StringUtils;
 import org.apache.logging.log4j.util.Strings;
 import services.DataService;
+import services.NotificationService;
 import utils.IOUtils;
 import utils.Utils;
 import utils.io.Leaf;
@@ -32,15 +36,19 @@ import static constants.Const.TOAST_ERROR;
 
 public class DashboardController {
     private final DataService dataService;
+    private final NotificationService notificationService;
     private final String authRedirect;
 
     @Inject
     public DashboardController(DataService dataService,
+                               NotificationService notificationService,
                                @Named("authentication.redirect.login") String authRedirect) {
+        this.notificationService = Objects.requireNonNull(notificationService, Required.NOTIFICATION_SERVICE);
         this.dataService = Objects.requireNonNull(dataService, Required.DATA_SERVICE);
         this.authRedirect = Objects.requireNonNull(authRedirect, Required.AUTH_REDIRECT);
 
     }
+
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     public Response dashboard(Authentication authentication, Optional<String> categoryUid) {
         String userUid = authentication.getSubject();
@@ -82,6 +90,7 @@ public class DashboardController {
         return Response.ok()
                 .render("mfaFallback", fallback)
                 .render("username", user.getUsername())
+                .render("confirmed", user.isConfirmed())
                 .render("mfa", user.isMfa())
                 .render("qrCode", qrCode)
                 .render("active", "profile")
@@ -108,6 +117,23 @@ public class DashboardController {
         return Response.ok()
                 .render("active", "io")
                 .render("categories", categories.orElseThrow());
+    }
+
+    public Response confirmEmail(Authentication authentication, Flash flash) {
+        String userUid = authentication.getSubject();
+
+        User user = dataService.findUserByUid(userUid);
+        if (user != null && !user.isConfirmed()) {
+            String token = MangooUtils.randomString(64);
+            dataService.save(new Action(userUid, token, Type.CONFIRM_EMAIL));
+            notificationService.confirmEmail(user.getUsername(), token);
+
+            flash.put(Const.TOAST_SUCCESS, "Email confirmation has been sent");
+        } else {
+            flash.put(Const.TOAST_ERROR, SOMETHING_WENT_WRONG);
+        }
+
+        return Response.redirect("/dashboard/profile");
     }
 
     public Response importer(Form form, Authentication authentication) {
@@ -229,7 +255,12 @@ public class DashboardController {
             User user = dataService.findUserByUid(userUid);
             if (user.getPassword().equals(CodecUtils.hashArgon2(password, user.getSalt()))) {
                 user.setUsername(username);
+                user.setConfirmed(false);
                 dataService.save(user);
+
+                String token = MangooUtils.randomString(64);
+                dataService.save(new Action(user.getUid(), token, Type.CONFIRM_EMAIL));
+                notificationService.confirmEmail(username, token);
 
                 flash.put(Const.TOAST_SUCCESS, "Username successfully changed");
             } else {
@@ -261,6 +292,7 @@ public class DashboardController {
             if (user.getPassword().equals(CodecUtils.hashArgon2(password, user.getSalt()))) {
                 user.setPassword(CodecUtils.hashArgon2(newPassword, user.getSalt()));
                 dataService.save(user);
+                notificationService.passwordChanged(user.getUsername());
 
                 flash.put(Const.TOAST_SUCCESS, "Password successfully changed");
             } else {
