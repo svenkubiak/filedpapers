@@ -40,6 +40,7 @@ public class UserControllerV1Tests {
         user2.setPassword(CodecUtils.hashArgon2("bar", user2.getSalt()));
         user2.setMfa(true);
         user2.setMfaSecret("foobar");
+        user2.setMfaFallback(MangooUtils.randomString(64));
         datastore.save(user2);
 
         datastore.save(new Category(Const.INBOX, user.getUid()));

@@ -66,7 +66,7 @@ public class UserControllerV1 {
         String challengeToken = credentials.get(Const.CHALLENGE_TOKEN);
         String otp = credentials.get(Const.OTP);
 
-        if (!StringUtils.isNotBlank(challengeToken) || !StringUtils.isNotBlank(otp) || !NumberUtils.isCreatable(otp)) {
+        if (StringUtils.isBlank(challengeToken) || StringUtils.isBlank(otp) || !NumberUtils.isCreatable(otp)) {
             return Response.forbidden();
         }
 

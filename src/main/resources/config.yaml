@@ -1,0 +1,101 @@
+# Application configuration
+#
+# The configuration consists of default values that are common in all environments and
+# environment specific values for dev, test, and prod.
+#
+# Values in an active environment overwrite default values
+#
+# Default configuration:
+
+default:
+  application:
+    url: http://localhost:9090
+    name: filedpapers
+    secret: JMvtA6RWYQTjWE5mT9jNCuXiAP9U90ZNdk8V3wmdWZZE8WceVjplpRNZm4WIYRG0
+    language: en
+    registration: true
+  api:
+    accessToken:
+      secret: 7jxYMCRL1WIyiaSn5gb0ULCnX3a5GTsnBXfv2AJVj4ZIBiUQqRuv9SrhoGor2AIk
+      expires: 60
+    refreshToken:
+      secret: B9iQO0gF1eWDbUR7Z5qwxz8bgDQoHIQtW1r5WMQudbIWx1a12xmhtAmixtdc8AKJ
+      expires: 120
+    challengeToken:
+      secret: RnZ9JZ9g68T5PNKZV5sKUTR1jJdCndU6kSPDy8TsoZKuXC9TnT4zcluU3u7VW2wl
+  connector:
+    http:
+      host: localhost
+      port: 8080
+  session:
+    cookie:
+      name: filedpapers-session
+      secret: y1LEAusRqekYYnPEPF4Qfqj4ZNSdqnUklrIK6F0XN1KDj9lFyxbiPfFkvqlMC9pb
+      secure: true
+  authentication:
+    redirect:
+      login: /auth/login
+      mfa: /auth/mfa
+    cookie:
+      name: filedpapers-authentication
+      secret: C4rfFW6PSE9lvDqa5pgBnfaSDJuxBCnFgoHed3k92YE7pmVK39XMo9nVD1M4PEBG
+      secure: true
+  token:
+    secret: X6JdFDrUmDXna5E47xqirx3zzVuzvUPK
+  flash:
+    cookie:
+      name: filedpapers-flash
+      secret: 1WXhOzfGM60I9JoRNEa60QgXu0fCR6yqyAZeckWLNuvCa3ZV3NuadlEZgq7OnDQo
+      secure: true
+  smtp:
+    host: host
+    port: 587
+    authentication: true
+    username: username
+    password: password
+    from: from
+    protocol: smtptls
+    debug: false
+
+# Environments configuration:
+
+environments:
+  test:
+    connector:
+      http:
+        port: 9999
+    session:
+      cookie:
+        secure: false
+    flash:
+      cookie:
+        secure: false
+    authentication:
+      cookie:
+        secure: false
+    persistence:
+      mongo:
+        embedded: true
+        host: localhost
+        port: 29019
+        package: models
+
+  dev:
+    connector:
+      http:
+        port: 9090
+    session:
+      cookie:
+        secure: false
+    flash:
+      cookie:
+        secure: false
+    authentication:
+      cookie:
+        secure: false
+    persistence:
+      mongo:
+        embedded: false
+        host: localhost
+        port: 31031
+        package: models
