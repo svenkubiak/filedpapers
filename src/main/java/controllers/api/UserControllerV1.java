@@ -41,7 +41,7 @@ public class UserControllerV1 {
         String username = credentials.get("username");
         String password = credentials.get("password");
 
-        if (StringUtils.isNoneBlank(username, password)) {
+        if (StringUtils.isAnyBlank(username, password)) {
             return Response.unauthorized();
         }
 
