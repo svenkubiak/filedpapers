@@ -42,10 +42,10 @@ public class DashboardController {
     @Inject
     public DashboardController(DataService dataService,
                                NotificationService notificationService,
-                               @Named("authentication.redirect.login") String authRedirect) {
+                               @Named("authentication.redirect.login") String loginRedirect) {
         this.notificationService = Objects.requireNonNull(notificationService, Required.NOTIFICATION_SERVICE);
         this.dataService = Objects.requireNonNull(dataService, Required.DATA_SERVICE);
-        this.authRedirect = Objects.requireNonNull(authRedirect, Required.AUTH_REDIRECT);
+        this.authRedirect = Objects.requireNonNull(loginRedirect, Required.LOGIN_REDIRECT);
 
     }
 

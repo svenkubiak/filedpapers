@@ -9,6 +9,7 @@ import io.mangoo.routing.bindings.Request;
 import io.mangoo.utils.CodecUtils;
 import io.mangoo.utils.JsonUtils;
 import jakarta.inject.Inject;
+import org.apache.fury.util.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import services.DataService;
@@ -28,26 +29,29 @@ public class ItemsControllerV1 {
     }
 
     public Response add(Request request, boolean async, HashMap<String, String> data) {
-        if (async) {
-            Thread.ofVirtual().start(() -> addItem(request, data));
-        } else {
-            try {
-                addItem(request, data);
-            } catch (Exception e) {
-                LOG.error("Failed to add item", e);
+        String userUid = request.getAttribute(Const.USER_UID);
+        String url = data.get("url");
+        String category = data.get("category");
 
-                return Response.badRequest();
+        if (StringUtils.isNotBlank(url) && StringUtils.isNotBlank(category)) {
+            if (async) {
+                Thread.ofVirtual().start(() -> dataService.addItem(userUid, url, category));
+                return Response.ok();
+            } else {
+                if (dataService.addItem(userUid, url, category)) {
+                    return Response.ok();
+                }
             }
         }
 
-        return Response.ok();
+        return Response.badRequest();
     }
 
     public Response list(Request request, String categoryUid) {
         String userUid = request.getAttribute(Const.USER_UID);
         String ifNoneMatch = request.getHeader("If-None-Match");
 
-        try {
+        if (StringUtils.isNotBlank(categoryUid)) {
             return dataService.findItems(userUid, categoryUid)
                     .map(items -> {
                         String json = JsonUtils.toJson(Map.of("items", items));
@@ -58,58 +62,43 @@ public class ItemsControllerV1 {
                         } else {
                             return Response.ok().header("ETag", hash).bodyJson(json);
                         }
-                    })
-                    .orElseGet(Response::badRequest);
-        } catch (NullPointerException e) {
-            LOG.error("Failed to find items", e);
-            return Response.badRequest();
+                    }).orElseGet(Response::badRequest);
         }
+
+        return Response.badRequest();
     }
 
     public Response delete(Request request, String uid) {
         String userUid = request.getAttribute(Const.USER_UID);
 
-        try {
-            dataService.deleteItem(uid, userUid);
+        if (StringUtils.isNotBlank(uid) && dataService.deleteItem(uid, userUid)) {
             return Response.ok();
-        } catch (NullPointerException e) {
-            LOG.error("Failed to delete item", e);
-            return Response.badRequest();
         }
+
+        return Response.badRequest();
     }
 
     public Response trash(Request request) {
         String userUid = request.getAttribute(Const.USER_UID);
 
-        try {
-            dataService.emptyTrash(userUid);
+        if (dataService.emptyTrash(userUid)) {
             return Response.ok();
-        } catch (NullPointerException e) {
-            LOG.error("Failed to empty trash", e);
-            return Response.badRequest();
         }
+
+        return Response.badRequest();
     }
 
     public Response move(Request request, HashMap<String, String> data) {
         String userUid = request.getAttribute(Const.USER_UID);
+        String categoryUid = data.get("category");
+        String uid = data.get("uid");
 
-        try {
-            String categoryUid = data.get("category");
-            String uid = data.get("uid");
-
-            dataService.moveItem(uid, userUid, categoryUid);
+        if (StringUtils.isNotBlank(categoryUid) &&
+                StringUtils.isNotBlank(uid) &&
+                dataService.moveItem(uid, userUid, categoryUid)) {
             return Response.ok();
-        } catch (NullPointerException e) {
-            LOG.error("Failed to move item", e);
-            return Response.badRequest();
         }
-    }
 
-    private void addItem(Request request, HashMap<String, String> data) {
-        String userUid = request.getAttribute(Const.USER_UID);
-        String url = data.get("url");
-        String category = data.get("category");
-
-        dataService.addItem(userUid, url, category);
+        return Response.badRequest();
     }
 }

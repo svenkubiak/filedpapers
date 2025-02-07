@@ -23,8 +23,8 @@ import java.util.Objects;
 public class AuthenticationController {
     private final DataService dataService;
     private final NotificationService notificationService;
-    private final boolean registration;
     private final String authRedirect;
+    private final boolean registration;
 
     @Inject
     public AuthenticationController(DataService dataService,
@@ -34,7 +34,7 @@ public class AuthenticationController {
         this.dataService = Objects.requireNonNull(dataService, Required.DATA_SERVICE);
         this.notificationService = Objects.requireNonNull(notificationService, Required.NOTIFICATION_SERVICE);
         this.registration = registration;
-        this.authRedirect = Objects.requireNonNull(authRedirect, Required.AUTH_REDIRECT);
+        this.authRedirect = Objects.requireNonNull(authRedirect, Required.LOGIN_REDIRECT);
     }
 
     public Response login() {

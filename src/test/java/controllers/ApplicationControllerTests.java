@@ -23,4 +23,27 @@ public class ApplicationControllerTests {
         assertThat(response.getStatusCode(), equalTo(StatusCodes.OK));
         assertThat(response.getContent(), containsString("OK"));
     }
+
+    @Test
+    public void testSuccess() {
+        //when
+        TestResponse response = TestRequest.get("/success").execute();
+
+        //then
+        assertThat(response, not(nullValue()));
+        assertThat(response.getStatusCode(), equalTo(StatusCodes.OK));
+        assertThat(response.getContent(), containsString("Success"));
+    }
+
+    @Test
+    public void testError() {
+        //when
+        TestResponse response = TestRequest.get("/error").execute();
+
+        //then
+        assertThat(response, not(nullValue()));
+        assertThat(response.getStatusCode(), equalTo(StatusCodes.OK));
+        assertThat(response.getContent(), containsString("Error"));
+    }
+
 }

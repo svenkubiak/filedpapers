@@ -58,8 +58,7 @@ public class UserControllerV1 {
                     } catch (MangooTokenException e) {
                         return Response.unauthorized();
                     }
-                })
-                .orElseGet(Response::unauthorized);
+                }).orElseGet(Response::unauthorized);
     }
 
     public Response mfa(Map<String, String> credentials) {
@@ -85,8 +84,7 @@ public class UserControllerV1 {
                         } catch (MangooTokenException e) {
                             return Response.forbidden();
                         }
-                    })
-                    .orElseGet(Response::forbidden);
+                    }).orElseGet(Response::forbidden);
 
         } catch (MangooTokenException e) {
             return Response.forbidden();
@@ -114,8 +112,7 @@ public class UserControllerV1 {
                         } catch (MangooTokenException e) {
                             return Response.unauthorized();
                         }
-                    })
-                    .orElseGet(Response::unauthorized);
+                    }).orElseGet(Response::unauthorized);
 
         } catch (MangooTokenException e) {
             return Response.unauthorized();

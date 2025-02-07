@@ -124,7 +124,7 @@ public class DataService {
                 eq("uid", uid)),
                     Updates.set("categoryUid", trash.getUid()));
 
-        return updateResult.wasAcknowledged();
+        return updateResult.wasAcknowledged() && updateResult.getModifiedCount() == 1;
     }
 
     public boolean emptyTrash(String userUid) {
@@ -207,7 +207,7 @@ public class DataService {
         return false;
     }
 
-    public void addItem(String userUid, String url, String categoryUid) {
+    public boolean addItem(String userUid, String url, String categoryUid) {
         Objects.requireNonNull(userUid, Required.USER_UID);
         Objects.requireNonNull(url, Required.URL);
 
@@ -234,22 +234,28 @@ public class DataService {
 
             if (category != null) {
                 category.setCount(category.getCount() + 1);
-                datastore.save(category);
+                String categoryResult = datastore.save(category);
 
                 Item item = new Item(userUid, category.getUid(), url, previewImage, title);
-                datastore.save(item);
+                String itemResult = datastore.save(item);
+
+                return StringUtils.isNotBlank(categoryResult) && StringUtils.isNotBlank(itemResult);
             }
         }
+
+        return false;
     }
 
-    public void addCategory(String userUid, String name) {
+    public boolean addCategory(String userUid, String name) {
         Objects.requireNonNull(userUid, Required.USER_UID);
         Objects.requireNonNull(name, Required.CATEGORY_NAME);
 
-        datastore.save(new Category(name, userUid));
+        String result = datastore.save(new Category(name, userUid));
+
+        return StringUtils.isNotBlank(result);
     }
 
-    public void deleteCategory(String userUid, String uid) {
+    public boolean deleteCategory(String userUid, String uid) {
         Objects.requireNonNull(userUid, Required.USER_UID);
         Objects.requireNonNull(uid, Required.UID);
 
@@ -268,12 +274,16 @@ public class DataService {
             trash.setCount((int) (trash.getCount() + modifiedCount));
             datastore.save(trash);
 
-            datastore.query(Category.class)
+            DeleteResult deleteResult = datastore.query(Category.class)
                     .deleteOne(
                             and(
                                     eq("userUid", userUid),
                                     eq("uid", uid)));
+
+            return deleteResult.getDeletedCount() == 1;
         }
+
+        return false;
     }
 
     public User findUser(String username) {

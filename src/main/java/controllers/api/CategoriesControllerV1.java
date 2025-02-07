@@ -7,6 +7,7 @@ import io.mangoo.annotations.FilterWith;
 import io.mangoo.routing.Response;
 import io.mangoo.routing.bindings.Request;
 import jakarta.inject.Inject;
+import org.apache.fury.util.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import services.DataService;
@@ -27,37 +28,30 @@ public class CategoriesControllerV1 {
     public Response list(Request request) {
         String userUid = request.getAttribute(Const.USER_UID);
 
-        try {
-            return dataService.findCategories(userUid)
-                    .map(categories -> Response.ok().bodyJson(Map.of("categories", categories)))
-                    .orElseGet(Response::badRequest);
-        } catch (NullPointerException e) {
-            LOG.error("Error getting categories list", e);
-            return Response.badRequest();
-        }
+        return dataService.findCategories(userUid)
+                .map(categories -> Response.ok().bodyJson(Map.of("categories", categories)))
+                .orElseGet(Response::badRequest);
     }
 
     public Response add(Request request, Map<String, String> data) {
         String userUid = request.getAttribute(Const.USER_UID);
 
-        try {
-            dataService.addCategory(userUid, data.get("name"));
+        if (data != null
+                && StringUtils.isNotBlank(data.get("name"))
+                && dataService.addCategory(userUid, data.get("name"))) {
             return Response.ok();
-        } catch (NullPointerException e) {
-            LOG.error("Error adding new category", e);
-            return Response.badRequest();
         }
+
+        return Response.badRequest();
     }
 
     public Response delete(Request request, String uid) {
         String userUid = request.getAttribute(Const.USER_UID);
 
-        try {
-            dataService.deleteCategory(userUid, uid);
+        if (StringUtils.isNotBlank(uid) && dataService.deleteCategory(userUid, uid)) {
             return Response.ok();
-        } catch (NullPointerException e) {
-            LOG.error("Error deleting category", e);
-            return Response.badRequest();
         }
+
+        return Response.badRequest();
     }
 }
