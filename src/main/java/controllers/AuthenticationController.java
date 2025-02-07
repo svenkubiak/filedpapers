@@ -153,9 +153,9 @@ public class AuthenticationController {
         form.expectMaxLength("username", 256, "Email address must not be longer than 256 characters");
 
         if (form.isValid()) {
-            User user = dataService.findUser(form.get("username"));
+            var user = dataService.findUser(form.get("username"));
             if (user != null) {
-                String token = MangooUtils.randomString(64);
+                var token = MangooUtils.randomString(64);
                 dataService.save(new Action(user.getUid(), token, Type.RESET_PASSWORD));
                 notificationService.forgotPassword(form.get("username"), token);
             }
@@ -194,7 +194,7 @@ public class AuthenticationController {
                 dataService.save(new Category(Const.INBOX, user.getUid()));
                 dataService.save(new Category(Const.TRASH, user.getUid()));
 
-                String token = MangooUtils.randomString(64);
+                var token = MangooUtils.randomString(64);
                 dataService.save(new Action(user.getUid(), token, Type.CONFIRM_EMAIL));
                 notificationService.confirmEmail(username, token);
 

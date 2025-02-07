@@ -10,8 +10,6 @@ import io.mangoo.utils.CodecUtils;
 import io.mangoo.utils.JsonUtils;
 import jakarta.inject.Inject;
 import org.apache.fury.util.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import services.DataService;
 
 import java.util.HashMap;
@@ -20,7 +18,6 @@ import java.util.Objects;
 
 @FilterWith(ApiFilter.class)
 public class ItemsControllerV1 {
-    private static final Logger LOG = LogManager.getLogger(ItemsControllerV1.class);
     private final DataService dataService;
 
     @Inject

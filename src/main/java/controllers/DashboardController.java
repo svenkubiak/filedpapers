@@ -122,9 +122,9 @@ public class DashboardController {
     public Response confirmEmail(Authentication authentication, Flash flash) {
         String userUid = authentication.getSubject();
 
-        User user = dataService.findUserByUid(userUid);
+        var user = dataService.findUserByUid(userUid);
         if (user != null && !user.isConfirmed()) {
-            String token = MangooUtils.randomString(64);
+            var token = MangooUtils.randomString(64);
             dataService.save(new Action(userUid, token, Type.CONFIRM_EMAIL));
             notificationService.confirmEmail(user.getUsername(), token);
 
@@ -258,7 +258,7 @@ public class DashboardController {
                 user.setConfirmed(false);
                 dataService.save(user);
 
-                String token = MangooUtils.randomString(64);
+                var token = MangooUtils.randomString(64);
                 dataService.save(new Action(user.getUid(), token, Type.CONFIRM_EMAIL));
                 notificationService.confirmEmail(username, token);
 

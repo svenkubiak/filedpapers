@@ -5,11 +5,11 @@ import io.mangoo.email.Mail;
 import io.mangoo.exceptions.MangooTemplateEngineException;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
-import models.User;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 
 public class NotificationService {
@@ -31,14 +31,18 @@ public class NotificationService {
         Objects.requireNonNull(username, Required.USERNAME);
         Objects.requireNonNull(token, Required.TOKEN);
 
-        User user = dataService.findUser(username);
+        var user = dataService.findUser(username);
         if (user != null) {
             try {
+                Map<String, Object> content = new HashMap<>();
+                content.put("token", token);
+                content.put("url", url);
+
                 Mail.newMail()
                         .from(from)
                         .subject("[Filed Papers] Forgot Password")
                         .to(user.getUsername())
-                        .textMessage("emails/forgot_password.ftl", new HashMap<>() {{put("token", token); put("url", url);}})
+                        .textMessage("emails/forgot_password.ftl", content)
                         .send();
             } catch (MangooTemplateEngineException e) {
                 LOG.error("Failed to send forgot password email", e);
@@ -50,14 +54,18 @@ public class NotificationService {
         Objects.requireNonNull(username, Required.USERNAME);
         Objects.requireNonNull(token, Required.TOKEN);
 
-        User user = dataService.findUser(username);
+        var user = dataService.findUser(username);
         if (user != null) {
             try {
+                Map<String, Object> content = new HashMap<>();
+                content.put("token", token);
+                content.put("url", url);
+
                 Mail.newMail()
                         .from(from)
                         .subject("[Filed Papers] Confirm Email")
                         .to(user.getUsername())
-                        .textMessage("emails/confirm_email.ftl", new HashMap<>() {{put("token", token); put("url", url);}})
+                        .textMessage("emails/confirm_email.ftl", content)
                         .send();
             } catch (MangooTemplateEngineException e) {
                 LOG.error("Failed to send confirm email", e);
@@ -68,7 +76,7 @@ public class NotificationService {
     public void passwordChanged(String username) {
         Objects.requireNonNull(username, Required.USERNAME);
 
-        User user = dataService.findUser(username);
+        var user = dataService.findUser(username);
         if (user != null) {
             try {
                 Mail.newMail()

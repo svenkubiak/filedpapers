@@ -274,7 +274,7 @@ public class DataService {
             trash.setCount((int) (trash.getCount() + modifiedCount));
             datastore.save(trash);
 
-            DeleteResult deleteResult = datastore.query(Category.class)
+            var deleteResult = datastore.query(Category.class)
                     .deleteOne(
                             and(
                                     eq("userUid", userUid),
@@ -338,7 +338,7 @@ public class DataService {
         Objects.requireNonNull(userUid, Required.USER_UID);
         Objects.requireNonNull(otp, Required.OTP);
 
-        User user = findUserByUid(userUid);
+        var user = findUserByUid(userUid);
         return user != null && user.isMfa() && ( TotpUtils.verifiedTotp(user.getMfaSecret(), otp) || CodecUtils.matchArgon2(otp, user.getSalt(), user.getMfaFallback()));
     }
 
@@ -346,7 +346,7 @@ public class DataService {
         Objects.requireNonNull(userUid, Required.USER_UID);
 
         String fallaback = null;
-        User user = findUserByUid(userUid);
+        var user = findUserByUid(userUid);
         if (mfa) {
             fallaback = MangooUtils.randomString(32);
             user.setMfaSecret(MangooUtils.randomString(64));
@@ -369,7 +369,7 @@ public class DataService {
         Objects.requireNonNull(userUid, Required.USER_UID);
         Objects.requireNonNull(password, Required.PASSWORD);
 
-        User user = findUserByUid(userUid);
+        var user = findUserByUid(userUid);
         if (user != null) {
             user.setPassword(CodecUtils.hashArgon2(password, user.getSalt()));
             datastore.save(user);
@@ -385,7 +385,7 @@ public class DataService {
     public void confirmEmail(String userUid) {
         Objects.requireNonNull(userUid, Required.USER_UID);
 
-        User user = findUserByUid(userUid);
+        var user = findUserByUid(userUid);
         if (user != null) {
             user.setConfirmed(true);
             datastore.save(user);

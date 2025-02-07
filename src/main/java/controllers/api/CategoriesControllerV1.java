@@ -8,8 +8,6 @@ import io.mangoo.routing.Response;
 import io.mangoo.routing.bindings.Request;
 import jakarta.inject.Inject;
 import org.apache.fury.util.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import services.DataService;
 
 import java.util.Map;
@@ -17,7 +15,6 @@ import java.util.Objects;
 
 @FilterWith(ApiFilter.class)
 public class CategoriesControllerV1 {
-    private static final Logger LOG = LogManager.getLogger(CategoriesControllerV1.class);
     private final DataService dataService;
 
     @Inject
