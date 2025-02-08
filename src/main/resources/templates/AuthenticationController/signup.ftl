@@ -40,7 +40,6 @@
                     <p class="help is-danger">${form.getError("password")}</p>
                 </#if>
             </div>
-
             <div class="field">
                 <div class="control has-icons-left<#if form.hasError("confirm-password")> has-icons-right</#if>">
                     <input class="input<#if form.hasError("confirm-password")> is-danger</#if>" type="password" placeholder="Confirm Password" name="confirm-password" required>

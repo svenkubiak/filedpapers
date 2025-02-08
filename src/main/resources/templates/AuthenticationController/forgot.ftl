@@ -7,7 +7,6 @@
         </span>
         <h1 class="auth-title">Reset Password</h1>
         <p class="auth-subtitle">Enter your email to reset your password.</p>
-
         <#if flash.success??>
             <div class="notification is-success is-light mb-5">
                 <button class="delete"></button>

@@ -7,7 +7,6 @@
         </span>
         <h1 class="auth-title">Two-Step Verification</h1>
         <p class="auth-subtitle">Please enter your TOTP.</p>
-
         <#if flash.error??>
             <div class="notification is-danger is-light mb-5">
                 <button class="delete"></button>
@@ -38,7 +37,7 @@
             </div>
         </form>
         <div class="auth-links">
-            <a href="/auth/login">Back to Login</a>
+            <a href="/auth/logout">Cancel</a>
         </div>
     </div>
 </div>

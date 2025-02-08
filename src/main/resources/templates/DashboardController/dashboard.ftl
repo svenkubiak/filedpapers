@@ -11,7 +11,6 @@
         </#if>
     </ul>
 </nav>
-
 <div class="columns is-multiline">
     <#list items?sort_by("sort")?reverse as item>
         <div class="column is-one-quarter">
