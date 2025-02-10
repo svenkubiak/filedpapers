@@ -16,18 +16,9 @@ generate_secret() {
 echo "Creating .env file..."
 
 cat > .env <<EOL
+# Custom configuration
 APPLICATION_URL=http://localhost
-MONGODB_INITDB_DATABASE=filedpapers
-MONGODB_INITDB_ROOT_USERNAME=filedpapers
-MONGODB_INITDB_ROOT_PASSWORD=$(generate_secret)
 ALLOW_REGISTRATION=true
-APPLICATION_SECRET=$(generate_secret)
-ACCESS_TOKEN_SECRET=$(generate_secret)
-REFRESH_TOKEN_SECRET=$(generate_secret)
-CHALLENGE_TOKEN_SECRET=$(generate_secret)
-SESSION_SECRET=$(generate_secret)
-AUTHENTICATION_SECRET=$(generate_secret)
-FLASH_SECRET=$(generate_secret)
 SMTP_HOST=localhost
 SMTP_PORT=25
 SMTP_AUTHENTICATION=true
@@ -36,6 +27,18 @@ SMTP_PASSWORD=password
 SMTP_FROM=email@localhost
 SMTP_PROTOCOL=smtptls
 SMTP_DEBUG=false
+
+# Auto generated - Change at your own risk
+MONGODB_INITDB_DATABASE=filedpapers
+MONGODB_INITDB_ROOT_USERNAME=filedpapers
+MONGODB_INITDB_ROOT_PASSWORD=$(generate_secret)
+APPLICATION_SECRET=$(generate_secret)
+ACCESS_TOKEN_SECRET=$(generate_secret)
+REFRESH_TOKEN_SECRET=$(generate_secret)
+CHALLENGE_TOKEN_SECRET=$(generate_secret)
+SESSION_SECRET=$(generate_secret)
+AUTHENTICATION_SECRET=$(generate_secret)
+FLASH_SECRET=$(generate_secret)
 EOL
 
 # Create the config folder

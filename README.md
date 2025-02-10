@@ -54,6 +54,7 @@ Before starting the installation process, make sure you have the following prere
 - **Docker**: Ensure Docker is installed and running on your system
 - **Docker Compose**: Make sure Docker Compose is installed to manage multi-container applications
 - **Web Frontend Server**: A frontend HTTP server (e.g., Nginx) to handle SSL termination and proxy requests to the backend.
+- **SMTP Server**: A SMTP server for sending emails like registration confirmation, or password reset, etc.
 
 ## Installation
 
@@ -70,8 +71,23 @@ Before starting the installation process, make sure you have the following prere
    ```shell
    curl -sSL https://raw.githubusercontent.com/svenkubiak/filedpapers/refs/heads/main/install.sh | bash
    ```
+   
+3. **After installation is complete open the .env file and set your custom configuration:**
 
-3. **Start the containers**
+   ```
+   APPLICATION_URL=http://localhost
+   ALLOW_REGISTRATION=true
+   SMTP_HOST=localhost
+   SMTP_PORT=25
+   SMTP_AUTHENTICATION=true
+   SMTP_USERNAME=username
+   SMTP_PASSWORD=password
+   SMTP_FROM=email@localhost
+   SMTP_PROTOCOL=smtptls
+   SMTP_DEBUG=false
+   ```
+
+4. **Start the containers**
 
    ```shell
    docker compose up -d
