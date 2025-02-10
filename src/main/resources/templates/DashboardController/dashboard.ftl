@@ -38,7 +38,7 @@
                         </div>
                     </div>
                     <div class="card-meta" >
-                        <span class="card-domain"><a href="${item.url}" target="_blank">${item.url?truncate(50, '...')}</a></span>
+                        <span class="card-domain"><a href="${item.url}" target="_blank">${item.url?truncate(30, '...')}</a></span>
                         <span class="card-added">Added ${item.added}</span>
                     </div>
                 </div>
