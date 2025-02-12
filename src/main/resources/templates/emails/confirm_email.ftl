@@ -1,4 +1,4 @@
-Please confirm your email address by clicking the button below:
+Please confirm your email address by clicking the link below:
 
 ${url}/auth/confirm/${token}
 
