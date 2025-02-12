@@ -624,3 +624,12 @@
     color: black;
     text-decoration: none;
 }
+
+.card-image:last-child img {
+    border-end-end-radius: unset;
+    border-end-start-radius: unset;
+}
+.card-image:first-child img {
+    border-end-end-radius: unset;
+    border-end-start-radius: unset;
+}
