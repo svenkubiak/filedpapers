@@ -30,7 +30,7 @@ public class ItemsControllerV1 {
         String url = data.get("url");
         String category = data.get("category");
 
-        if (StringUtils.isNoneBlank(url, category)) {
+        if (StringUtils.isNotBlank(url)) {
             if (async) {
                 Thread.ofVirtual().start(() -> dataService.addItem(userUid, url, category));
                 return Response.ok();
