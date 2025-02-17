@@ -57,7 +57,9 @@ public class ItemsControllerV1 {
                         if (hash.equals(ifNoneMatch)) {
                             return Response.notModified();
                         } else {
-                            return Response.ok().header("ETag", hash).bodyJson(json);
+                            return Response.ok()
+                                    .header("ETag", hash)
+                                    .bodyJson(json);
                         }
                     }).orElseGet(Response::badRequest);
         }
