@@ -8,6 +8,7 @@ import io.mangoo.utils.paseto.PasetoBuilder;
 import io.mangoo.utils.paseto.PasetoParser;
 import io.mangoo.utils.paseto.Token;
 import org.apache.commons.lang3.StringUtils;
+import models.User;
 
 import java.net.URI;
 import java.time.LocalDateTime;
@@ -108,5 +109,11 @@ public final class Utils {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    public static String language(User user) {
+        if (user == null || user.getLanguage() == null) return "en";
+
+        return user.getLanguage().toString().toLowerCase();
     }
 }

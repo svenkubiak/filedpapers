@@ -6,6 +6,7 @@ import io.mangoo.annotations.Indexed;
 import io.mangoo.persistence.Entity;
 import io.mangoo.utils.CodecUtils;
 import io.mangoo.utils.MangooUtils;
+import models.enums.Language;
 
 import java.io.Serializable;
 import java.util.Objects;
@@ -24,6 +25,7 @@ public class User extends Entity implements Serializable  {
     private String salt;
     private String mfaSecret;
     private String mfaFallback;
+    private Language language;
     private boolean mfa;
     private boolean confirmed;
 
@@ -32,6 +34,7 @@ public class User extends Entity implements Serializable  {
         this.uid = CodecUtils.uuid();
         this.salt = MangooUtils.randomString(64);
         this.mfaSecret = MangooUtils.randomString(64);
+        this.language = Language.EN;
     }
 
     public User() {
@@ -99,5 +102,13 @@ public class User extends Entity implements Serializable  {
 
     public void setConfirmed(boolean confirmed) {
         this.confirmed = confirmed;
+    }
+
+    public Language getLanguage() {
+        return language;
+    }
+
+    public void setLanguage(Language language) {
+        this.language = language;
     }
 }

@@ -5,6 +5,7 @@ import com.mongodb.client.result.DeleteResult;
 import com.mongodb.client.result.UpdateResult;
 import constants.Const;
 import constants.Required;
+import io.mangoo.i18n.Messages;
 import io.mangoo.persistence.interfaces.Datastore;
 import io.mangoo.utils.CodecUtils;
 import io.mangoo.utils.DateUtils;
@@ -27,15 +28,16 @@ import java.time.ZoneOffset;
 import java.util.*;
 
 import static com.mongodb.client.model.Filters.*;
-import static constants.Const.MISSING_TITLE;
 import static constants.Const.PLACEHOLDER_IMAGE;
 
 public class DataService {
     private final Datastore datastore;
+    private final Messages messages;
 
     @Inject
-    public DataService(Datastore datastore) {
+    public DataService(Datastore datastore, Messages messages) {
         this.datastore = Objects.requireNonNull(datastore, Required.DATASTORE);
+        this.messages = Objects.requireNonNull(messages, Required.MESSAGES);
     }
 
     @SuppressWarnings("unchecked")
@@ -213,7 +215,7 @@ public class DataService {
 
         if (Utils.isValidURL(url)) {
             String previewImage = PLACEHOLDER_IMAGE;
-            String title = MISSING_TITLE;
+            String title = messages.get("item.missing.title");
             List<LinkPreviewMatch> previews = LinkPreview.createPreviews(url);
             for (LinkPreviewMatch linkPreviewMatch : previews) {
                 title = linkPreviewMatch.result().title();

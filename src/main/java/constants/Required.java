@@ -29,6 +29,8 @@ public final class Required {
     public static final String NOTIFICATION_SERVICE = "notificationService can not be null";
     public static final String ACTION = "action can not be null";
     public static final String FROM = "from can not be null";
+    public static final String MESSAGES = "messages can not be null";
+    public static final String CONFIG = "config can not be null";
 
     private Required() {}
 }

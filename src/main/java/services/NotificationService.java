@@ -1,12 +1,15 @@
 package services;
 
+import constants.Const;
 import constants.Required;
 import io.mangoo.email.Mail;
 import io.mangoo.exceptions.MangooTemplateEngineException;
+import io.mangoo.i18n.Messages;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import utils.Utils;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -14,15 +17,18 @@ import java.util.Objects;
 
 public class NotificationService {
     private static final Logger LOG = LogManager.getLogger(NotificationService.class);
+    private final Messages messages;
     private final DataService dataService;
     private final String from;
     private final String url;
 
     @Inject
     public NotificationService(DataService dataService,
+                               Messages messages,
                                @Named("smtp.from") String from,
                                @Named("application.url") String url) {
         this.dataService = Objects.requireNonNull(dataService, Required.DATA_SERVICE);
+        this.messages = Objects.requireNonNull(messages, Required.MESSAGES);
         this.from = Objects.requireNonNull(from, Required.FROM);
         this.url = Objects.requireNonNull(url, Required.URL);
     }
@@ -40,9 +46,9 @@ public class NotificationService {
 
                 Mail.newMail()
                         .from(from)
-                        .subject("[Filed Papers] Forgot Password")
+                        .subject(Const.EMAIL_PREFIX + " " + messages.get("email.forgot.password.subject"))
                         .to(user.getUsername())
-                        .textMessage("emails/forgot_password.ftl", content)
+                        .textMessage("emails/" + Utils.language(user)  + "/forgot_password.ftl", content)
                         .send();
             } catch (MangooTemplateEngineException e) {
                 LOG.error("Failed to send forgot password email", e);
@@ -63,9 +69,9 @@ public class NotificationService {
 
                 Mail.newMail()
                         .from(from)
-                        .subject("[Filed Papers] Confirm Email")
+                        .subject(Const.EMAIL_PREFIX + " " + messages.get("email.confirm.email.subject"))
                         .to(user.getUsername())
-                        .textMessage("emails/confirm_email.ftl", content)
+                        .textMessage("emails/" + Utils.language(user)  + "/confirm_email.ftl", content)
                         .send();
             } catch (MangooTemplateEngineException e) {
                 LOG.error("Failed to send confirm email", e);
@@ -81,9 +87,9 @@ public class NotificationService {
             try {
                 Mail.newMail()
                         .from(from)
-                        .subject("[Filed Papers] Confirm Email")
+                        .subject(Const.EMAIL_PREFIX + " " + messages.get("email.confirm.password.subject"))
                         .to(user.getUsername())
-                        .textMessage("emails/password_changed.ftl", new HashMap<>())
+                        .textMessage("emails/" + Utils.language(user)  + "/password_changed.ftl", new HashMap<>())
                         .send();
             } catch (MangooTemplateEngineException e) {
                 LOG.error("Failed to send password change confirmation", e);

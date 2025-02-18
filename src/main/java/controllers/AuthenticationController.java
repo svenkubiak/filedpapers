@@ -4,11 +4,17 @@ import constants.Const;
 import constants.Required;
 import filters.TokenFilter;
 import io.mangoo.annotations.FilterWith;
+import io.mangoo.core.Config;
+import io.mangoo.i18n.Messages;
 import io.mangoo.routing.Response;
 import io.mangoo.routing.bindings.*;
 import io.mangoo.utils.CodecUtils;
+import io.mangoo.utils.DateUtils;
 import io.mangoo.utils.MangooUtils;
 import io.mangoo.utils.totp.TotpUtils;
+import io.undertow.server.handlers.Cookie;
+import io.undertow.server.handlers.CookieImpl;
+import io.undertow.server.handlers.CookieSameSiteMode;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import models.Action;
@@ -17,22 +23,31 @@ import models.User;
 import models.enums.Type;
 import services.DataService;
 import services.NotificationService;
+import utils.Utils;
 
+import java.time.LocalDateTime;
+import java.util.Date;
 import java.util.Objects;
 
 public class AuthenticationController {
     private final DataService dataService;
     private final NotificationService notificationService;
+    private final Config config;
+    private final Messages messages;
     private final String authRedirect;
     private final boolean registration;
 
     @Inject
     public AuthenticationController(DataService dataService,
                                     NotificationService notificationService,
+                                    Config config,
+                                    Messages messages,
                                     @Named("application.registration") boolean registration,
                                     @Named("authentication.redirect.login") String authRedirect) {
         this.dataService = Objects.requireNonNull(dataService, Required.DATA_SERVICE);
         this.notificationService = Objects.requireNonNull(notificationService, Required.NOTIFICATION_SERVICE);
+        this.config = Objects.requireNonNull(config, Required.CONFIG);
+        this.messages = Objects.requireNonNull(messages, Required.MESSAGES);
         this.registration = registration;
         this.authRedirect = Objects.requireNonNull(authRedirect, Required.LOGIN_REDIRECT);
     }
@@ -49,15 +64,15 @@ public class AuthenticationController {
         authentication.logout();
         session.clear();
 
-        return Response.redirect(authRedirect);
+        return Response.redirect(authRedirect).disposeCookie(config.getI18nCookieName());
     }
 
     public Response doLogin(Flash flash, Form form, Authentication authentication) {
-        form.expectValue("username", "Please enter an email address");
-        form.expectValue("password", "Please enter a password");
-        form.expectEmail("username", "Please enter a valid email address");
-        form.expectMaxLength("username", 256, "Email address must not be longer than 256 characters");
-        form.expectMaxLength("password", 256, "Password must not be longer than 256 characters");
+        form.expectValue("username", messages.get("validation.required.username"));
+        form.expectValue("password", messages.get("validation.required.password"));
+        form.expectEmail("username", messages.get("validation.required.email"));
+        form.expectMaxLength("username", 256, messages.get("validation.max.length.username"));
+        form.expectMaxLength("password", 256, messages.get("validation.max.length.password"));
         form.expectMaxLength("rememberme", 2);
 
         if (form.isValid()) {
@@ -71,18 +86,29 @@ public class AuthenticationController {
                 authentication.rememberMe(rememberme);
                 authentication.twoFactorAuthentication(user.isMfa());
 
-                return Response.redirect("/dashboard");
+                long expires = (rememberme) ? config.getAuthenticationCookieRememberExpires() : config.getAuthenticationCookieTokenExpires();
+
+                Cookie cookie = new CookieImpl(config.getI18nCookieName());
+                cookie.setValue(Utils.language(user));
+                cookie.setHttpOnly(true);
+                cookie.setSecure(config.isAuthenticationCookieSecure());
+                cookie.setSameSite(true);
+                cookie.setSameSiteMode(CookieSameSiteMode.STRICT.toString());
+                cookie.setExpires(DateUtils.localDateTimeToDate(LocalDateTime.now().plusMinutes(expires)));
+                cookie.setPath("/");
+
+                return Response.redirect("/dashboard").cookie(cookie);
             }
         }
 
-        flash.setError("Invalid Username or Password!");
+        flash.setError(messages.get("validation.login.flash.error"));
         form.keep();
 
         return Response.redirect("/auth/login");
     }
 
     public Response doMfa(Flash flash, Form form, Authentication authentication) {
-        form.expectValue("mfa", "Please enter a TOTP value");
+        form.expectValue("mfa", messages.get("validation.required.mfa"));
 
         if (form.isValid()) {
             String userUid = authentication.getSubject();
@@ -97,7 +123,7 @@ public class AuthenticationController {
             }
         }
 
-        flash.setError("Invalid TOTP!");
+        flash.setError(messages.get("validation.mfa.flash.error"));
         form.keep();
 
         return Response.redirect("/auth/mfa");
@@ -124,10 +150,10 @@ public class AuthenticationController {
     @FilterWith(TokenFilter.class)
     public Response doResetPassword(Request request, Form form) {
         Action action = request.getAttribute(Const.ACTION);
-        form.expectValue("password", "Please enter your current password");
-        form.expectValue("confirm-password", "Please confirm your password");
-        form.expectMinLength("confirm-password", 12, "Password must be at least 12 characters");
-        form.expectMaxLength("confirm-password", 256, "Password must not be longer than 256 characters");
+        form.expectValue("password", messages.get("validation.required.current.password"));
+        form.expectValue("confirm-password", messages.get("validation.required.password.confirm"));
+        form.expectMinLength("confirm-password", 12, messages.get("validation.min.length.password"));
+        form.expectMaxLength("confirm-password", 256, messages.get("validation.max.length.password"));
 
         if (form.isValid()) {
             dataService.setPassword(action.getUserUid(), form.get("password"));
@@ -148,9 +174,9 @@ public class AuthenticationController {
     }
 
     public Response doForgot(Form form, Flash flash) {
-        form.expectValue("username", "Please enter an email address");
-        form.expectEmail("username", "Please enter a valid email address");
-        form.expectMaxLength("username", 256, "Email address must not be longer than 256 characters");
+        form.expectValue("username", messages.get("validation.required.username"));
+        form.expectEmail("username", messages.get("validation.required.email"));
+        form.expectMaxLength("username", 256, messages.get("validation.max.length.password"));
 
         if (form.isValid()) {
             var user = dataService.findUser(form.get("username"));
@@ -159,7 +185,7 @@ public class AuthenticationController {
                 dataService.save(new Action(user.getUid(), token, Type.RESET_PASSWORD));
                 notificationService.forgotPassword(form.get("username"), token);
             }
-            flash.setSuccess("If your email address exists, you will receive an email shortly.");
+            flash.setSuccess(messages.get("validation.forgot.flash.success"));
         }
 
         form.keep();
@@ -172,15 +198,15 @@ public class AuthenticationController {
             return Response.redirect("/auth/login");
         }
 
-        form.expectValue("username", "Please enter an email address");
-        form.expectValue("password", "Please enter a password");
-        form.expectValue("confirm-password", "Please confirm your password");
-        form.expectEmail("username", "Please enter a valid email address");
-        form.expectMinLength("password", 12, "Password must be at least 12 characters");
-        form.expectMaxLength("username", 256, "Email address must not be longer than 256 characters");
-        form.expectMaxLength("password", 256, "Password must not be longer than 256 characters");
-        form.expectMaxLength("confirm-password", 256, "Password confirmation must not be longer than 256 characters");
-        form.expectExactMatch("password", "confirm-password", "Passwords do not match");
+        form.expectValue("username", messages.get("validation.required.username"));
+        form.expectValue("password", messages.get("validation.required.password"));
+        form.expectValue("confirm-password", messages.get("validation.required.password.confirm"));
+        form.expectEmail("username", messages.get("validation.required.email"));
+        form.expectMinLength("password", 12, messages.get("validation.min.length.password"));
+        form.expectMaxLength("username", 256, messages.get("validation.max.length.username"));
+        form.expectMaxLength("password", 256, messages.get("validation.max.length.password"));
+        form.expectMaxLength("confirm-password", 256, messages.get("validation.max.length.confirm.password"));
+        form.expectExactMatch("password", "confirm-password", messages.get("validation.password.match"));
 
         if (form.isValid()) {
             String username = form.get("username");
@@ -198,7 +224,7 @@ public class AuthenticationController {
                 dataService.save(new Action(user.getUid(), token, Type.CONFIRM_EMAIL));
                 notificationService.confirmEmail(username, token);
 
-                flash.setSuccess("Your account has been created! You will receive an email shortly.");
+                flash.setSuccess(messages.get("validation.signup.flash.success"));
 
                 return Response.redirect("/auth/login");
             }

@@ -3,6 +3,7 @@ package controllers;
 import constants.Const;
 import constants.Required;
 import io.mangoo.constants.Hmac;
+import io.mangoo.i18n.Messages;
 import io.mangoo.routing.Response;
 import io.mangoo.routing.bindings.Authentication;
 import io.mangoo.routing.bindings.Flash;
@@ -31,20 +32,22 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.*;
 
-import static constants.Const.SOMETHING_WENT_WRONG;
 import static constants.Const.TOAST_ERROR;
 
 public class DashboardController {
     private final DataService dataService;
     private final NotificationService notificationService;
+    private final Messages messages;
     private final String authRedirect;
 
     @Inject
     public DashboardController(DataService dataService,
                                NotificationService notificationService,
+                               Messages messages,
                                @Named("authentication.redirect.login") String loginRedirect) {
         this.notificationService = Objects.requireNonNull(notificationService, Required.NOTIFICATION_SERVICE);
         this.dataService = Objects.requireNonNull(dataService, Required.DATA_SERVICE);
+        this.messages = Objects.requireNonNull(messages, Required.MESSAGES);
         this.authRedirect = Objects.requireNonNull(loginRedirect, Required.LOGIN_REDIRECT);
 
     }
@@ -102,7 +105,7 @@ public class DashboardController {
         String mfa = form.get("mfa");
 
         String fallback = dataService.changeMfa(userUid, ("on").equals(mfa));
-        flash.put(Const.TOAST_SUCCESS, "Two-Factor authentication " + (("on").equals(mfa) ? "enabled" : "disabled"));
+        flash.put(Const.TOAST_SUCCESS, messages.get("toast.mfa.success", ("on").equals(mfa) ? messages.get("toast.mfa.enabled") : messages.get("toast.mfa.disabled")));
         flash.put(Const.MFA_FALLBACK, fallback);
 
         return Response.redirect("/dashboard/profile");
@@ -128,9 +131,9 @@ public class DashboardController {
             dataService.save(new Action(userUid, token, Type.CONFIRM_EMAIL));
             notificationService.confirmEmail(user.getUsername(), token);
 
-            flash.put(Const.TOAST_SUCCESS, "Email confirmation has been sent");
+            flash.put(Const.TOAST_SUCCESS, messages.get("toast.confirm.email.success"));
         } else {
-            flash.put(Const.TOAST_ERROR, SOMETHING_WENT_WRONG);
+            flash.put(Const.TOAST_ERROR, messages.get("toast.error"));
         }
 
         return Response.redirect("/dashboard/profile");
@@ -191,7 +194,7 @@ public class DashboardController {
             return Response.redirect(authRedirect);
         }
 
-        flash.put(TOAST_ERROR, SOMETHING_WENT_WRONG);
+        flash.put(TOAST_ERROR, messages.get("toast.error"));
 
         return Response.redirect("/dashboard/profile");
     }
@@ -241,12 +244,12 @@ public class DashboardController {
 
     public Response doChangeUsername(Form form, Authentication authentication, Flash flash) {
         String userUid = authentication.getSubject();
-        form.expectValue("username", "Please enter an email address");
-        form.expectEmail("username", "Please enter a valid email address");
-        form.expectMaxLength("username", 256, "Email address must not be longer than 256 characters");
-        form.expectValue("password", "Please enter your current password");
-        form.expectMinLength("password", 12, "Password must be at least 12 characters");
-        form.expectMaxLength("password", 256, "Password must not be longer than 256 characters");
+        form.expectValue("username", messages.get("validation.required.username"));
+        form.expectEmail("username", messages.get("validation.required.email"));
+        form.expectMaxLength("username", 256, messages.get("validation.max.length.username"));
+        form.expectValue("password", messages.get("validation.required.password"));
+        form.expectMinLength("password", 12, messages.get("validation.min.length.password"));
+        form.expectMaxLength("password", 256, messages.get("validation.max.length.password"));
 
         if (form.isValid()) {
             String username = form.get("username");
@@ -262,9 +265,9 @@ public class DashboardController {
                 dataService.save(new Action(user.getUid(), token, Type.CONFIRM_EMAIL));
                 notificationService.confirmEmail(username, token);
 
-                flash.put(Const.TOAST_SUCCESS, "Username successfully changed");
+                flash.put(Const.TOAST_SUCCESS, messages.get("toast.username.success"));
             } else {
-                flash.put(Const.TOAST_ERROR, SOMETHING_WENT_WRONG);
+                flash.put(Const.TOAST_ERROR, messages.get("toast.error"));
             }
         }
 
@@ -275,14 +278,14 @@ public class DashboardController {
 
     public Response doChangePassword(Form form, Authentication authentication, Flash flash) {
         String userUid = authentication.getSubject();
-        form.expectValue("password", "Please enter your current password");
-        form.expectValue("new-password", "Please enter a new password");
-        form.expectValue("confirm-password", "Please confirm your password");
-        form.expectMinLength("new-password", 12, "Password must be at least 12 characters");
-        form.expectMaxLength("new-password", 256, "Password must not be longer than 256 characters");
-        form.expectMinLength("confirm-password", 12, "Password must be at least 12 characters");
-        form.expectMaxLength("confirm-password", 256, "Password must not be longer than 256 characters");
-        form.expectExactMatch("new-password", "confirm-password", "Passwords do not match");
+        form.expectValue("password", messages.get("validation.required.current.password"));
+        form.expectValue("new-password", messages.get("validation.required.new.password"));
+        form.expectValue("confirm-password", messages.get("validation.required.password.confirm"));
+        form.expectMinLength("new-password", 12, messages.get("validation.min.length.password"));
+        form.expectMaxLength("new-password", 256, messages.get("validation.max.length.password"));
+        form.expectMinLength("confirm-password", 12, messages.get("validation.min.length.confirm.password"));
+        form.expectMaxLength("confirm-password", 256, messages.get("validation.max.length.confirm.password"));
+        form.expectExactMatch("new-password", "confirm-password", messages.get("validation.password.match"));
 
         if (form.isValid()) {
             String password = form.get("password");
@@ -294,9 +297,9 @@ public class DashboardController {
                 dataService.save(user);
                 notificationService.passwordChanged(user.getUsername());
 
-                flash.put(Const.TOAST_SUCCESS, "Password successfully changed");
+                flash.put(Const.TOAST_SUCCESS, messages.get("toast.password.success"));
             } else {
-                flash.put(Const.TOAST_ERROR, Const.SOMETHING_WENT_WRONG);
+                flash.put(Const.TOAST_ERROR, messages.get("toast.error"));
             }
         }
 

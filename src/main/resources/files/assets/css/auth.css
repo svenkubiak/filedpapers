@@ -23,7 +23,7 @@
 
 .auth-box {
     width: 100%;
-    max-width: 400px;
+    max-width: 430px;
     padding: var(--spacing-large);
     background: var(--white);
     border-radius: var(--radius-large);

@@ -143,7 +143,7 @@
                 <div class="form-field">
                     <div class="control">
                         <button type="submit" class="button is-danger is-fullwidth" id="delete-account">
-                            ${i18n("profile.password.button")}
+                            ${i18n("profile.danger.button")}
                         </button>
                     </div>
                 </div>
