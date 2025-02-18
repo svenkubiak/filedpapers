@@ -5,12 +5,12 @@
         <span class="icon auth-logo">
             <i class="fas fa-bookmark fa-8x"></i>
         </span>
-        <h1 class="auth-title">Sign Up</h1>
-        <p class="auth-subtitle">Create your account to get started.</p>
+        <h1 class="auth-title">${i18n("auth.signup.title")}</h1>
+        <p class="auth-subtitle">${i18n("auth.signup.subtitle")}</p>
         <form action="/auth/signup" method="POST" onsubmit="showLoading('signup-button')">
             <div class="field">
                 <div class="control has-icons-left<#if form.hasError("username")> has-icons-right</#if>">
-                    <input class="input<#if form.hasError("username")> is-danger</#if>" type="email" placeholder="Your Email" id="username" value="<#if form.username??>${form.username}</#if>"  name="username" required>
+                    <input class="input<#if form.hasError("username")> is-danger</#if>" type="email" placeholder="${i18n("auth.signup.username.placeholder")}" id="username" value="<#if form.username??>${form.username}</#if>"  name="username" required>
                     <span class="icon is-small is-left">
                         <i class="fas fa-envelope"></i>
                     </span>
@@ -26,7 +26,7 @@
             </div>
             <div class="field">
                 <div class="control has-icons-left<#if form.hasError("password")> has-icons-right</#if>">
-                    <input class="input<#if form.hasError("password")> is-danger</#if>" type="password" placeholder="Choose Password" name="password" required>
+                    <input class="input<#if form.hasError("password")> is-danger</#if>" type="password" placeholder="${i18n("auth.signup.password.placeholder")}" name="password" required>
                     <span class="icon is-small is-left">
                         <i class="fas fa-lock"></i>
                     </span>
@@ -42,7 +42,7 @@
             </div>
             <div class="field">
                 <div class="control has-icons-left<#if form.hasError("confirm-password")> has-icons-right</#if>">
-                    <input class="input<#if form.hasError("confirm-password")> is-danger</#if>" type="password" placeholder="Confirm Password" name="confirm-password" required>
+                    <input class="input<#if form.hasError("confirm-password")> is-danger</#if>" type="password" placeholder="${i18n("auth.signup.confirm.placeholder")}" name="confirm-password" required>
                     <span class="icon is-small is-left">
                         <i class="fas fa-lock"></i>
                     </span>
@@ -59,13 +59,13 @@
             <div class="field">
                 <div class="control">
                     <button type="submit" class="button is-link is-fullwidth" id="signup-button">
-                        Create Account
+                        ${i18n("auth.signup.button")}
                     </button>
                 </div>
             </div>
         </form>
         <div class="auth-links">
-            <a href="/auth/login">Already have an account? Login</a>
+            <a href="/auth/login">${i18n("auth.signup.link")}</a>
         </div>
     </div>
 </div>

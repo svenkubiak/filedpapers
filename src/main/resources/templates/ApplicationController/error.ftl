@@ -5,10 +5,10 @@
     <span class="icon auth-logo" style="color: red;">
         <i class="fas fa-bookmark fa-8x"></i>
     </span>
-        <h1 class="auth-title">Error</h1>
-        <p class="auth-subtitle">The requested URL does not exist or expired.</p>
+        <h1 class="auth-title">${i18n("application.error.title")}</h1>
+        <p class="auth-subtitle">${i18n("application.error.subtitle")}</p>
         <div class="auth-links">
-            <a href="/auth/login">Back to Login</a>
+            <a href="/auth/login">${i18n("application.error.link")}</a>
         </div>
     </div>
 </div>

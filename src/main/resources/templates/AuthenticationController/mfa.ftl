@@ -5,8 +5,8 @@
         <span class="icon auth-logo">
             <i class="fas fa-bookmark fa-8x"></i>
         </span>
-        <h1 class="auth-title">Two-Step Verification</h1>
-        <p class="auth-subtitle">Please enter your TOTP.</p>
+        <h1 class="auth-title">${i18n("auth.mfa.title")}</h1>
+        <p class="auth-subtitle">${i18n("auth.mfa.subtitle")}</p>
         <#if flash.error??>
             <div class="notification is-danger is-light mb-5">
                 <button class="delete"></button>
@@ -16,7 +16,7 @@
         <form action="/auth/mfa" method="POST" onsubmit="showLoading('login-button')">
             <div class="field">
                 <div class="control has-icons-left<#if form.hasError("mfa")> has-icons-right</#if>">
-                    <input class="input<#if form.hasError("mfa")> is-danger</#if>" type="text" placeholder="6 digits code" name="mfa" id="mfa" value="" required>
+                    <input class="input<#if form.hasError("mfa")> is-danger</#if>" type="text" placeholder="${i18n("auth.mfa.placeholder")}" name="mfa" id="mfa" value="" required>
                     <span class="icon is-small is-left">
                         <i class="fas fa-lock"></i>
                     </span>
@@ -32,12 +32,12 @@
             </div>
             <div class="field">
                 <div class="control">
-                    <button type="submit" class="button is-link is-fullwidth" id="login-button">Verify</button>
+                    <button type="submit" class="button is-link is-fullwidth" id="login-button">${i18n("auth.mfa.button")}</button>
                 </div>
             </div>
         </form>
         <div class="auth-links">
-            <a href="/auth/logout">Cancel</a>
+            <a href="/auth/logout">${i18n("auth.mfa.cancel")}</a>
         </div>
     </div>
 </div>

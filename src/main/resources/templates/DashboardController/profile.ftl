@@ -2,17 +2,17 @@
 <@layout.myLayout "Layout">
 <nav class="breadcrumb" aria-label="breadcrumbs">
     <ul>
-        <li><a href="/dashboard"><span class="icon is-small"><i class="fas fa-user-cog"></i></span><span>Profile</span></a></li>
+        <li><a href="/dashboard"><span class="icon is-small"><i class="fas fa-user-cog"></i></span><span>${i18n("profile.breadcrumbs")}</span></a></li>
     </ul>
 </nav>
 <div class="columns is-multiline">
     <div class="column is-half">
         <div class="profile-form">
             <form action="/dashboard/profile/enable-mfa" method="POST" class="profile-section">
-                <h2 class="section-title">Security</h2>
+                <h2 class="section-title">${i18n("profile.mfa.title")}</h2>
                 <div class="form-field">
                     <div class="control has-icons-left">
-                        <input class="checkbox" type="checkbox" name="mfa" <#if mfa>checked</#if>> Enable Two-Factor Authentication
+                        <input class="checkbox" type="checkbox" name="mfa" <#if mfa>checked</#if>> ${i18n("profile.mfa.checkbox")}
                     </div>
                 </div>
                 <#if qrCode??>
@@ -21,29 +21,29 @@
                 <div class="form-field">
                     <div class="control">
                         <button type="submit" class="button is-link is-fullwidth">
-                            Save
+                            ${i18n("profile.mfa.save")}
                         </button>
                     </div>
                 </div>
                 <#if mfaFallback??>
                     <div class="notification is-warning">
-                        You have successfully enabled multi-factor authentication (MFA) on your account. In case you lose access to your primary authentication method, use the fallback code below to regain access:
+                        ${i18n("profile.mfa.fallback.1")}
                         <br><br>
-                        🔒 Fallback Code: <code>${mfaFallback}</code>
+                        🔒 ${i18n("profile.mfa.fallback.2")}: <code>${mfaFallback}</code>
                         <br><br>
-                        This code is <b>only displayed once</b> — make sure to store it in a secure place.
+                        ${i18n("profile.mfa.fallback.3")}
                     </div>
                 </#if>
             </form>
             <form action="/dashboard/profile/change-username" method="POST" class="profile-section" onsubmit="showLoading('update-email-button')">
-                <h2 class="section-title">Change email</h2>
+                <h2 class="section-title">${i18n("profile.email.title")}</h2>
                 <#if !confirmed>
                 <div class="notification is-warning">
-                    Your email address is unconfirmed. Without a valid email, you won’t be able to reset your password. If you haven’t received a confirmation email, click <a href="/dashboard/profile/confirm-email">here</a> to resend it.
+                    ${i18n("profile.email.notification")}
                 </div>
                 </#if>
                 <div class="form-field">
-                    <label class="label">Current email</label>
+                    <label class="label">${i18n("profile.email.label")}</label>
                     <div class="control has-icons-left">
                         <input class="input" type="email" value="${username}" disabled>
                         <span class="icon is-small is-left">
@@ -52,9 +52,9 @@
                     </div>
                 </div>
                 <div class="form-field">
-                    <label class="label">New email</label>
+                    <label class="label">${i18n("profile.email.new.label")}</label>
                     <div class="control has-icons-left<#if form.hasError("username")> has-icons-right</#if>">
-                        <input class="input<#if form.hasError("username")> is-danger</#if>" type="email" placeholder="new@email.com" name="username">
+                        <input class="input<#if form.hasError("username")> is-danger</#if>" type="email" placeholder="${i18n("profile.email.placeholder")}" name="username">
                         <span class="icon is-small is-left">
                             <i class="fas fa-envelope"></i>
                         </span>
@@ -69,9 +69,9 @@
                     </#if>
                 </div>
                 <div class="form-field">
-                    <label class="label">Password</label>
+                    <label class="label">${i18n("profile.email.password.label")}</label>
                     <div class="control has-icons-left">
-                        <input class="input" type="password" placeholder="Confirm with your password" name="password">
+                        <input class="input" type="password" placeholder="${i18n("profile.email.password.placeholder")}" name="password">
                         <span class="icon is-small is-left">
                             <i class="fas fa-lock"></i>
                         </span>
@@ -80,26 +80,26 @@
                 <div class="form-field">
                     <div class="control">
                         <button type="submit" class="button is-link is-fullwidth" id="update-email-button">
-                            Update Email
+                            ${i18n("profile.email.button")}
                         </button>
                     </div>
                 </div>
             </form>
             <form action="/dashboard/profile/change-password" method="post" class="profile-section" onsubmit="showLoading('update-password-button')">
-                <h2 class="section-title">Change password</h2>
+                <h2 class="section-title">${i18n("profile.password.title")}</h2>
                 <div class="form-field">
-                    <label class="label">Current password</label>
+                    <label class="label">${i18n("profile.password.label")}</label>
                     <div class="control has-icons-left">
-                        <input class="input" type="password" placeholder="Current password" name="password">
+                        <input class="input" type="password" placeholder="${i18n("profile.password.placeholder")}" name="password">
                         <span class="icon is-small is-left">
                             <i class="fas fa-lock"></i>
                         </span>
                     </div>
                 </div>
                 <div class="form-field">
-                    <label class="label">New password</label>
+                    <label class="label">${i18n("profile.password.new.label")}</label>
                     <div class="control has-icons-left<#if form.hasError("new-password")> has-icons-right</#if>">
-                        <input class="input<#if form.hasError("new-password")> is-danger</#if>" type="password" placeholder="New password" name="new-password">
+                        <input class="input<#if form.hasError("new-password")> is-danger</#if>" type="password" placeholder="${i18n("profile.password.new.placeholder")}" name="new-password">
                         <span class="icon is-small is-left">
                             <i class="fas fa-lock"></i>
                         </span>
@@ -114,9 +114,9 @@
                     </#if>
                 </div>
                 <div class="form-field">
-                    <label class="label">Confirm new password</label>
+                    <label class="label">${i18n("profile.password.confirm.label")}</label>
                     <div class="control has-icons-left<#if form.hasError("confirm-password")> has-icons-right</#if>">
-                        <input class="input<#if form.hasError("confirm-password")> is-danger</#if>" type="password" placeholder="Confirm new password" name="confirm-password">
+                        <input class="input<#if form.hasError("confirm-password")> is-danger</#if>" type="password" placeholder="${i18n("profile.password.confirm.placeholder")}" name="confirm-password">
                         <span class="icon is-small is-left">
                             <i class="fas fa-lock"></i>
                         </span>
@@ -133,17 +133,17 @@
                 <div class="form-field">
                     <div class="control">
                         <button type="submit" class="button is-link is-fullwidth" id="update-password-button">
-                            Update Password
+                            ${i18n("profile.password.button")}
                         </button>
                     </div>
                 </div>
             </form>
             <form class="profile-section">
-                <h2 class="section-title">Danger zone</h2>
+                <h2 class="section-title">${i18n("profile.danger.title")}</h2>
                 <div class="form-field">
                     <div class="control">
                         <button type="submit" class="button is-danger is-fullwidth" id="delete-account">
-                            Delete account
+                            ${i18n("profile.password.button")}
                         </button>
                     </div>
                 </div>

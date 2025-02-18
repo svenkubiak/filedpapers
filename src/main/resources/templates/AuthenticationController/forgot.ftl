@@ -5,8 +5,8 @@
         <span class="icon auth-logo">
             <i class="fas fa-bookmark fa-8x"></i>
         </span>
-        <h1 class="auth-title">Reset Password</h1>
-        <p class="auth-subtitle">Enter your email to reset your password.</p>
+        <h1 class="auth-title">${i18n("auth.forgot.title")}</h1>
+        <p class="auth-subtitle">${i18n("auth.forgot.subtitle")}</p>
         <#if flash.success??>
             <div class="notification is-success is-light mb-5">
                 <button class="delete"></button>
@@ -16,7 +16,7 @@
         <form action="/auth/forgot" method="POST">
             <div class="field">
                 <div class="control has-icons-left<#if form.hasError("username")> has-icons-right</#if>">
-                    <input class="input<#if form.hasError("username")> is-danger</#if>" type="email" placeholder="Your Email" name="username" id="username" value="" required>
+                    <input class="input<#if form.hasError("username")> is-danger</#if>" type="email" placeholder="${i18n("auth.forgot.placeholder")}" name="username" id="username" value="" required>
                     <span class="icon is-small is-left">
                         <i class="fas fa-envelope"></i>
                     </span>
@@ -33,13 +33,13 @@
             <div class="field">
                 <div class="control">
                     <button type="submit" class="button is-link is-fullwidth<#if flash.forgot?? && flash.forgot == "success"> is-disabled</#if>"<#if flash.forgot?? && flash.forgot == "success"> disabled</#if>>
-                        Reset Password
+                        ${i18n("auth.forgot.submit")}
                     </button>
                 </div>
             </div>
         </form>
         <div class="auth-links">
-            <a href="/auth/login">Back to Login</a>
+            <a href="/auth/login">${i18n("auth.forgot.link")}</a>
         </div>
     </div>
 </div>

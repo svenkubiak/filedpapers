@@ -5,8 +5,8 @@
         <span class="icon auth-logo">
             <i class="fa-solid fa-bookmark fa-8x"></i>
         </span>
-        <h1 class="auth-title">Welcome to Filed Papers</h1>
-        <p class="auth-subtitle">Please login to proceed.</p>
+        <h1 class="auth-title">${i18n("auth.login.title")}</h1>
+        <p class="auth-subtitle">${i18n("auth.login.subtitle")}</p>
         <#if flash.success??>
             <div class="notification is-success is-light mb-5">
                 <button class="delete"></button>
@@ -22,7 +22,7 @@
         <form action="/auth/login" method="POST" onsubmit="showLoading('login-button')">
             <div class="field">
                 <div class="control has-icons-left<#if form.hasError("username")> has-icons-right</#if>">
-                    <input class="input<#if form.hasError("username")> is-danger</#if>" type="email" placeholder="Your Email" id="username" value="<#if form.username??>${form.username}</#if>" name="username" required>
+                    <input class="input<#if form.hasError("username")> is-danger</#if>" type="email" placeholder="${i18n("auth.login.username.placeholder")}" id="username" value="<#if form.username??>${form.username}</#if>" name="username" required>
                     <span class="icon is-small is-left">
                         <i class="fas fa-envelope"></i>
                     </span>
@@ -38,7 +38,7 @@
             </div>
             <div class="field">
                 <div class="control has-icons-left<#if form.hasError("password")> has-icons-right</#if>">
-                    <input class="input<#if form.hasError("password")> is-danger</#if>" type="password" placeholder="Your Password" name="password" required>
+                    <input class="input<#if form.hasError("password")> is-danger</#if>" type="password" placeholder="${i18n("auth.login.password.placeholder")}" name="password" required>
                     <span class="icon is-small is-left">
                         <i class="fas fa-lock"></i>
                     </span>
@@ -56,22 +56,22 @@
                 <div class="control">
                     <label class="checkbox">
                         <input type="checkbox" value="1" name="rememberme">
-                        Remember me
+                        ${i18n("auth.login.remember")}
                     </label>
                 </div>
             </div>
             <div class="field">
                 <div class="control">
-                    <button type="submit" class="button is-link is-fullwidth" id="login-button">Login</button>
+                    <button type="submit" class="button is-link is-fullwidth" id="login-button">${i18n("auth.login.button")}</button>
                 </div>
             </div>
         </form>
         <div class="auth-links">
             <#if registration>
-            <a href="/auth/signup">Sign Up</a>
+            <a href="/auth/signup">${i18n("auth.login.link.signup")}</a>
             <span>·</span>
             </#if>
-            <a href="/auth/forgot">Forgot Password?</a>
+            <a href="/auth/forgot">${i18n("auth.login.link.forgot")}</a>
         </div>
     </div>
 </div>

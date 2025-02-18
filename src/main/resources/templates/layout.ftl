@@ -16,7 +16,7 @@
 <aside class="sidebar">
     <div class="sidebar-content">
         <p class="menu-label menu-label-with-icon">
-            Overview
+            ${i18n("layout.menu.label")}
             <span class="icon is-small" style="cursor: pointer;" id="add-category-button">
                 <i class="fas fa-plus"></i>
             </span>
@@ -52,19 +52,19 @@
                 <span class="icon">
                     <i class="fas fa-user-cog"></i>
                 </span>
-                <span>Profile</span>
+                <span>${i18n("layout.menu.profile")}</span>
             </a>
             <a href="/dashboard/io" class="button is-light is-fullwidth mb-2<#if active == "io"> is-active</#if>">
                 <span class="icon">
                     <i class="fas fa-sync"></i>
                 </span>
-                <span>Import/Export</span>
+                <span>${i18n("layout.menu.io")}</span>
             </a>
             <a href="/auth/logout" class="button is-danger is-light is-fullwidth">
                 <span class="icon">
                     <i class="fas fa-sign-out-alt"></i>
                 </span>
-                <span>Logout</span>
+                <span>${i18n("layout.menu.logout")}</span>
             </a>
         </div>
     </div>
@@ -74,7 +74,7 @@
         <span class="icon">
             <i class="fas fa-plus"></i>
         </span>
-        <span>Add Bookmark</span>
+        <span>${i18n("layout.add.bookmark")}</span>
     </button>
    <#nested/>
 </div>
@@ -82,12 +82,12 @@
     <div class="modal-background"></div>
     <div class="modal-card">
         <header class="modal-card-head">
-            <p class="modal-card-title">Add category</p>
+            <p class="modal-card-title">${i18n("layout.modal.add.category.title")}</p>
             <button class="delete" aria-label="close"></button>
         </header>
         <section class="modal-card-body">
             <div class="field">
-                <label class="label">Name</label>
+                <label class="label">${i18n("layout.modal.add.category.name")}</label>
                 <div class="control">
                     <input class="input" type="text" name="category" id="category">
                 </div>
@@ -95,8 +95,8 @@
         </section>
         <footer class="modal-card-foot">
             <div class="is-flex is-justify-content-space-between" style="width: 100%">
-                <button class="button">Cancel</button>
-                <button class="button is-primary" id="add-category-submit">Add</button>
+                <button class="button">${i18n("layout.modal.add.category.cancel")}</button>
+                <button class="button is-primary" id="add-category-submit">${i18n("layout.modal.add.category.add")}</button>
             </div>
         </footer>
     </div>
@@ -105,25 +105,25 @@
     <div class="modal-background"></div>
     <div class="modal-card">
         <header class="modal-card-head">
-            <p class="modal-card-title">Delete account</p>
+            <p class="modal-card-title">${i18n("layout.modal.delete.account.title")}</p>
             <button class="delete" aria-label="close"></button>
         </header>
         <section class="modal-card-body">
-            <p>Are you sure you want to delete your account? All your data will be permanently deleted, and this action cannot be undone.</p>
+            <p>${i18n("layout.modal.delete.account.body")}</p>
         </section>
         <form action="/dashboard/profile/delete-account" method="POST">
         <section class="modal-card-body">
             <div class="field">
-                <label class="label">Password</label>
+                <label class="label">${i18n("layout.modal.delete.account.password")}</label>
                 <div class="control">
-                    <input class="input" type="password" name="confirmPassword" placeholder="To delete your account, type in your password">
+                    <input class="input" type="password" name="confirmPassword" placeholder="${i18n("layout.modal.delete.account.placeholder")}">
                 </div>
             </div>
         </section>
         <footer class="modal-card-foot">
             <div class="is-flex is-justify-content-space-between" style="width: 100%">
-                <button class="button">Cancel</button>
-                <input type="submit" class="button is-danger" id="add-category-submit" value="Delete account">
+                <button class="button">${i18n("layout.modal.delete.account.cancel")}</button>
+                <input type="submit" class="button is-danger" id="add-category-submit" value="${i18n("layout.modal.delete.account.delete")}">
             </div>
         </footer>
         </form>
@@ -133,16 +133,16 @@
     <div class="modal-background"></div>
     <div class="modal-card">
         <header class="modal-card-head">
-            <p class="modal-card-title">Delete Bookmark</p>
+            <p class="modal-card-title">${i18n("layout.modal.delete.bookmark.title")}</p>
             <button class="delete" aria-label="close"></button>
         </header>
         <section class="modal-card-body">
-            <p>Are you sure you want to delete this bookmark? Deleted bookmarks will be moves to trash.</p>
+            <p>${i18n("layout.modal.delete.bookmark.body")}</p>
         </section>
         <footer class="modal-card-foot">
             <div class="is-flex is-justify-content-space-between" style="width: 100%">
-                <button class="button">Cancel</button>
-                <button class="button is-danger" id="confirm-delete">Delete</button>
+                <button class="button">${i18n("layout.modal.delete.bookmark.cancel")}</button>
+                <button class="button is-danger" id="confirm-delete">${i18n("layout.modal.delete.bookmark.delete")}</button>
             </div>
         </footer>
     </div>
@@ -151,16 +151,16 @@
     <div class="modal-background"></div>
     <div class="modal-card">
         <header class="modal-card-head">
-            <p class="modal-card-title">Delete category</p>
+            <p class="modal-card-title">${i18n("layout.modal.delete.category.title")}</p>
             <button class="delete" aria-label="close"></button>
         </header>
         <section class="modal-card-body">
-            <p>Are you sure you want to delete this category? All items in this category will be moved to trash.</p>
+            <p>${i18n("layout.modal.delete.category.body")}</p>
         </section>
         <footer class="modal-card-foot">
             <div class="is-flex is-justify-content-space-between" style="width: 100%">
-                <button class="button">Cancel</button>
-                <button class="button is-danger" id="confirm-category-delete">Delete</button>
+                <button class="button">${i18n("layout.modal.delete.category.cancel")}</button>
+                <button class="button is-danger" id="confirm-category-delete">${i18n("layout.modal.delete.category.delete")}</button>
             </div>
         </footer>
     </div>
@@ -169,16 +169,16 @@
     <div class="modal-background"></div>
     <div class="modal-card">
         <header class="modal-card-head">
-            <p class="modal-card-title">Empty trash</p>
+            <p class="modal-card-title">${i18n("layout.modal.trash.title")}</p>
             <button class="delete" aria-label="close"></button>
         </header>
         <section class="modal-card-body">
-            <p>Are you sure you want to empty the trash? All items will be irrevocably deleted.</p>
+            <p>${i18n("layout.modal.trash.body")}</p>
         </section>
         <footer class="modal-card-foot">
             <div class="is-flex is-justify-content-space-between" style="width: 100%">
-                <button class="button">Cancel</button>
-                <button class="button is-danger" id="confirm-empty-trash">Empty</button>
+                <button class="button">${i18n("layout.modal.trash.cancel")}</button>
+                <button class="button is-danger" id="confirm-empty-trash">${i18n("layout.modal.trash.empty")}</button>
             </div>
         </footer>
     </div>
@@ -187,18 +187,18 @@
     <div class="modal-background"></div>
     <div class="modal-card">
         <header class="modal-card-head">
-            <p class="modal-card-title">Add Bookmark</p>
+            <p class="modal-card-title">${i18n("layout.modal.add.bookmark.title")}</p>
             <button class="delete" aria-label="close"></button>
         </header>
         <section class="modal-card-body">
             <div class="field">
-                <label class="label">URL</label>
+                <label class="label">${i18n("layout.modal.add.bookmark.url")}</label>
                 <div class="control">
                     <input class="input" type="url" name="bookmark-url" id="bookmark-url" placeholder="https://example.com">
                 </div>
             </div>
             <div class="field">
-                <label class="label">Category</label>
+                <label class="label">${i18n("layout.modal.add.bookmark.category")}</label>
                 <div class="control">
                     <div class="select is-fullwidth">
                         <select name="bookmark-category" id="bookmark-category">
@@ -215,8 +215,8 @@
         </section>
         <footer class="modal-card-foot">
             <div class="is-flex is-justify-content-space-between" style="width: 100%">
-                <button class="button">Cancel</button>
-                <button class="button is-primary" id="confirm-add-bookmark">Add</button>
+                <button class="button">${i18n("layout.modal.add.bookmark.cancel")}</button>
+                <button class="button is-primary" id="confirm-add-bookmark">${i18n("layout.modal.add.bookmark.add")}</button>
             </div>
         </footer>
     </div>

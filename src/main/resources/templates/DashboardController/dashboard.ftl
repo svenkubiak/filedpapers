@@ -29,17 +29,17 @@
                             <a href="${item.url}" target="_blank" class="card-link-no-decoration">${item.title}</a>
                         </p>
                         <div class="is-flex">
-                            <span class="icon card-move" data-tooltip="Drag&Drop bookmark to another category">
+                            <span class="icon card-move" data-tooltip="${i18n("dashboard.card.drag.tooltip")}">
                                 <i class="fas fa-folder-open dragging" draggable="true" data-uid="${item.uid}"></i>
                             </span>
-                                <span class="icon card-trash" data-tooltip="Delete bookmark">
+                                <span class="icon card-trash" data-tooltip="${i18n("dashboard.card.delete.tooltip")}">
                                 <i class="fas fa-trash-alt"></i>
                             </span>
                         </div>
                     </div>
                     <div class="card-meta" >
                         <span class="card-domain"><a href="${item.url}" target="_blank">${item.url?truncate(30, '...')}</a></span>
-                        <span class="card-added">Added ${item.added}</span>
+                        <span class="card-added">${i18n("dashboard.card.added")} ${item.added}</span>
                     </div>
                 </div>
             </div>
@@ -47,13 +47,13 @@
     <#else>
         <#if active?? && active == "trash">
             <div class="column is-half">
-                <h2 class="is-size-3">Nothing in Trash</h2>
-                <p>Items you delete will appear here</p>
+                <h2 class="is-size-3">${i18n("dashboard.category.trash.title")}</h2>
+                <p>${i18n("dashboard.category.trash.subtitle")}</p>
             </div>
         <#else>
             <div class="column is-half">
-                <h2 class="is-size-3">No bookmarks yet</h2>
-                <p>Bookmarks in this category will appear here</p>
+                <h2 class="is-size-3">${i18n("dashboard.category.title")}</h2>
+                <p>${i18n("dashboard.category.subtitle")}</p>
             </div>
         </#if>
     </#list>
