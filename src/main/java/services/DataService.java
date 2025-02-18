@@ -19,6 +19,7 @@ import models.Action;
 import models.Category;
 import models.Item;
 import models.User;
+import models.enums.Language;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.util.Strings;
 import utils.Utils;
@@ -398,5 +399,18 @@ public class DataService {
         datastore
                 .query(Action.class)
                 .deleteMany(lt("expires", LocalDateTime.now()));
+    }
+
+    public boolean updateLanguage(String userUid, String language) {
+        Objects.requireNonNull(userUid, Required.USER_UID);
+        Objects.requireNonNull(language, Required.LANGUAGE);
+
+        User user = findUserByUid(userUid);
+        if (user != null) {
+            user.setLanguage(Language.valueOf(language.toUpperCase()));
+            return datastore.save(user) != null;
+        }
+
+        return false;
     }
 }

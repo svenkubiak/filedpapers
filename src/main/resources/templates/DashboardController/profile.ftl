@@ -35,6 +35,29 @@
                     </div>
                 </#if>
             </form>
+            <form action="/dashboard/profile/language" method="POST" class="profile-section">
+                <h2 class="section-title">${i18n("profile.language.title")}</h2>
+                <div class="form-field">
+                    <div class="control has-icons-left">
+                        <div class="select is-medium is-fullwidth">
+                            <select name="language">
+                                <option value="de"<#if language == "de"> selected</#if>>Deutsch</option>
+                                <option value="en"<#if language == "en"> selected</#if>>English</option>
+                            </select>
+                        </div>
+                        <span class="icon is-medium is-left">
+                            <i class="fas fa-globe"></i>
+                        </span>
+                    </div>
+                </div>
+                <div class="form-field">
+                    <div class="control">
+                        <button type="submit" class="button is-link is-fullwidth">
+                            ${i18n("profile.language.save")}
+                        </button>
+                    </div>
+                </div>
+            </form>
             <form action="/dashboard/profile/change-username" method="POST" class="profile-section" onsubmit="showLoading('update-email-button')">
                 <h2 class="section-title">${i18n("profile.email.title")}</h2>
                 <#if !confirmed>

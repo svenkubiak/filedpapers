@@ -3,6 +3,7 @@ package controllers;
 import constants.Const;
 import constants.Required;
 import io.mangoo.constants.Hmac;
+import io.mangoo.core.Config;
 import io.mangoo.i18n.Messages;
 import io.mangoo.routing.Response;
 import io.mangoo.routing.bindings.Authentication;
@@ -10,8 +11,12 @@ import io.mangoo.routing.bindings.Flash;
 import io.mangoo.routing.bindings.Form;
 import io.mangoo.routing.bindings.Session;
 import io.mangoo.utils.CodecUtils;
+import io.mangoo.utils.DateUtils;
 import io.mangoo.utils.MangooUtils;
 import io.mangoo.utils.totp.TotpUtils;
+import io.undertow.server.handlers.Cookie;
+import io.undertow.server.handlers.CookieImpl;
+import io.undertow.server.handlers.CookieSameSiteMode;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import models.Action;
@@ -28,6 +33,7 @@ import utils.io.Leaf;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.*;
@@ -37,16 +43,19 @@ import static constants.Const.TOAST_ERROR;
 public class DashboardController {
     private final DataService dataService;
     private final NotificationService notificationService;
+    private final Config config;
     private final Messages messages;
     private final String authRedirect;
 
     @Inject
     public DashboardController(DataService dataService,
                                NotificationService notificationService,
+                               Config config,
                                Messages messages,
                                @Named("authentication.redirect.login") String loginRedirect) {
         this.notificationService = Objects.requireNonNull(notificationService, Required.NOTIFICATION_SERVICE);
         this.dataService = Objects.requireNonNull(dataService, Required.DATA_SERVICE);
+        this.config = Objects.requireNonNull(config, Required.CONFIG);
         this.messages = Objects.requireNonNull(messages, Required.MESSAGES);
         this.authRedirect = Objects.requireNonNull(loginRedirect, Required.LOGIN_REDIRECT);
 
@@ -95,6 +104,7 @@ public class DashboardController {
                 .render("username", user.getUsername())
                 .render("confirmed", user.isConfirmed())
                 .render("mfa", user.isMfa())
+                .render("language", Utils.language(user))
                 .render("qrCode", qrCode)
                 .render("active", "profile")
                 .render("categories", categories.orElseThrow());
@@ -107,6 +117,33 @@ public class DashboardController {
         String fallback = dataService.changeMfa(userUid, ("on").equals(mfa));
         flash.put(Const.TOAST_SUCCESS, messages.get("toast.mfa.success", ("on").equals(mfa) ? messages.get("toast.mfa.enabled") : messages.get("toast.mfa.disabled")));
         flash.put(Const.MFA_FALLBACK, fallback);
+
+        return Response.redirect("/dashboard/profile");
+    }
+
+    public Response doLanguage(Authentication authentication, Form form, Flash flash) {
+        String userUid = authentication.getSubject();
+        form.expectValue("language");
+        form.expectTrue("language", form.get("language").equals("de") || form.get("language").equals("en"));
+
+        if (form.isValid() && dataService.updateLanguage(userUid, form.get("language"))) {
+            flash.put(Const.TOAST_SUCCESS, messages.get("toast.language.success"));
+
+            long expires = (authentication.isRememberMe()) ? config.getAuthenticationCookieRememberExpires() : config.getAuthenticationCookieTokenExpires();
+
+            Cookie cookie = new CookieImpl(config.getI18nCookieName());
+            cookie.setValue(form.get("language"));
+            cookie.setHttpOnly(true);
+            cookie.setSecure(config.isAuthenticationCookieSecure());
+            cookie.setSameSite(true);
+            cookie.setSameSiteMode(CookieSameSiteMode.STRICT.toString());
+            cookie.setExpires(DateUtils.localDateTimeToDate(LocalDateTime.now().plusMinutes(expires)));
+            cookie.setPath("/");
+
+            return Response.redirect("/dashboard/profile").cookie(cookie);
+        } else {
+            flash.put(TOAST_ERROR, messages.get("toast.error"));
+        }
 
         return Response.redirect("/dashboard/profile");
     }
