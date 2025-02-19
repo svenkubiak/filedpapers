@@ -1,7 +1,13 @@
 let $cardToDelete = null;
 const toastSuccess = 'toast-success';
 const toastError = 'toast-error';
-const error = "Ops, something went wrong. Please try again.";
+const error = document.getElementById('i18n-js').dataset.error;
+const bookmarkMovedSuccess = document.getElementById('i18n-js').dataset.bookmarkMovedSuccess;
+const categoryDeletedSuccess = document.getElementById('i18n-js').dataset.categoryDeletedSuccess;
+const trashEmptiedSuccess = document.getElementById('i18n-js').dataset.trashEmptiedSuccess;
+const bookmarkDeletedSuccess = document.getElementById('i18n-js').dataset.bookmarkDeletedSuccess;
+const categoryCreatedSuccess = document.getElementById('i18n-js').dataset.categoryCreatedSuccess;
+const bookmarkCreatedSuccess = document.getElementById('i18n-js').dataset.bookmarkCreatedSuccess;
 const $addButton = document.getElementById('add-category-button');
 const $addBookmark = document.getElementById('add-bookmark-modal');
 const $modal = document.getElementById('add-category-modal');
@@ -17,6 +23,7 @@ const $confirmAddBookmark = document.getElementById('confirm-add-bookmark');
 const deleteAccount = document.getElementById('delete-account');
 const $bookmarkUrl = document.getElementById('bookmark-url');
 const fabButton = document.getElementById('fab-add-bookmark');
+const applicationJson = "application/json";
 
 function openModal($el) {
     $el.classList.add('is-active');
@@ -65,7 +72,6 @@ document.addEventListener('keydown', (event) => {
 
 draggableItems.forEach(item => {
     item.addEventListener('dragstart', (e) => {
-        // Create a custom drag image (bookmark icon)
         const dragIcon = document.createElement('div');
         dragIcon.className = 'drag-icon';
         dragIcon.innerHTML = '<i class="fas fa-bookmark fa-2x"></i>';
@@ -74,13 +80,11 @@ draggableItems.forEach(item => {
         dragIcon.style.color = '#3273dc';
         document.body.appendChild(dragIcon);
 
-        // Set the custom drag image
         e.dataTransfer.setDragImage(dragIcon, 25, 25);
 
         item.closest('.card').classList.add('dragging');
         e.dataTransfer.setData('text/plain', item.dataset.uid);
 
-        // Remove the temporary element after a short delay
         setTimeout(() => {
             document.body.removeChild(dragIcon);
         }, 0);
@@ -115,12 +119,12 @@ categoryTargets.forEach(target => {
                 category: categoryUid
             }),
             headers: {
-                "Content-type": "application/json"
+                "Content-type" : applicationJson
             }
         });
 
         if (response.ok) {
-            sessionStorage.setItem(toastSuccess, "Bookmark successfully moved!");
+            sessionStorage.setItem(toastSuccess, bookmarkMovedSuccess);
         } else {
             sessionStorage.setItem(toastError, error);
         }
@@ -169,12 +173,12 @@ document.getElementById('confirm-category-delete').addEventListener('click', asy
         const response = await fetch("/api/v1/categories/" + uid, {
             method: "DELETE",
             headers: {
-                "Content-type": "application/json"
+                "Content-type" : applicationJson
             }
         });
 
         if (response.ok) {
-            sessionStorage.setItem(toastSuccess, "Category successfully deleted!");
+            sessionStorage.setItem(toastSuccess, categoryDeletedSuccess);
         } else {
             sessionStorage.setItem(toastError, error);
         }
@@ -189,12 +193,12 @@ document.getElementById('confirm-empty-trash').addEventListener('click', async (
     const response = await fetch("/api/v1/items/trash", {
         method: "DELETE",
         headers: {
-            "Content-type": "application/json"
+            "Content-type" : applicationJson
         }
     });
 
     if (response.ok) {
-        sessionStorage.setItem(toastSuccess, "Trash successfully emptied!");
+        sessionStorage.setItem(toastSuccess, trashEmptiedSuccess);
     } else {
         sessionStorage.setItem(toastError, error);
     }
@@ -216,12 +220,12 @@ document.getElementById('confirm-delete').addEventListener('click', async () => 
         const response = await fetch("/api/v1/items/" + uid, {
             method: "PUT",
             headers: {
-                "Content-type": "application/json"
+                "Content-type" : applicationJson
             }
         });
 
         if (response.ok) {
-            sessionStorage.setItem(toastSuccess, "Bookmark successfully deleted!");
+            sessionStorage.setItem(toastSuccess, bookmarkDeletedSuccess);
         } else {
             sessionStorage.setItem(toastError, error);
         }
@@ -243,12 +247,12 @@ if ($addBookmarkSubmit) {
                     name: category
                 }),
                 headers: {
-                    "Content-type": "application/json"
+                    "Content-type" : applicationJson
                 }
             });
 
             if (response.ok) {
-                sessionStorage.setItem(toastSuccess, "Category successfully created!");
+                sessionStorage.setItem(toastSuccess, categoryCreatedSuccess);
             } else {
                 sessionStorage.setItem(toastError, error);
             }
@@ -261,7 +265,6 @@ if ($addBookmarkSubmit) {
         }
     });
 }
-
 
 if ($bookmarkUrl) {
     $bookmarkUrl.addEventListener('input', () => {
@@ -283,15 +286,12 @@ function showToast(message, type = 'success', duration = 3000) {
 
     toastContainer.appendChild(toast);
 
-    // Trigger reflow to enable transition
     toast.offsetHeight;
 
-    // Show toast
     requestAnimationFrame(() => {
         toast.classList.add('is-active');
     });
 
-    // Remove toast after duration
     setTimeout(() => {
         toast.classList.remove('is-active');
         setTimeout(() => {
@@ -329,15 +329,13 @@ if ($confirmAddBookmark) {
         const category = document.getElementById('bookmark-category').value;
 
         if (url && category) {
-            // Show loading state on button
             $confirmAddBookmark.classList.add('is-loading');
             $confirmAddBookmark.disabled = true;
 
-            // Make POST request to API
             const response = await fetch('/api/v1/items', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
+                    "Content-type" : applicationJson
                 },
                 body: JSON.stringify({
                     url: url,
@@ -346,7 +344,7 @@ if ($confirmAddBookmark) {
             })
 
             if (response.ok) {
-                sessionStorage.setItem(toastSuccess, "Bookmark successfully created!");
+                sessionStorage.setItem(toastSuccess, bookmarkCreatedSuccess);
             } else {
                 sessionStorage.setItem(toastError, error);
             }
@@ -363,16 +361,14 @@ if ($confirmAddBookmark) {
 document.querySelectorAll('.image-container').forEach(container => {
     const img = container.querySelector('.image-with-fallback');
     const spinner = container.querySelector('.spinner');
-    const timeout = 4000; // 4 seconds timeout
+    const timeout = 4000;
     let timeoutReached = false;
 
-    // Function to hide the spinner and show the image
     const showImage = () => {
-        spinner.style.display = 'none'; // Hide the spinner
-        img.style.display = 'block';    // Show the image
+        spinner.style.display = 'none';
+        img.style.display = 'block';
     };
 
-    // Function to handle the success case (image loaded successfully)
     const handleSuccess = () => {
         if (!timeoutReached) {
             timeoutReached = true;
@@ -380,34 +376,25 @@ document.querySelectorAll('.image-container').forEach(container => {
         }
     };
 
-    // Function to handle the error case (image failed or timeout)
     const handleError = () => {
         if (!timeoutReached) {
             timeoutReached = true;
-            spinner.style.display = 'none'; // Hide the spinner
-            img.style.display = 'block';    // Show the image
-            img.src = '/assets/images/placeholder.svg';    // Set the fallback placeholder
+            spinner.style.display = 'none';
+            img.style.display = 'block';
+            img.src = '/assets/images/placeholder.svg';
         }
     };
 
-    // Add event listener for image load success
     img.onload = handleSuccess;
-
-    // Add error handling for failed image loading
     img.onerror = handleError;
 
-    // Explicitly handle cached images
     if (img.complete) {
-        // If the image is already complete (cached), check its natural width
         if (img.naturalWidth > 0) {
-            // Image has loaded successfully (cached or just loaded)
             handleSuccess();
         } else {
-            // Image failed to load (cached error or not found)
             handleError();
         }
     } else {
-        // Set a timeout to handle fallback if the image takes too long
         setTimeout(() => {
             if (!timeoutReached) handleError();
         }, timeout);

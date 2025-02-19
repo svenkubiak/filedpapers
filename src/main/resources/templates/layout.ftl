@@ -222,6 +222,15 @@
     </div>
 </div>
 <div class="toast-container"></div>
+<div id="i18n-js"
+     data-error='${i18n("toast.error")}'
+     data-bookmark-moved-success='${i18n("js.bookmark.moved")}'
+     data-category-deleted-success='${i18n("js.category.deleted")}'
+     data-trash-emptied-euccess='${i18n("js.trash.emptied")}'
+     data-bookmark-deleted-success='${i18n("js.bookmark.deleted")}'
+     data-category-created-success='${i18n("js.category.created")}'
+     data-bookmark-created-success='${i18n("js.bookmark.created")}'>
+</div>
 <script src="/assets/js/app.min.js"></script>
 <#if flash.toastsuccess??>
 <script>showToast("${flash.toastsuccess}");</script>

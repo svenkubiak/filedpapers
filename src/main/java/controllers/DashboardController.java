@@ -104,6 +104,7 @@ public class DashboardController {
                 .render("username", user.getUsername())
                 .render("confirmed", user.isConfirmed())
                 .render("mfa", user.isMfa())
+                .render("languages", Utils.getLanguages())
                 .render("language", Utils.language(user))
                 .render("qrCode", qrCode)
                 .render("active", "profile")

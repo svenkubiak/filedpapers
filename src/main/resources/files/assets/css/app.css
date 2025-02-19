@@ -1,4 +1,3 @@
-/* Custom styles for fixed sidebar and layout */
 .sidebar {
     position: fixed;
     left: 0;
@@ -632,4 +631,8 @@
 .card-image:first-child img {
     border-end-end-radius: unset;
     border-end-start-radius: unset;
+}
+
+.i18n-js {
+    display: none;
 }
