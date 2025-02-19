@@ -112,8 +112,18 @@ public final class Utils {
     }
 
     public static String language(User user) {
-        if (user == null || user.getLanguage() == null) return "en";
+        if (user == null || user.getLanguage() == null) return Const.DEFAULT_LANGUAGE;
 
-        return user.getLanguage().toString().toLowerCase();
+        return user.getLanguage();
+    }
+
+    public static Map<String, String> getLanguages() {
+        Map<String, String> languages = new HashMap<>();
+        for (String language : MangooUtils.getLanguages()) {
+            Locale locale = Locale.of(language);
+            languages.put(language, locale.getDisplayLanguage(locale));
+        }
+
+        return languages;
     }
 }

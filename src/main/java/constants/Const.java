@@ -15,6 +15,7 @@ public class Const {
     public static final String MFA_FALLBACK = "mfa-fallback";
     public static final String ACTION = "action";
     public static final String EMAIL_PREFIX = "[Filed Papers]";
+    public static final String DEFAULT_LANGUAGE = "en";
 
     private Const() {}
 }

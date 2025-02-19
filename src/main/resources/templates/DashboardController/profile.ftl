@@ -10,6 +10,9 @@
         <div class="profile-form">
             <form action="/dashboard/profile/enable-mfa" method="POST" class="profile-section">
                 <h2 class="section-title">${i18n("profile.mfa.title")}</h2>
+                <div class="notification is-info is-light">
+                    ${i18n("profile.mfa.info")}
+                </div>
                 <div class="form-field">
                     <div class="control has-icons-left">
                         <input class="checkbox" type="checkbox" name="mfa" <#if mfa>checked</#if>> ${i18n("profile.mfa.checkbox")}
@@ -37,12 +40,16 @@
             </form>
             <form action="/dashboard/profile/language" method="POST" class="profile-section">
                 <h2 class="section-title">${i18n("profile.language.title")}</h2>
+                <div class="notification is-info is-light">
+                    ${i18n("profile.language.info")}
+                </div>
                 <div class="form-field">
                     <div class="control has-icons-left">
                         <div class="select is-medium is-fullwidth">
                             <select name="language">
-                                <option value="de"<#if language == "de"> selected</#if>>Deutsch</option>
-                                <option value="en"<#if language == "en"> selected</#if>>English</option>
+                                <#list languages as key, value>
+                                    <option value="${key}"<#if language == key> selected</#if>>${value}</option>
+                                </#list>
                             </select>
                         </div>
                         <span class="icon is-medium is-left">

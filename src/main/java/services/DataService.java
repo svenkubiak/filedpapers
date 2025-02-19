@@ -19,7 +19,6 @@ import models.Action;
 import models.Category;
 import models.Item;
 import models.User;
-import models.enums.Language;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.util.Strings;
 import utils.Utils;
@@ -407,7 +406,7 @@ public class DataService {
 
         User user = findUserByUid(userUid);
         if (user != null) {
-            user.setLanguage(Language.valueOf(language.toUpperCase()));
+            user.setLanguage(language.toLowerCase());
             return datastore.save(user) != null;
         }
 
