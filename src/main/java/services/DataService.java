@@ -101,7 +101,7 @@ public class DataService {
                     "image", (item.getImage() == null) ? Strings.EMPTY : item.getImage(),
                     "title", item.getTitle(),
                     "sort", item.getTimestamp().toEpochSecond(ZoneOffset.UTC),
-                    "added", DateUtils.getPrettyTime(item.getTimestamp())));
+                    "added", DateUtils.getPrettyTime(item.getTimestamp()))); // FIX ME: Remove in later API version
         }
 
         return Optional.of(output);
