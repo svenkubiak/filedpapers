@@ -47,7 +47,7 @@ public class DataService {
         List<Category> categories = new ArrayList<>();
         datastore
                 .query(Category.class)
-                .find(eq("userUid", userUid)).into(categories);
+                .find(eq(Const.USER_UID, userUid)).into(categories);
 
         List<Map<String, Object>> output = new ArrayList<>();
         if (categories.size() >= 2) {
@@ -91,7 +91,7 @@ public class DataService {
         datastore
                 .query(Item.class)
                 .find(and(
-                        eq("userUid", userUid),
+                        eq(Const.USER_UID, userUid),
                         eq("categoryUid", categoryUid))).into(items);
 
         List<Map<String, Object>> output = new ArrayList<>();
@@ -122,7 +122,7 @@ public class DataService {
         datastore.save(trash);
 
         UpdateResult updateResult = datastore.query(Item.class).updateOne(and(
-                eq("userUid", userUid),
+                eq(Const.USER_UID, userUid),
                 eq("uid", uid)),
                     Updates.set("categoryUid", trash.getUid()));
 
@@ -137,7 +137,7 @@ public class DataService {
         datastore.save(trash);
 
         DeleteResult deleteResult = datastore.query(Item.class).deleteMany(and(
-                eq("userUid", userUid),
+                eq(Const.USER_UID, userUid),
                 eq("categoryUid", trash.getUid())));
 
         return deleteResult.wasAcknowledged();
@@ -148,7 +148,7 @@ public class DataService {
 
         return datastore.find(Category.class,
                 and(
-                    eq("userUid", userUid),
+                    eq(Const.USER_UID, userUid),
                     eq("name", Const.TRASH)));
     }
 
@@ -157,7 +157,7 @@ public class DataService {
 
         return datastore.find(Category.class,
                 and(
-                        eq("userUid", userUid),
+                        eq(Const.USER_UID, userUid),
                         eq("name", Const.INBOX)));
     }
 
@@ -168,7 +168,7 @@ public class DataService {
         return datastore.find(Category.class,
                 and(
                     eq("uid", uid),
-                    eq("userUid", userUid)));
+                    eq(Const.USER_UID, userUid)));
     }
 
     public Item findItem(String uid, String userUid) {
@@ -178,7 +178,7 @@ public class DataService {
         return datastore.find(Item.class,
                 and(
                         eq("uid", uid),
-                        eq("userUid", userUid)));
+                        eq(Const.USER_UID, userUid)));
     }
 
     public boolean moveItem(String uid, String userUid, String categoryUid) {
@@ -199,7 +199,7 @@ public class DataService {
 
             UpdateResult updateResult = datastore.query(Item.class).updateOne(
                     and(
-                            eq("userUid", userUid),
+                            eq(Const.USER_UID, userUid),
                             eq("uid", uid)),
                     Updates.set("categoryUid", categoryUid));
 
@@ -268,7 +268,7 @@ public class DataService {
             UpdateResult updateResult = datastore.query(Item.class)
                     .updateMany(
                             and(
-                                    eq("userUid", userUid),
+                                    eq(Const.USER_UID, userUid),
                                     eq("categoryUid", uid)),
                             Updates.set("categoryUid", trash.getUid()));
 
@@ -279,7 +279,7 @@ public class DataService {
             var deleteResult = datastore.query(Category.class)
                     .deleteOne(
                             and(
-                                    eq("userUid", userUid),
+                                    eq(Const.USER_UID, userUid),
                                     eq("uid", uid)));
 
             return deleteResult.getDeletedCount() == 1;
@@ -310,7 +310,7 @@ public class DataService {
         Objects.requireNonNull(name, Required.CATEGORY_NAME);
         Objects.requireNonNull(userUid, Required.USER_UID);
 
-        return datastore.find(Category.class, and(eq("name", name), eq("userUid", userUid)));
+        return datastore.find(Category.class, and(eq("name", name), eq(Const.USER_UID, userUid)));
     }
 
     public boolean deleteAccount(String password, String userUid) {
@@ -319,8 +319,8 @@ public class DataService {
 
         var user = findUserByUid(userUid);
         if (user != null && user.getPassword().equals(CodecUtils.hashArgon2(password, user.getSalt()))) {
-            DeleteResult deleteCategories = datastore.query(Category.class).deleteMany(eq("userUid", userUid));
-            DeleteResult deleteItems = datastore.query(Item.class).deleteMany(eq("userUid", userUid));
+            DeleteResult deleteCategories = datastore.query(Category.class).deleteMany(eq(Const.USER_UID, userUid));
+            DeleteResult deleteItems = datastore.query(Item.class).deleteMany(eq(Const.USER_UID, userUid));
             DeleteResult deleteUser = datastore.query(User.class).deleteOne(eq("uid", userUid));
 
             return deleteCategories.wasAcknowledged() && deleteItems.wasAcknowledged() && deleteUser.wasAcknowledged();

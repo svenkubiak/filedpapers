@@ -214,7 +214,7 @@ public class DashboardController {
                     }
                 }
             }
-        } catch (IOException e) {
+        } catch (Exception e) {
             //Intentionally left blank
         }
 

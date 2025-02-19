@@ -100,7 +100,7 @@ public final class IOUtils {
                 .replace("'", "&#39;");
     }
 
-    public static List<Leaf> importItems(String input) throws IOException {
+    public static List<Leaf> importItems(String input) {
         Document doc = Jsoup.parse(input, "UTF-8");
 
         // The root bookmark that will contain all others
