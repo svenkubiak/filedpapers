@@ -120,7 +120,7 @@ public final class Utils {
     public static Map<String, String> getLanguages() {
         Map<String, String> languages = new HashMap<>();
         for (String language : MangooUtils.getLanguages()) {
-            Locale locale = Locale.of(language);
+            var locale = Locale.of(language);
             languages.put(language, locale.getDisplayLanguage(locale));
         }
 

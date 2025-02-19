@@ -20,7 +20,7 @@ public final class IOUtils {
     }
 
     public static String exportItems(List<Leaf> bookmarks) {
-        StringBuilder buffer = new StringBuilder();
+        var buffer = new StringBuilder();
         buffer.append("<!DOCTYPE NETSCAPE-Bookmark-file-1>\n");
         buffer.append("<!-- This is an automatically generated file.\n");
         buffer.append("     It will be read and overwritten.\n");
@@ -104,12 +104,12 @@ public final class IOUtils {
         Document doc = Jsoup.parse(input, "UTF-8");
 
         // The root bookmark that will contain all others
-        Leaf root = new Leaf();
+        var root = new Leaf();
         root.setFolder(true);
         root.setTitle("Root");
 
         // Process all DL elements (bookmark folders)
-        Elements dls = doc.getElementsByTag("dl");
+        var dls = doc.getElementsByTag("dl");
         if (!dls.isEmpty()) {
             processDL(dls.first(), root);
         }
@@ -169,7 +169,7 @@ public final class IOUtils {
                         }
                     } else if (firstChild.is("a")) {
                         // This is a bookmark
-                        Leaf bookmark = new Leaf();
+                        var bookmark = new Leaf();
                         bookmark.setFolder(false);
                         bookmark.setTitle(firstChild.text());
                         bookmark.setUrl(firstChild.attr("href"));

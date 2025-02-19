@@ -112,8 +112,8 @@ public class DataService {
         Objects.requireNonNull(uid, Required.UID);
         Objects.requireNonNull(userUid, Required.USER_UID);
 
-        Item item = findItem(uid, userUid);
-        Category category = findCategory(item.getCategoryUid(), userUid);
+        var item = findItem(uid, userUid);
+        var category = findCategory(item.getCategoryUid(), userUid);
         category.setCount(category.getCount() - 1);
         datastore.save(category);
 
@@ -121,7 +121,7 @@ public class DataService {
         trash.setCount(trash.getCount() + 1);
         datastore.save(trash);
 
-        UpdateResult updateResult = datastore.query(Item.class).updateOne(and(
+        var updateResult = datastore.query(Item.class).updateOne(and(
                 eq(Const.USER_UID, userUid),
                 eq("uid", uid)),
                     Updates.set("categoryUid", trash.getUid()));
@@ -136,7 +136,7 @@ public class DataService {
         trash.setCount(0);
         datastore.save(trash);
 
-        DeleteResult deleteResult = datastore.query(Item.class).deleteMany(and(
+        var deleteResult = datastore.query(Item.class).deleteMany(and(
                 eq(Const.USER_UID, userUid),
                 eq("categoryUid", trash.getUid())));
 
@@ -186,9 +186,9 @@ public class DataService {
         Objects.requireNonNull(userUid, Required.USER_UID);
         Objects.requireNonNull(categoryUid, Required.CATEGORY_UID);
 
-        Item item = findItem(uid, userUid);
-        Category sourceCategory = findCategory(item.getCategoryUid(), userUid);
-        Category targetCategory = findCategory(categoryUid, userUid);
+        var item = findItem(uid, userUid);
+        var sourceCategory = findCategory(item.getCategoryUid(), userUid);
+        var targetCategory = findCategory(categoryUid, userUid);
 
         if (!sourceCategory.getUid().equals(targetCategory.getUid())) {
             sourceCategory.setCount(sourceCategory.getCount() - 1);
@@ -197,7 +197,7 @@ public class DataService {
             targetCategory.setCount(targetCategory.getCount() + 1);
             datastore.save(targetCategory);
 
-            UpdateResult updateResult = datastore.query(Item.class).updateOne(
+            var updateResult = datastore.query(Item.class).updateOne(
                     and(
                             eq(Const.USER_UID, userUid),
                             eq("uid", uid)),
@@ -238,7 +238,7 @@ public class DataService {
                 category.setCount(category.getCount() + 1);
                 String categoryResult = datastore.save(category);
 
-                Item item = new Item(userUid, category.getUid(), url, previewImage, title);
+                var item = new Item(userUid, category.getUid(), url, previewImage, title);
                 String itemResult = datastore.save(item);
 
                 return StringUtils.isNoneBlank(categoryResult, itemResult);
@@ -265,7 +265,7 @@ public class DataService {
         Category trash = findTrash(userUid);
 
         if (!uid.equals(inbox.getUid()) && !uid.equals(trash.getUid())) {
-            UpdateResult updateResult = datastore.query(Item.class)
+            var updateResult = datastore.query(Item.class)
                     .updateMany(
                             and(
                                     eq(Const.USER_UID, userUid),
@@ -404,7 +404,7 @@ public class DataService {
         Objects.requireNonNull(userUid, Required.USER_UID);
         Objects.requireNonNull(language, Required.LANGUAGE);
 
-        User user = findUserByUid(userUid);
+        var user = findUserByUid(userUid);
         if (user != null) {
             user.setLanguage(language.toLowerCase());
             return datastore.save(user) != null;

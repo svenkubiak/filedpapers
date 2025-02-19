@@ -31,7 +31,6 @@ import utils.IOUtils;
 import utils.Utils;
 import utils.io.Leaf;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -249,16 +248,16 @@ public class DashboardController {
 
                     List<Map<String, Object>> items = dataService.findItems(userUid, uid).orElse(List.of());
 
-                    Leaf folderLeaf = new Leaf();
+                    var folderLeaf = new Leaf();
                     folderLeaf.setFolder(true);
                     folderLeaf.setTitle(name);
 
                     items.stream()
                             .map(item -> {
                                 String itemUid = (String) item.get("uid");
-                                Item dataItem = dataService.findItem(itemUid, userUid);
+                                var dataItem = dataService.findItem(itemUid, userUid);
 
-                                Leaf itemLeaf = new Leaf();
+                                var itemLeaf = new Leaf();
                                 itemLeaf.setFolder(false);
                                 itemLeaf.setUrl(dataItem.getUrl());
                                 itemLeaf.setDataCover(dataItem.getImage());
@@ -293,7 +292,7 @@ public class DashboardController {
             String username = form.get("username");
             String password = form.get("password");
 
-            User user = dataService.findUserByUid(userUid);
+            var user = dataService.findUserByUid(userUid);
             if (user.getPassword().equals(CodecUtils.hashArgon2(password, user.getSalt()))) {
                 user.setUsername(username);
                 user.setConfirmed(false);
