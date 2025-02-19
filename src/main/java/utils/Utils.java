@@ -7,8 +7,8 @@ import io.mangoo.utils.MangooUtils;
 import io.mangoo.utils.paseto.PasetoBuilder;
 import io.mangoo.utils.paseto.PasetoParser;
 import io.mangoo.utils.paseto.Token;
-import org.apache.commons.lang3.StringUtils;
 import models.User;
+import org.apache.commons.lang3.StringUtils;
 
 import java.net.URI;
 import java.time.LocalDateTime;
