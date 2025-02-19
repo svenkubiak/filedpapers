@@ -37,6 +37,9 @@ default:
       name: __Host-filedpapers-flash
       secret: arg{}
       secure: true
+  i18n:
+    cookie:
+      name: __Host-filedpapers-i18n
   smtp:
     host: arg{}
     port: arg{}
