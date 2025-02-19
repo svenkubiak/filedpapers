@@ -557,7 +557,7 @@
 
 [data-tooltip]:before {
     content: attr(data-tooltip);
-    position: fixed;
+    position: absolute;
     bottom: 100%;
     right: 0;
     transform: translateY(-10px);
@@ -570,13 +570,12 @@
     opacity: 0;
     visibility: hidden;
     transition: opacity 0.2s;
-    z-index: 9999;
+    z-index: 1000;
 }
 
 [data-tooltip]:hover:before {
     opacity: 1;
     visibility: visible;
-    z-index: 9999;
 }
 
 .image-container {
