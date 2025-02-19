@@ -6,17 +6,17 @@ GHCR_USERNAME="svenkubiak"
 REPO_NAME="filedpapers"
 GHCR_URL="ghcr.io"
 
-#mvn release:clean
-#mvn clean verify
+mvn release:clean
+mvn clean verify
 
-#if [ $? -ne 0 ]; then
-#  echo "Maven build failed! Exiting..."
-#  exit 1
-#else
-#  echo "Maven build succeeded."
-#fi
+if [ $? -ne 0 ]; then
+  echo "Maven build failed! Exiting..."
+  exit 1
+else
+  echo "Maven build succeeded."
+fi
 
-#mvn versions:set
+mvn versions:set
 STATUS=$?
 IMAGE_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
 IMAGE_FULL_PATH="$GHCR_URL/$GHCR_USERNAME/$REPO_NAME/$IMAGE_NAME:$IMAGE_VERSION"

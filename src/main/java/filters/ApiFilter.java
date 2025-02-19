@@ -8,7 +8,6 @@ import io.mangoo.interfaces.filters.PerRequestFilter;
 import io.mangoo.routing.Response;
 import io.mangoo.routing.bindings.Request;
 import io.mangoo.utils.RequestUtils;
-import io.undertow.server.handlers.Cookie;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import services.DataService;

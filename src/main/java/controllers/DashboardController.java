@@ -21,7 +21,6 @@ import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import models.Action;
 import models.Item;
-import models.User;
 import models.enums.Type;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.util.Strings;
@@ -77,7 +76,7 @@ public class DashboardController {
                 .render("breadcrumb", category.getName())
                 .render("categories", categories.orElseThrow())
                 .render("categoryUid", category.getUid())
-                .render("items", items.orElseThrow() );
+                .render("items", Utils.convertItems(items.orElseThrow()));
     }
 
     public Response profile(Authentication authentication, Flash flash) {

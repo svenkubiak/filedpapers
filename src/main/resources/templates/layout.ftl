@@ -39,7 +39,13 @@
                         <i class="fas fa-folder"></i>
                     </#if>
                     </span>
-                        ${category.name}
+                        <#if slug == "inbox">
+                            ${i18n("layout.inbox.name")}
+                        <#elseif slug == "trash">
+                            ${i18n("layout.trash.name")}
+                        <#else>
+                            ${category.name}
+                        </#if>
                         <span class="tag is-rounded is-pulled-right">${category.count}</span>
                     </a>
                 </li>

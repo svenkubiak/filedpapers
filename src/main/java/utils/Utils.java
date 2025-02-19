@@ -11,7 +11,9 @@ import models.User;
 import org.apache.commons.lang3.StringUtils;
 
 import java.net.URI;
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.*;
 
 public final class Utils {
@@ -125,5 +127,23 @@ public final class Utils {
         }
 
         return languages;
+    }
+
+    public static List<Map<String, Object>> convertItems(List<Map<String, Object>> items) {
+        Objects.requireNonNull(items, Required.ITEMS);
+
+        List<Map<String, Object>> list = new ArrayList<>();
+        for (Map<String, Object> item : items) {
+            Map<String, Object> map = new HashMap<>(item);
+
+            Instant instant = Instant.ofEpochSecond(((long) item.get("sort")));
+            LocalDateTime localDateTime = LocalDateTime
+                    .ofInstant(instant, ZoneOffset.UTC);
+
+            map.put("sort", localDateTime);
+            list.add(map);
+        }
+
+        return list;
     }
 }
