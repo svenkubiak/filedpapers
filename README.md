@@ -23,6 +23,11 @@ Why Choose Filed Papers?
 - Focused Simplicity: A clean, intuitive interface designed to make managing bookmarks straightforward and effective.
 - Perfect for Professionals and Privacy-Conscious Users: Whether for research, work, or personal use, Filed Papers offers the ideal balance of organization and security. 
 
+## Available languages
+
+- German
+- English
+
 ## Resources
 
 **Homepage**   
