@@ -2,11 +2,16 @@ package utils;
 
 import constants.Const;
 import constants.Required;
+import io.mangoo.core.Config;
 import io.mangoo.exceptions.MangooTokenException;
+import io.mangoo.utils.DateUtils;
 import io.mangoo.utils.MangooUtils;
 import io.mangoo.utils.paseto.PasetoBuilder;
 import io.mangoo.utils.paseto.PasetoParser;
 import io.mangoo.utils.paseto.Token;
+import io.undertow.server.handlers.Cookie;
+import io.undertow.server.handlers.CookieImpl;
+import io.undertow.server.handlers.CookieSameSiteMode;
 import models.User;
 import org.apache.commons.lang3.StringUtils;
 
@@ -145,5 +150,30 @@ public final class Utils {
         }
 
         return list;
+    }
+
+    public static Cookie getLanguageCookie(String language, Config config, boolean rememberMe) {
+        Objects.requireNonNull(language, Required.LANGUAGE);
+        Objects.requireNonNull(config, Required.CONFIG);
+
+        Cookie cookie = new CookieImpl(config.getI18nCookieName());
+        cookie.setValue(language);
+        cookie.setHttpOnly(true);
+        cookie.setSecure(config.isAuthenticationCookieSecure());
+        cookie.setSameSite(true);
+        cookie.setSameSiteMode(CookieSameSiteMode.STRICT.toString());
+        cookie.setPath("/");
+
+        if (rememberMe) {
+            cookie.setExpires(DateUtils.localDateTimeToDate(
+                    LocalDateTime.now()
+                            .plusHours(config.getAuthenticationCookieRememberExpires())));
+        } else if (config.isAuthenticationCookieExpires()) {
+            cookie.setExpires(DateUtils.localDateTimeToDate(
+                    LocalDateTime.now()
+                            .plusMinutes(config.getAuthenticationCookieTokenExpires())));
+        }
+
+        return cookie;
     }
 }

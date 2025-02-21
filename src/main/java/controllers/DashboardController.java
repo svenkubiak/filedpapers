@@ -128,18 +128,11 @@ public class DashboardController {
         if (form.isValid() && dataService.updateLanguage(userUid, form.get("language"))) {
             flash.put(Const.TOAST_SUCCESS, messages.get("toast.language.success"));
 
-            long expires = (authentication.isRememberMe()) ? config.getAuthenticationCookieRememberExpires() : config.getAuthenticationCookieTokenExpires();
+            Cookie cookie = Utils.getLanguageCookie(form.get("language"), config, authentication.isRememberMe());
 
-            Cookie cookie = new CookieImpl(config.getI18nCookieName());
-            cookie.setValue(form.get("language"));
-            cookie.setHttpOnly(true);
-            cookie.setSecure(config.isAuthenticationCookieSecure());
-            cookie.setSameSite(true);
-            cookie.setSameSiteMode(CookieSameSiteMode.STRICT.toString());
-            cookie.setExpires(DateUtils.localDateTimeToDate(LocalDateTime.now().plusMinutes(expires)));
-            cookie.setPath("/");
-
-            return Response.redirect("/dashboard/profile").cookie(cookie);
+            return Response
+                    .redirect("/dashboard/profile")
+                    .cookie(cookie);
         } else {
             flash.put(TOAST_ERROR, messages.get("toast.error"));
         }
