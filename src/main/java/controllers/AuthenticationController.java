@@ -9,12 +9,9 @@ import io.mangoo.i18n.Messages;
 import io.mangoo.routing.Response;
 import io.mangoo.routing.bindings.*;
 import io.mangoo.utils.CodecUtils;
-import io.mangoo.utils.DateUtils;
 import io.mangoo.utils.MangooUtils;
 import io.mangoo.utils.totp.TotpUtils;
 import io.undertow.server.handlers.Cookie;
-import io.undertow.server.handlers.CookieImpl;
-import io.undertow.server.handlers.CookieSameSiteMode;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import models.Action;
@@ -25,7 +22,6 @@ import services.DataService;
 import services.NotificationService;
 import utils.Utils;
 
-import java.time.LocalDateTime;
 import java.util.Objects;
 
 public class AuthenticationController {
