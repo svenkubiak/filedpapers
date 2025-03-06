@@ -59,7 +59,7 @@ Before starting the installation process, make sure you have the following prere
 
 - **Docker**: Ensure Docker is installed and running on your system
 - **Docker Compose**: Make sure Docker Compose is installed to manage multi-container applications
-- **Web Frontend Server**: A frontend HTTP server (e.g., Nginx) to handle SSL termination and proxy requests to the backend.
+- **Web Frontend Server**: A frontend HTTP server (e.g. Nginx) to handle SSL termination and proxy requests to the backend.
 - **SMTP Server**: A SMTP server for sending emails like registration confirmation, or password reset, etc.
 
 ## Installation
