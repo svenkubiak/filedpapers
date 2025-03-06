@@ -400,3 +400,17 @@ document.querySelectorAll('.image-container').forEach(container => {
         }, timeout);
     }
 });
+
+document.getElementById('searchInput').addEventListener('input', function(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    const cards = document.querySelectorAll('.card');
+
+    cards.forEach(card => {
+        const title = card.querySelector('.card-title').textContent.toLowerCase();
+        if (title.includes(searchTerm)) {
+            card.closest('.column').style.display = '';
+        } else {
+            card.closest('.column').style.display = 'none';
+        }
+    });
+});
