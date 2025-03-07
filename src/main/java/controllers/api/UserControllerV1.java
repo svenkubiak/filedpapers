@@ -5,36 +5,22 @@ import constants.Required;
 import io.mangoo.exceptions.MangooTokenException;
 import io.mangoo.routing.Response;
 import jakarta.inject.Inject;
-import jakarta.inject.Named;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
+import services.AuthenticationService;
 import services.DataService;
-import utils.Utils;
 
 import java.util.Map;
 import java.util.Objects;
 
 public class UserControllerV1 {
     private final DataService dataService;
-    private final String accessTokenSecret;
-    private final String refreshTokenSecret;
-    private final String challengeTokenSecret;
-    private final int accessTokenExpires;
-    private final int refreshTokenExpires;
+    private final AuthenticationService authenticationService;
 
     @Inject
-    public UserControllerV1(DataService dataService,
-                            @Named("api.challengeToken.secret") String challengeTokenSecret,
-                            @Named("api.accessToken.secret") String accessTokenSecret,
-                            @Named("api.refreshToken.secret") String refreshTokenSecret,
-                            @Named("api.accessToken.expires") int accessTokenExpires,
-                            @Named("api.refreshToken.expires") int refreshTokenExpires) {
+    public UserControllerV1(DataService dataService, AuthenticationService authenticationService) {
         this.dataService = Objects.requireNonNull(dataService, Required.DATA_SERVICE);
-        this.challengeTokenSecret = Objects.requireNonNull(challengeTokenSecret, Required.CHALLENGE_TOKEN_SECRET);
-        this.accessTokenSecret = Objects.requireNonNull(accessTokenSecret, Required.ACCESS_TOKEN_SECRET);
-        this.refreshTokenSecret = Objects.requireNonNull(refreshTokenSecret, Required.REFRESH_TOKEN_SECRET);
-        this.accessTokenExpires = accessTokenExpires;
-        this.refreshTokenExpires = refreshTokenExpires;
+        this.authenticationService = Objects.requireNonNull(authenticationService, Required.AUTHENTICATION_SERVICE);
     }
 
     public Response login(Map<String, String> credentials) {
@@ -50,10 +36,10 @@ public class UserControllerV1 {
                     try {
                         if (dataService.userHasMfa(userUid)) {
                             return Response.accepted()
-                                    .bodyJson(Utils.getChallengeToken(userUid, challengeTokenSecret));
+                                    .bodyJson(authenticationService.getChallengeToken(userUid));
                         } else {
                             return Response.ok()
-                                    .bodyJson(Utils.getAccessTokens(userUid, accessTokenSecret, refreshTokenSecret, accessTokenExpires, refreshTokenExpires));
+                                    .bodyJson(authenticationService.getAccessTokens(userUid));
                         }
                     } catch (MangooTokenException e) {
                         return Response.unauthorized();
@@ -70,17 +56,16 @@ public class UserControllerV1 {
         }
 
         try {
-            var token = Utils.parsePaseto(challengeToken, challengeTokenSecret);
+            var token = authenticationService.parseChallengeToken(challengeToken);
             if (token == null) {
                 return Response.forbidden();
             }
 
-            return Utils.validateToken(token)
+            return authenticationService.validateToken(token)
                     .filter(userUid -> dataService.isValidMfa(userUid, otp))
                     .map(userUid -> {
                         try {
-                            return Response.ok().bodyJson(
-                                    Utils.getAccessTokens(userUid, accessTokenSecret, refreshTokenSecret, accessTokenExpires, refreshTokenExpires));
+                            return Response.ok().bodyJson(authenticationService.getAccessTokens(userUid));
                         } catch (MangooTokenException e) {
                             return Response.forbidden();
                         }
@@ -99,16 +84,16 @@ public class UserControllerV1 {
         }
 
         try {
-            var token = Utils.parsePaseto(refreshToken, refreshTokenSecret);
+            var token = authenticationService.parseRefreshToken(refreshToken);
             if (token == null) {
                 return Response.unauthorized();
             }
 
-            return Utils.validateToken(token)
+            return authenticationService.validateToken(token)
                     .map(userUid -> {
                         try {
                             return Response.ok().bodyJson(
-                                    Utils.getAccessTokens(userUid, accessTokenSecret, refreshTokenSecret, accessTokenExpires, refreshTokenExpires));
+                                    authenticationService.getAccessTokens(userUid));
                         } catch (MangooTokenException e) {
                             return Response.unauthorized();
                         }

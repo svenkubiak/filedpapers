@@ -38,6 +38,28 @@
                     </div>
                 </#if>
             </form>
+            <form action="/dashboard/profile/logout-devices" method="POST" class="profile-section">
+                <h2 class="section-title">${i18n("profile.logout.devices.title")}</h2>
+                <div class="notification is-info is-light">
+                    ${i18n("profile.logout.devices.info")}
+                </div>
+                <div class="form-field">
+                    <div class="control">
+                        <button type="submit" class="button is-link is-fullwidth" id="logout-devices">
+                            ${i18n("profile.logout.devices.submit")}
+                        </button>
+                    </div>
+                </div>
+                <#if mfaFallback??>
+                    <div class="notification is-warning">
+                        ${i18n("profile.mfa.fallback.1")}
+                        <br><br>
+                        🔒 ${i18n("profile.mfa.fallback.2")}: <code>${mfaFallback}</code>
+                        <br><br>
+                        ${i18n("profile.mfa.fallback.3")}
+                    </div>
+                </#if>
+            </form>
             <form action="/dashboard/profile/language" method="POST" class="profile-section">
                 <h2 class="section-title">${i18n("profile.language.title")}</h2>
                 <div class="notification is-info is-light">

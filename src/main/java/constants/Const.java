@@ -10,6 +10,7 @@ public class Const {
     public static final String ACCESS_TOKEN = "accessToken";
     public static final String REFRESH_TOKEN = "refreshToken";
     public static final String NONCE = "nonce";
+    public static final String PEPPER = "pepper";
     public static final String PLACEHOLDER_IMAGE = "/assets/images/placeholder.png";
     public static final String OTP = "otp";
     public static final String MFA_FALLBACK = "mfa-fallback";

@@ -8,28 +8,26 @@ import io.mangoo.interfaces.filters.PerRequestFilter;
 import io.mangoo.routing.Response;
 import io.mangoo.routing.bindings.Request;
 import io.mangoo.utils.RequestUtils;
+import io.mangoo.utils.paseto.Token;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
+import services.AuthenticationService;
 import services.DataService;
-import utils.Utils;
 
 import java.util.Objects;
 
 public class ApiFilter implements PerRequestFilter {
     private final DataService dataService;
-    private final String apiSecret;
+    private final AuthenticationService authenticationService;
     private final String cookieName;
-    private final String cookieSecret;
 
     @Inject
     public ApiFilter(DataService dataService,
-                     @Named("api.accessToken.secret") String apiSecret,
-                     @Named(Key.AUTHENTICATION_COOKIE_NAME) String cookieName,
-                     @Named(Key.AUTHENTICATION_COOKIE_SECRET) String cookieSecret) {
+                     AuthenticationService authenticationService,
+                     @Named(Key.AUTHENTICATION_COOKIE_NAME) String cookieName) {
         this.dataService = Objects.requireNonNull(dataService, Required.DATA_SERVICE);
-        this.apiSecret = Objects.requireNonNull(apiSecret, Required.API_SECRET);
+        this.authenticationService = Objects.requireNonNull(authenticationService, Required.DATA_SERVICE);
         this.cookieName = Objects.requireNonNull(cookieName, Required.COOKIE_NAME);
-        this.cookieSecret = Objects.requireNonNull(cookieSecret, Required.COOKIE_SECRET);
     }
 
     @Override
@@ -37,19 +35,25 @@ public class ApiFilter implements PerRequestFilter {
         var cookie = request.getCookie(cookieName);
         if (cookie != null) {
             String cookieValue = cookie.getValue();
-            return authorize(cookieValue, request, response, cookieSecret);
+            return authorize(cookieValue, request, response, true);
         }
 
         return RequestUtils.getAuthorizationHeader(request)
-                .map(authorization -> authorize(authorization, request, response, apiSecret))
+                .map(authorization -> authorize(authorization, request, response, false))
                 .orElseGet(() -> Response.unauthorized().end());
     }
 
-    private Response authorize(String authorization, Request request, Response response, String secret) {
+    private Response authorize(String authorization, Request request, Response response, boolean cookie) {
         try {
-            var token = Utils.parsePaseto(authorization, secret);
+            Token token = null;
+            if (cookie) {
+                token = authenticationService.parseAuthenticationCookie(authorization);
+            } else {
+                token = authenticationService.parseAccessToken(authorization);
+            }
+
             if (token != null) {
-                return Utils.validateToken(token).map(userUid -> {
+                return authenticationService.validateToken(token).map(userUid -> {
                     if (dataService.userExists(userUid)) {
                         request.addAttribute(Const.USER_UID, userUid);
                         return response;

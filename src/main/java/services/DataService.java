@@ -411,4 +411,16 @@ public class DataService {
 
         return false;
     }
+
+    public boolean updatePepper(String userUid) {
+        Objects.requireNonNull(userUid, Required.USER_UID);
+
+        var user = findUserByUid(userUid);
+        if (user != null) {
+            user.setPepper(MangooUtils.randomString(64));
+            return datastore.save(user) != null;
+        }
+
+        return false;
+    }
 }

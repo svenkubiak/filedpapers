@@ -8,11 +8,13 @@ const trashEmptiedSuccess = document.getElementById('i18n-js').dataset.trashEmpt
 const bookmarkDeletedSuccess = document.getElementById('i18n-js').dataset.bookmarkDeletedSuccess;
 const categoryCreatedSuccess = document.getElementById('i18n-js').dataset.categoryCreatedSuccess;
 const bookmarkCreatedSuccess = document.getElementById('i18n-js').dataset.bookmarkCreatedSuccess;
+const logoutDevicesSuccess = document.getElementById('i18n-js').dataset.logoutDevicesSuccess;
 const $addButton = document.getElementById('add-category-button');
 const $addBookmark = document.getElementById('add-bookmark-modal');
 const $modal = document.getElementById('add-category-modal');
 const $deleteModal = document.getElementById('delete-confirm-modal');
 const $deleteAccountModal = document.getElementById('delete-account-modal');
+const $logoutDevicesModal = document.getElementById('logout-devices-confirm-modal');
 const $deleteCategoryModal = document.getElementById('delete-category-confirm-modal');
 const $emptyTrashModal = document.getElementById('empty-trash-confirm-modal');
 const $closeButtons = document.querySelectorAll('.modal-background, .modal-card-head .delete, .modal-card-foot .button:not(.is-danger)');
@@ -21,6 +23,7 @@ const categoryTargets = document.querySelectorAll('.menu-list a[data-category]')
 const $addBookmarkSubmit = document.getElementById('add-category-submit');
 const $confirmAddBookmark = document.getElementById('confirm-add-bookmark');
 const deleteAccount = document.getElementById('delete-account');
+const logoutDevices = document.getElementById('logout-devices');
 const $bookmarkUrl = document.getElementById('bookmark-url');
 const fabButton = document.getElementById('fab-add-bookmark');
 const applicationJson = "application/json";
@@ -150,6 +153,14 @@ if (deleteAccount) {
     });
 }
 
+if (logoutDevices) {
+    logoutDevices.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        openModal($logoutDevicesModal);
+    });
+}
+
 document.querySelectorAll('.category-trash').forEach(trashIcon => {
     trashIcon.addEventListener('click', (e) => {
         e.preventDefault();
@@ -187,6 +198,21 @@ document.getElementById('confirm-category-delete').addEventListener('click', asy
         window.location.href = "/dashboard";
     }
     closeModal($deleteCategoryModal);
+});
+
+document.getElementById('confirm-logout-devices').addEventListener('click', async () => {
+    const response = await fetch("/dashboard/profile/logout-devices", {
+        method: "POST",
+    });
+
+    if (response.ok) {
+        sessionStorage.setItem(toastSuccess, logoutDevicesSuccess);
+    } else {
+        sessionStorage.setItem(toastError, error);
+    }
+
+    closeAllModals();
+    window.location.href = "/dashboard/profile";
 });
 
 document.getElementById('confirm-empty-trash').addEventListener('click', async () => {

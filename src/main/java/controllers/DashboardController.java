@@ -116,6 +116,16 @@ public class DashboardController {
         return Response.redirect("/dashboard/profile");
     }
 
+    public Response doLogoutDevices(Authentication authentication, Flash flash) {
+        String userUid = authentication.getSubject();
+
+        if (dataService.updatePepper(userUid)) {
+            return Response.ok();
+        } else {
+            return Response.badRequest();
+        }
+    }
+
     public Response doLanguage(Authentication authentication, Form form, Flash flash) {
         String userUid = authentication.getSubject();
         form.expectValue("language");

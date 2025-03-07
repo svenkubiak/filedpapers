@@ -23,6 +23,7 @@ public class User extends Entity implements Serializable  {
     private String password;
 
     private String salt;
+    private String pepper;
     private String mfaSecret;
     private String mfaFallback;
     private String language;
@@ -33,6 +34,7 @@ public class User extends Entity implements Serializable  {
         this.username = Objects.requireNonNull(username, Required.USERNAME);
         this.uid = CodecUtils.uuid();
         this.salt = MangooUtils.randomString(64);
+        this.pepper = MangooUtils.randomString(64);
         this.mfaSecret = MangooUtils.randomString(64);
         this.language = Const.DEFAULT_LANGUAGE;
     }
@@ -110,5 +112,13 @@ public class User extends Entity implements Serializable  {
 
     public void setLanguage(String language) {
         this.language = language;
+    }
+
+    public String getPepper() {
+        return pepper;
+    }
+
+    public void setPepper(String pepper) {
+        this.pepper = pepper;
     }
 }

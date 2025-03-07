@@ -33,6 +33,7 @@ public final class Required {
     public static final String CONFIG = "config can not be null";
     public static final String LANGUAGE = "language can not be null";
     public static final String ITEMS = "items can not be null";
+    public static final String AUTHENTICATION_SERVICE = "authenticationService can not be null" ;
 
     private Required() {}
 }
