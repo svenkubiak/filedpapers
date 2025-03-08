@@ -116,7 +116,7 @@ public class DashboardController {
         return Response.redirect("/dashboard/profile");
     }
 
-    public Response doLogoutDevices(Authentication authentication, Flash flash) {
+    public Response doLogoutDevices(Authentication authentication) {
         String userUid = authentication.getSubject();
 
         if (dataService.updatePepper(userUid)) {

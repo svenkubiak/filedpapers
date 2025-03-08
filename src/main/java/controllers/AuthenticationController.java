@@ -81,7 +81,7 @@ public class AuthenticationController {
                 authentication.rememberMe(rememberme);
                 authentication.twoFactorAuthentication(user.isMfa());
 
-                Cookie cookie = Utils.getLanguageCookie(Utils.language(user), config, authentication.isRememberMe());
+                var cookie = Utils.getLanguageCookie(Utils.language(user), config, authentication.isRememberMe());
 
                 return Response
                         .redirect("/dashboard")

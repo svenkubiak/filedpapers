@@ -75,8 +75,8 @@ public final class Utils {
         for (Map<String, Object> item : items) {
             Map<String, Object> map = new HashMap<>(item);
 
-            Instant instant = Instant.ofEpochSecond(((long) item.get("sort")));
-            LocalDateTime localDateTime = LocalDateTime
+            var instant = Instant.ofEpochSecond(((long) item.get("sort")));
+            var localDateTime = LocalDateTime
                     .ofInstant(instant, ZoneOffset.UTC);
 
             map.put("sort", localDateTime);

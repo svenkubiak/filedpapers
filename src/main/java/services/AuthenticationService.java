@@ -88,7 +88,7 @@ public class AuthenticationService {
         Objects.requireNonNull(userUid, Required.USER_UID);
 
         String pepper = Strings.EMPTY;
-        User user = dataService.findUserByUid(userUid);
+        var user = dataService.findUserByUid(userUid);
         if (user != null) {
             pepper = user.getPepper();
             if (StringUtils.isBlank(pepper)) {
