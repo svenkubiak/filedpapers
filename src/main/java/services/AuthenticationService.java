@@ -10,7 +10,6 @@ import io.mangoo.utils.paseto.PasetoParser;
 import io.mangoo.utils.paseto.Token;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
-import models.User;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.util.Strings;
 import utils.Utils;

@@ -134,8 +134,7 @@ public class DashboardController {
         if (form.isValid() && dataService.updateLanguage(userUid, form.get("language"))) {
             flash.put(Const.TOAST_SUCCESS, messages.get("toast.language.success"));
 
-            Cookie cookie = Utils.getLanguageCookie(form.get("language"), config, authentication.isRememberMe());
-
+            var cookie = Utils.getLanguageCookie(form.get("language"), config, authentication.isRememberMe());
             return Response
                     .redirect("/dashboard/profile")
                     .cookie(cookie);
