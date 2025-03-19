@@ -64,6 +64,17 @@ public class DataService {
         return Optional.empty();
     }
 
+    public long countItems(String userUid, String categoryUid) {
+        Objects.requireNonNull(userUid, Required.USER_UID);
+
+        if (StringUtils.isBlank(categoryUid) || ("null").equals(categoryUid)) {
+            categoryUid = findInbox(userUid).getUid();
+        }
+
+        return datastore.countAll(Item.class,
+                and(eq(Const.USER_UID, userUid), eq(Const.CATEGORY_UID, categoryUid)));
+    }
+
     public boolean userExists(String userUid) {
         Objects.requireNonNull(userUid, Required.USER_UID);
         return datastore.find(User.class, eq("uid", userUid)) != null;

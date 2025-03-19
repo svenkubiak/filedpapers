@@ -30,6 +30,21 @@ public class CategoriesControllerV1 {
                 .orElseGet(Response::badRequest);
     }
 
+    public Response poll(String categoryUid, Request request, Map<String, Integer> data) {
+        String userUid = request.getAttribute(Const.USER_UID);
+
+        if (data != null) {
+            long items = dataService.countItems(userUid, categoryUid);
+            long count = data.get("count");
+
+            if (items != count) {
+                return Response.ok();
+            }
+        }
+
+        return Response.notModified();
+    }
+
     public Response add(Request request, Map<String, String> data) {
         String userUid = request.getAttribute(Const.USER_UID);
 

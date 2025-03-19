@@ -16,6 +16,7 @@ public class Const {
     public static final String TOAST_ERROR = "toasterror";
     public static final String TOAST_SUCCESS = "toastsuccess";
     public static final String TRASH = "Trash";
+    public static final String CATEGORY_UID = "categoryUid";
     public static final String USER_UID = "userUid";
 
     private Const() {}

@@ -440,3 +440,29 @@ document.getElementById('searchInput').addEventListener('input', function(e) {
         }
     });
 });
+
+async function pollServer() {
+    try {
+        let count = document.querySelectorAll('.card');
+
+        const path = window.location.pathname;
+        const match = path.match(/\/dashboard\/(.+)/);
+        const uid = match ? match[1] : null;
+
+        const response = await fetch("/api/v1/categories/poll/" + uid, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({ "count": count.length })
+        });
+
+        if (response.ok) {
+            location.reload();
+        }
+
+        setTimeout(pollServer, 3000);
+    } catch (error) {}
+}
+
+pollServer();
