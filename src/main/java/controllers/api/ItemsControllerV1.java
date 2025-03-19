@@ -12,7 +12,6 @@ import jakarta.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
 import services.DataService;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
@@ -25,7 +24,7 @@ public class ItemsControllerV1 {
         this.dataService = Objects.requireNonNull(dataService, Required.DATA_SERVICE);
     }
 
-    public Response add(Request request, boolean async, HashMap<String, String> data) {
+    public Response add(Request request, boolean async, Map<String, String> data) {
         String userUid = request.getAttribute(Const.USER_UID);
         String url = data.get("url");
         String category = data.get("category");
@@ -87,7 +86,7 @@ public class ItemsControllerV1 {
         return Response.badRequest();
     }
 
-    public Response move(Request request, HashMap<String, String> data) {
+    public Response move(Request request, Map<String, String> data) {
         String userUid = request.getAttribute(Const.USER_UID);
         String categoryUid = data.get("category");
         String uid = data.get("uid");

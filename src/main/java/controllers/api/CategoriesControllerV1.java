@@ -33,10 +33,10 @@ public class CategoriesControllerV1 {
     public Response poll(Request request, Map<String, String> data) {
         String userUid = request.getAttribute(Const.USER_UID);
 
-        if (data != null) {
-            String categoryUid = data.get("category");
+        if (!data.isEmpty()
+                && !StringUtils.isAnyBlank(data.get("category"), data.get("count"))) {
             long count = Long.parseLong(data.get("count"));
-            long items = dataService.countItems(userUid, categoryUid);
+            long items = dataService.countItems(userUid, data.get("category"));
 
             if (items > 0 && items != count) {
                 return Response.ok();
@@ -49,7 +49,7 @@ public class CategoriesControllerV1 {
     public Response add(Request request, Map<String, String> data) {
         String userUid = request.getAttribute(Const.USER_UID);
 
-        if (data != null
+        if (!data.isEmpty()
                 && StringUtils.isNotBlank(data.get("name"))
                 && dataService.addCategory(userUid, data.get("name"))) {
             return Response.ok();

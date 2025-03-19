@@ -13,7 +13,6 @@ import io.mangoo.routing.bindings.Session;
 import io.mangoo.utils.CodecUtils;
 import io.mangoo.utils.MangooUtils;
 import io.mangoo.utils.totp.TotpUtils;
-import io.undertow.server.handlers.Cookie;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import models.Action;
