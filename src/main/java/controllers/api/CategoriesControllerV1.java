@@ -30,14 +30,15 @@ public class CategoriesControllerV1 {
                 .orElseGet(Response::badRequest);
     }
 
-    public Response poll(String categoryUid, Request request, Map<String, Integer> data) {
+    public Response poll(Request request, Map<String, String> data) {
         String userUid = request.getAttribute(Const.USER_UID);
 
         if (data != null) {
+            String categoryUid = data.get("category");
+            long count = Long.parseLong(data.get("count"));
             long items = dataService.countItems(userUid, categoryUid);
-            long count = data.get("count");
 
-            if (items != count) {
+            if (items > 0 && items != count) {
                 return Response.ok();
             }
         }

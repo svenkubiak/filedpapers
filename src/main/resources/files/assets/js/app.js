@@ -441,7 +441,7 @@ document.getElementById('searchInput').addEventListener('input', function(e) {
     });
 });
 
-async function pollServer() {
+async function poll() {
     try {
         let count = document.querySelectorAll('.card');
 
@@ -449,20 +449,20 @@ async function pollServer() {
         const match = path.match(/\/dashboard\/(.+)/);
         const uid = match ? match[1] : null;
 
-        const response = await fetch("/api/v1/categories/poll/" + uid, {
+        const response = await fetch("/api/v1/categories/poll", {
             method: "POST",
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({ "count": count.length })
+            body: JSON.stringify({ "count": count.length.toString(), "category" : uid })
         });
 
         if (response.ok) {
             location.reload();
         }
 
-        setTimeout(pollServer, 3000);
+        setTimeout(poll, 3000);
     } catch (error) {}
 }
 
-pollServer();
+poll();
