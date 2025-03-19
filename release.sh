@@ -18,6 +18,7 @@ fi
 
 mvn versions:set
 STATUS=$?
+mvn clean verify -DskipTests=true
 IMAGE_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
 IMAGE_FULL_PATH="$GHCR_URL/$GHCR_USERNAME/$REPO_NAME/$IMAGE_NAME:$IMAGE_VERSION"
 IMAGE_LATEST_PATH="$GHCR_URL/$GHCR_USERNAME/$REPO_NAME/$IMAGE_NAME:latest"
@@ -78,7 +79,7 @@ else
         echo "Released!"
     else
         echo "Failed to push the image. Exiting..."
-      exit 1
+    exit 1
   fi
 fi
 
