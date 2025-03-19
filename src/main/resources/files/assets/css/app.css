@@ -635,3 +635,10 @@
 .i18n-js {
     display: none;
 }
+
+a.disabled {
+    pointer-events: none;
+    cursor: default !important;
+    color: inherit;
+    text-decoration: none;
+}

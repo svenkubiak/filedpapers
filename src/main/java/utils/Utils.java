@@ -1,5 +1,6 @@
 package utils;
 
+import app.Main;
 import constants.Const;
 import constants.Required;
 import io.mangoo.core.Config;
@@ -84,6 +85,15 @@ public final class Utils {
         }
 
         return list;
+    }
+
+    public static String getVersion() {
+        String version = Main.class.getPackage().getImplementationVersion();
+        if (StringUtils.isBlank(version)) {
+            version = "Unknown";
+        }
+
+        return version;
     }
 
     public static Cookie getLanguageCookie(String language, Config config, boolean rememberMe) {

@@ -63,6 +63,11 @@
 					<excludes>
 						<exclude>**/log4j2-test*</exclude>
 					</excludes>
+					<archive>
+						<manifestEntries>
+							<Implementation-Version>${project.version}</Implementation-Version>
+						</manifestEntries>
+					</archive>
 				</configuration>
 			</plugin>
 			<plugin>
@@ -85,6 +90,7 @@
 									<mainClass>io.mangoo.core.Application</mainClass>
 									<manifestEntries>
 										<Multi-Release>true</Multi-Release>
+										<Implementation-Version>${project.version}</Implementation-Version>
 									</manifestEntries>
 								</transformer>
 							</transformers>
