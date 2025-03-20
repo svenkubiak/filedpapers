@@ -9,6 +9,7 @@ const bookmarkDeletedSuccess = document.getElementById('i18n-js').dataset.bookma
 const categoryCreatedSuccess = document.getElementById('i18n-js').dataset.categoryCreatedSuccess;
 const bookmarkCreatedSuccess = document.getElementById('i18n-js').dataset.bookmarkCreatedSuccess;
 const logoutDevicesSuccess = document.getElementById('i18n-js').dataset.logoutDevicesSuccess;
+const searchInput = document.getElementById('searchInput');
 const $addButton = document.getElementById('add-category-button');
 const $addBookmark = document.getElementById('add-bookmark-modal');
 const $modal = document.getElementById('add-category-modal');
@@ -427,19 +428,21 @@ document.querySelectorAll('.image-container').forEach(container => {
     }
 });
 
-document.getElementById('searchInput').addEventListener('input', function(e) {
-    const searchTerm = e.target.value.toLowerCase();
-    const cards = document.querySelectorAll('.card');
+if (searchInput) {
+    searchInput.addEventListener('input', function(e) {
+        const searchTerm = e.target.value.toLowerCase();
+        const cards = document.querySelectorAll('.card');
 
-    cards.forEach(card => {
-        const title = card.querySelector('.card-title').textContent.toLowerCase();
-        if (title.includes(searchTerm)) {
-            card.closest('.column').style.display = '';
-        } else {
-            card.closest('.column').style.display = 'none';
-        }
+        cards.forEach(card => {
+            const title = card.querySelector('.card-title').textContent.toLowerCase();
+            if (title.includes(searchTerm)) {
+                card.closest('.column').style.display = '';
+            } else {
+                card.closest('.column').style.display = 'none';
+            }
+        });
     });
-});
+}
 
 async function poll() {
     try {

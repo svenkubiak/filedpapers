@@ -1,30 +1,32 @@
 <#import "../layout.ftl" as layout>
 <@layout.myLayout "Layout">
-    <div class="level">
-        <div class="level-left">
-            <nav class="breadcrumb" aria-label="breadcrumbs">
-                <ul>
-                    <li class="is-active"><a aria-current="page"><span class="icon is-small"><i class="fas fa-bookmark"></i></span>${breadcrumb}</a></li>
-                    <#if active == 'trash'>
-                        <li><span class="icon empty-trash"><i class="fas fa-trash-alt"></i></span></li>
-                    <#elseif active == 'inbox'>
-                    <#else>
-                        <li><span class="icon category-trash" data-uid="${categoryUid}"><i class="fas fa-folder-minus"></i></span></li>
-                    </#if>
-                </ul>
-            </nav>
-        </div>
-        <div class="level-right" style="flex: 1;">
-            <div class="field" style="width: 100%;">
-                <div class="control has-icons-left">
-                    <input class="input is-fullwidth" type="text" id="searchInput" placeholder="${i18n("dashboard.search")}">
-                    <span class="icon is-small is-left">
-                    <i class="fas fa-search"></i>
-                </span>
-                </div>
+<div class="level">
+    <div class="level-left">
+        <nav class="breadcrumb" aria-label="breadcrumbs">
+            <ul>
+                <li class="is-active"><a aria-current="page"><span class="icon is-small"><i class="fas fa-bookmark"></i></span>${breadcrumb}</a></li>
+                <#if active == 'trash'>
+                    <li><span class="icon empty-trash"><i class="fas fa-trash-alt"></i></span></li>
+                <#elseif active == 'inbox'>
+                <#else>
+                    <li><span class="icon category-trash" data-uid="${categoryUid}"><i class="fas fa-folder-minus"></i></span></li>
+                </#if>
+            </ul>
+        </nav>
+    </div>
+    <#if items?has_content>
+    <div class="level-right" style="flex: 1;">
+        <div class="field" style="width: 100%;">
+            <div class="control has-icons-left">
+                <input class="input is-fullwidth" type="text" id="searchInput" placeholder="${i18n("dashboard.search")}">
+                <span class="icon is-small is-left">
+                <i class="fas fa-search"></i>
+            </span>
             </div>
         </div>
     </div>
+    </#if>
+</div>
 <div class="columns is-multiline">
     <#list items?sort_by("sort")?reverse as item>
         <div class="column is-one-quarter">

@@ -288,11 +288,6 @@
     justify-content: center;
 }
 
-/* Profile form styles */
-.profile-form {
-    padding: 2rem;
-}
-
 .profile-section {
     border-bottom: 1px solid #f0f0f0;
     padding-bottom: 2.5rem;

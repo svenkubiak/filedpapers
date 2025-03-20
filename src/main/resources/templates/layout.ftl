@@ -55,12 +55,6 @@
     </div>
     <div class="sidebar-footer">
         <div class="buttons">
-            <a class="disabled button is-light is-fullwidth mb-2">
-                <span class="icon">
-                    <i class="fas fa-circle-info"></i>
-                </span>
-                <span>${version}</span>
-            </a>
             <a href="/dashboard/profile" class="button is-light is-fullwidth mb-2<#if active == "profile"> is-active</#if>">
                 <span class="icon">
                     <i class="fas fa-user-cog"></i>
@@ -72,6 +66,12 @@
                     <i class="fas fa-sync"></i>
                 </span>
                 <span>${i18n("layout.menu.io")}</span>
+            </a>
+            <a href="/dashboard/about" class="button is-light is-fullwidth mb-2<#if active == "about"> is-active</#if>">
+                <span class="icon">
+                    <i class="fas fa-info-circle"></i>
+                </span>
+                <span>${i18n("layout.menu.about")}</span>
             </a>
             <a href="/auth/logout" class="button is-danger is-light is-fullwidth">
                 <span class="icon">

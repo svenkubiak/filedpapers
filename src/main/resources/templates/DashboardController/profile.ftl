@@ -1,10 +1,14 @@
 <#import "../layout.ftl" as layout>
 <@layout.myLayout "Layout">
-<nav class="breadcrumb" aria-label="breadcrumbs">
-    <ul>
-        <li><a href="/dashboard"><span class="icon is-small"><i class="fas fa-user-cog"></i></span><span>${i18n("profile.breadcrumbs")}</span></a></li>
-    </ul>
-</nav>
+<div class="level">
+    <div class="level-left">
+        <nav class="breadcrumb" aria-label="breadcrumbs">
+            <ul>
+                <li><a href="/dashboard"><span class="icon is-small"><i class="fas fa-user-cog"></i></span><span>${i18n("profile.breadcrumbs")}</span></a></li>
+            </ul>
+        </nav>
+    </div>
+</div>
 <div class="columns is-multiline">
     <div class="column is-half">
         <div class="profile-form">

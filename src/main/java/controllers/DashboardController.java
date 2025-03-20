@@ -67,7 +67,6 @@ public class DashboardController {
         categories.ifPresent(Utils::sortCategories);
 
         return Response.ok()
-                .render("version", Utils.getVersion())
                 .render("active", category.getName().toLowerCase(Locale.ENGLISH))
                 .render("breadcrumb", category.getName())
                 .render("categories", categories.orElseThrow())
@@ -94,7 +93,6 @@ public class DashboardController {
         }
 
         return Response.ok()
-                .render("version", Utils.getVersion())
                 .render("mfaFallback", fallback)
                 .render("username", user.getUsername())
                 .render("confirmed", user.isConfirmed())
@@ -153,8 +151,19 @@ public class DashboardController {
         categories.ifPresent(Utils::sortCategories);
 
         return Response.ok()
-                .render("version", Utils.getVersion())
                 .render("active", "io")
+                .render("categories", categories.orElseThrow());
+    }
+
+    public Response about(Authentication authentication) {
+        String userUid = authentication.getSubject();
+        Optional<List<Map<String, Object>>> categories = dataService.findCategories(userUid);
+
+        categories.ifPresent(Utils::sortCategories);
+
+        return Response.ok()
+                .render("active", "about")
+                .render("version", Utils.getVersion())
                 .render("categories", categories.orElseThrow());
     }
 
