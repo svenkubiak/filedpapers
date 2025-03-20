@@ -1,6 +1,5 @@
 package utils;
 
-import app.Main;
 import constants.Const;
 import constants.Required;
 import io.mangoo.core.Config;
@@ -88,7 +87,7 @@ public final class Utils {
     }
 
     public static String getVersion() {
-        String version = Main.class.getPackage().getImplementationVersion();
+        String version = Utils.class.getPackage().getImplementationVersion();
         if (StringUtils.isBlank(version)) {
             version = "Unknown";
         }
