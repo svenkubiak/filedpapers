@@ -9,10 +9,8 @@ import io.mangoo.test.TestRunner;
 import io.mangoo.test.http.TestRequest;
 import io.mangoo.test.http.TestResponse;
 import io.mangoo.utils.CodecUtils;
-import io.mangoo.utils.JsonUtils;
 import io.undertow.util.StatusCodes;
 import models.Category;
-import models.Item;
 import models.User;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -20,7 +18,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
-import static org.hamcrest.Matchers.containsString;
 
 @ExtendWith({TestRunner.class})
 public class AuthenticationControllerTests {

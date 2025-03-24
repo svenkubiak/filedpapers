@@ -29,6 +29,9 @@ public class TokenFilter implements PerRequestFilter {
 
     @Override
     public Response execute(Request request, Response response) {
+        Objects.requireNonNull(request, Required.REQUEST);
+        Objects.requireNonNull(request, Required.RESPONSE);
+
         String uri = request.getURI();
         String token = request.getParameter("token");
 

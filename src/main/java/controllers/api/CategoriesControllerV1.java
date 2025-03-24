@@ -61,7 +61,7 @@ public class CategoriesControllerV1 {
     public Response delete(Request request, String uid) {
         String userUid = request.getAttribute(Const.USER_UID);
 
-        if (StringUtils.isNotBlank(uid) && dataService.deleteCategory(userUid, uid)) {
+        if (dataService.deleteCategory(userUid, uid)) {
             return Response.ok();
         }
 

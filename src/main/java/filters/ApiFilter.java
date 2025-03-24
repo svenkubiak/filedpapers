@@ -32,6 +32,9 @@ public class ApiFilter implements PerRequestFilter {
 
     @Override
     public Response execute(Request request, Response response) {
+        Objects.requireNonNull(request, Required.REQUEST);
+        Objects.requireNonNull(request, Required.RESPONSE);
+
         var cookie = request.getCookie(cookieName);
         if (cookie != null) {
             String cookieValue = cookie.getValue();

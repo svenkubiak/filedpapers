@@ -1,6 +1,7 @@
 package services;
 
 import constants.Const;
+import constants.Invalid;
 import constants.Required;
 import io.mangoo.constants.Key;
 import io.mangoo.exceptions.MangooTokenException;
@@ -46,7 +47,7 @@ public class AuthenticationService {
     }
 
     public Map<String, String> getChallengeToken(String userUid) throws MangooTokenException {
-        Objects.requireNonNull(userUid, Required.USER_UID);
+        Utils.checkCondition(Utils.isValidUuid(userUid), Invalid.USER_UID);
 
         var now = LocalDateTime.now();
 
@@ -61,7 +62,7 @@ public class AuthenticationService {
     }
 
     public Map<String, String> getAccessTokens(String userUid) throws MangooTokenException {
-        Objects.requireNonNull(userUid, Required.USER_UID);
+        Utils.checkCondition(Utils.isValidUuid(userUid), Invalid.USER_UID);
 
         var now = LocalDateTime.now();
         String accessToken = PasetoBuilder.create()
@@ -84,7 +85,7 @@ public class AuthenticationService {
     }
 
     private String getPepper(String userUid) {
-        Objects.requireNonNull(userUid, Required.USER_UID);
+        Utils.checkCondition(Utils.isValidUuid(userUid), Invalid.USER_UID);
 
         String pepper = Strings.EMPTY;
         var user = dataService.findUserByUid(userUid);
@@ -139,7 +140,7 @@ public class AuthenticationService {
 
         LocalDateTime expires = token.getExpires();
         String userUid = token.getSubject();
-        if (expires != null && expires.isAfter(LocalDateTime.now()) && Utils.isValidUserUid(userUid)) {
+        if (expires != null && expires.isAfter(LocalDateTime.now()) && Utils.isValidUuid(userUid)) {
             return Optional.of(userUid);
         }
 

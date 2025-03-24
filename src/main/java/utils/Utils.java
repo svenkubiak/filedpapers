@@ -1,5 +1,6 @@
 package utils;
 
+import com.google.re2j.Pattern;
 import constants.Const;
 import constants.Required;
 import io.mangoo.core.Config;
@@ -18,12 +19,17 @@ import java.time.ZoneOffset;
 import java.util.*;
 
 public final class Utils {
+    private static final Pattern UUID_PATTERN = Pattern.compile(
+            "^[0-9a-f]{8}-[0-9a-f]{4}-6[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+            Pattern.CASE_INSENSITIVE
+    );
+    private static final Pattern MFA_PATTERN = Pattern.compile("\\d{6}");
 
     private Utils() {
     }
 
-    public static boolean isValidUserUid(String userUid) {
-        return StringUtils.isNotBlank(userUid) && UUID.fromString(userUid).version() == 6;
+    public static boolean isValidUuid(String uuid) {
+        return StringUtils.isNotBlank(uuid) && UUID_PATTERN.matcher(uuid).matches();
     }
 
     public static void sortCategories(List<Map<String, Object>> categories) {
@@ -50,6 +56,10 @@ public final class Utils {
         } catch (Exception e) {
             return false;
         }
+    }
+
+    public static boolean isValidOtp(String mfa) {
+        return StringUtils.isNotBlank(mfa) && MFA_PATTERN.matcher(mfa).matches();
     }
 
     public static String language(User user) {
@@ -93,6 +103,12 @@ public final class Utils {
         }
 
         return version;
+    }
+
+    public static void checkCondition(boolean condition, String message) {
+        if (!condition) {
+            throw new IllegalArgumentException(message);
+        }
     }
 
     public static Cookie getLanguageCookie(String language, Config config, boolean rememberMe) {

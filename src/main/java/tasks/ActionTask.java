@@ -7,11 +7,11 @@ import services.DataService;
 
 import java.util.Objects;
 
-public class TokenTask {
+public class ActionTask {
     private final DataService dataService;
 
     @Inject
-    public TokenTask(DataService dataService) {
+    public ActionTask(DataService dataService) {
         this.dataService = Objects.requireNonNull(dataService, Required.DATA_SERVICE);
     }
 

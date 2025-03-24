@@ -8,13 +8,12 @@ import io.mangoo.test.http.TestRequest;
 import io.mangoo.test.http.TestResponse;
 import io.mangoo.utils.CodecUtils;
 import io.mangoo.utils.JsonUtils;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import models.Category;
 import models.Item;
 import models.User;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import services.DataService;
 
 import java.util.Map;
