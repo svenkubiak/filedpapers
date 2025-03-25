@@ -126,18 +126,18 @@ public class DataService {
         var item = findItem(itemUid, userUid);
         var category = findCategory(item.getCategoryUid(), userUid);
         category.setCount(category.getCount() - 1);
-        datastore.save(category);
+        save(category);
 
         Category trash = findTrash(userUid);
         trash.setCount(trash.getCount() + 1);
-        datastore.save(trash);
+        save(trash);
 
         var updateResult = datastore.query(Item.class).updateOne(and(
                 eq(Const.USER_UID, userUid),
                 eq(Const.UID, itemUid)),
                     Updates.set(Const.CATEGORY_UID, trash.getUid()));
 
-        return Optional.of(updateResult.wasAcknowledged() && updateResult.getModifiedCount() == 1);
+        return updateResult.getModifiedCount() == 1 ? Optional.of(true) : Optional.empty();
     }
 
     public Optional<Boolean> emptyTrash(String userUid) {
@@ -145,13 +145,13 @@ public class DataService {
 
         Category trash = findTrash(userUid);
         trash.setCount(0);
-        datastore.save(trash);
+        save(trash);
 
         var deleteResult = datastore.query(Item.class).deleteMany(and(
                 eq(Const.USER_UID, userUid),
                 eq(Const.CATEGORY_UID, trash.getUid())));
 
-        return Optional.of(deleteResult.wasAcknowledged());
+        return deleteResult.wasAcknowledged() ? Optional.of(true) : Optional.empty();
     }
 
     private Category findTrash(String userUid) {
@@ -203,10 +203,10 @@ public class DataService {
 
         if (!sourceCategory.getUid().equals(targetCategory.getUid())) {
             sourceCategory.setCount(sourceCategory.getCount() - 1);
-            datastore.save(sourceCategory);
+            save(sourceCategory);
 
             targetCategory.setCount(targetCategory.getCount() + 1);
-            datastore.save(targetCategory);
+            save(targetCategory);
 
             var updateResult = datastore.query(Item.class).updateOne(
                     and(
@@ -217,59 +217,57 @@ public class DataService {
             return Optional.of(updateResult.wasAcknowledged());
         }
 
-        return Optional.of(false);
+        return Optional.empty();
     }
 
-    public boolean addItem(String userUid, String url, String categoryUid) {
+    public Optional<Boolean> addItem(String userUid, String url, String categoryUid) {
         Utils.checkCondition(Utils.isValidUuid(userUid), Invalid.USER_UID);
         Utils.checkCondition(Utils.isValidURL(url), Invalid.URL);
         Utils.checkCondition(Utils.isValidUuid(categoryUid), Invalid.CATEGORY_UID);
 
-        if (Utils.isValidURL(url)) {
-            String previewImage = PLACEHOLDER_IMAGE;
-            String title = messages.get("item.missing.title");
-            List<LinkPreviewMatch> previews = LinkPreview.createPreviews(url);
-            for (LinkPreviewMatch linkPreviewMatch : previews) {
-                title = linkPreviewMatch.result().title();
-                Set<LinkPreviewMedia> images = linkPreviewMatch.result().images();
-                for (LinkPreviewMedia image : images) {
-                    previewImage = image.uri().toString();
-                }
-            }
-
-            Category category = null;
-            if (StringUtils.isNotBlank(categoryUid)) {
-                category = findCategory(categoryUid, userUid);
-            }
-
-            if (category == null) {
-                category = findInbox(userUid);
-            }
-
-            if (category != null) {
-                category.setCount(category.getCount() + 1);
-                String categoryResult = datastore.save(category);
-
-                var item = new Item(userUid, category.getUid(), url, previewImage, title);
-                String itemResult = datastore.save(item);
-
-                return StringUtils.isNoneBlank(categoryResult, itemResult);
+        String previewImage = PLACEHOLDER_IMAGE;
+        String title = messages.get("item.missing.title");
+        List<LinkPreviewMatch> previews = LinkPreview.createPreviews(url);
+        for (LinkPreviewMatch linkPreviewMatch : previews) {
+            title = linkPreviewMatch.result().title();
+            Set<LinkPreviewMedia> images = linkPreviewMatch.result().images();
+            for (LinkPreviewMedia image : images) {
+                previewImage = image.uri().toString();
             }
         }
 
-        return false;
+        Category category = null;
+        if (StringUtils.isNotBlank(categoryUid)) {
+            category = findCategory(categoryUid, userUid);
+        }
+
+        if (category == null) {
+            category = findInbox(userUid);
+        }
+
+        if (category != null) {
+            category.setCount(category.getCount() + 1);
+            String categoryResult = save(category);
+
+            var item = new Item(userUid, category.getUid(), url, previewImage, title);
+            String itemResult = save(item);
+
+            return Optional.of(StringUtils.isNoneBlank(categoryResult, itemResult));
+        }
+
+        return Optional.empty();
     }
 
-    public boolean addCategory(String userUid, String name) {
+    public Optional<Boolean> addCategory(String userUid, String name) {
         Utils.checkCondition(Utils.isValidUuid(userUid), Invalid.USER_UID);
         Objects.requireNonNull(name, Required.CATEGORY_NAME);
 
-        String result = datastore.save(new Category(name, userUid));
+        String result = save(new Category(name, userUid));
 
-        return StringUtils.isNotBlank(result);
+        return StringUtils.isNotBlank(result) ? Optional.of(true) : Optional.empty();
     }
 
-    public boolean deleteCategory(String userUid, String categoryUid) {
+    public Optional<Boolean> deleteCategory(String userUid, String categoryUid) {
         Utils.checkCondition(Utils.isValidUuid(userUid), Invalid.USER_UID);
         Utils.checkCondition(Utils.isValidUuid(categoryUid), Invalid.CATEGORY_UID);
 
@@ -286,7 +284,7 @@ public class DataService {
 
             long modifiedCount = updateResult.getModifiedCount();
             trash.setCount((int) (trash.getCount() + modifiedCount));
-            datastore.save(trash);
+            save(trash);
 
             var deleteResult = datastore.query(Category.class)
                     .deleteOne(
@@ -294,10 +292,10 @@ public class DataService {
                                     eq(Const.USER_UID, userUid),
                                     eq(Const.UID, categoryUid)));
 
-            return deleteResult.getDeletedCount() == 1;
+            return Optional.of(deleteResult.getDeletedCount() == 1);
         }
 
-        return false;
+        return Optional.empty();
     }
 
     public User findUser(String username) {
@@ -312,10 +310,10 @@ public class DataService {
         return datastore.find(User.class, eq(Const.UID, userUid));
     }
 
-    public void save(Object object) {
+    public String save(Object object) {
         Objects.requireNonNull(object, Required.OBJECT);
 
-        datastore.save(object);
+        return datastore.save(object);
     }
 
     public Category findCategoryByName(String categoryName, String userUid) {
@@ -368,7 +366,7 @@ public class DataService {
         }
         user.setMfa(mfa);
 
-        datastore.save(user);
+        save(user);
 
         return fallaback;
     }
@@ -386,7 +384,7 @@ public class DataService {
         var user = findUserByUid(userUid);
         if (user != null) {
             user.setPassword(CodecUtils.hashArgon2(password, user.getSalt()));
-            datastore.save(user);
+            save(user);
         }
     }
 
@@ -402,7 +400,7 @@ public class DataService {
         var user = findUserByUid(userUid);
         if (user != null) {
             user.setConfirmed(true);
-            datastore.save(user);
+            save(user);
         }
     }
 
@@ -419,7 +417,7 @@ public class DataService {
         var user = findUserByUid(userUid);
         if (user != null) {
             user.setLanguage(language.toLowerCase());
-            return datastore.save(user) != null;
+            return save(user) != null;
         }
 
         return false;
@@ -431,7 +429,7 @@ public class DataService {
         var user = findUserByUid(userUid);
         if (user != null) {
             user.setPepper(MangooUtils.randomString(64));
-            return datastore.save(user) != null;
+            return save(user) != null;
         }
 
         return false;

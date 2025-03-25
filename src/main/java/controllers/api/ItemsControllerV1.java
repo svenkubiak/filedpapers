@@ -32,50 +32,55 @@ public class ItemsControllerV1 {
             Thread.ofVirtual().start(() -> dataService.addItem(userUid, url, category));
             return Response.ok();
         } else {
-            if (dataService.addItem(userUid, url, category)) {
-                return Response.ok();
+            try {
+                return dataService.addItem(userUid, url, category)
+                        .filter(success -> success)
+                        .map(success -> Response.ok())
+                        .orElse(Response.internalServerError().bodyJson(Const.API_ERROR));
+            } catch (IllegalArgumentException e) {
+                return Response.badRequest().bodyJsonError("Invalid user, category or url");
             }
         }
-
-        return Response.badRequest();
     }
 
     public Response list(Request request, String categoryUid) {
         String userUid = request.getAttribute(Const.USER_UID);
         String ifNoneMatch = request.getHeader("If-None-Match");
 
-        return dataService.findItems(userUid, categoryUid)
-                .map(items -> {
-                    String json = JsonUtils.toJson(Map.of("items", items));
-                    String hash = CodecUtils.hexSHA512(json);
+        try {
+            return dataService.findItems(userUid, categoryUid)
+                    .map(items -> {
+                        String json = JsonUtils.toJson(Map.of("items", items));
+                        String hash = CodecUtils.hexSHA512(json);
 
-                    if (hash.equals(ifNoneMatch)) {
-                        return Response.notModified();
-                    } else {
-                        return Response.ok()
-                                .header("ETag", hash)
-                                .bodyJson(json);
-                    }
-                })
-                .orElseGet(Response::badRequest);
+                        if (hash.equals(ifNoneMatch)) {
+                            return Response.notModified();
+                        } else {
+                            return Response.ok()
+                                    .header("ETag", hash)
+                                    .bodyJson(json);
+                        }
+                    })
+                    .orElse(Response.badRequest().bodyJsonError("Invalid user or category"));
+        } catch (IllegalArgumentException e) {
+            return Response.badRequest().bodyJsonError("Invalid user or category");
+        }
     }
 
     public Response delete(Request request, String uid) {
         String userUid = request.getAttribute(Const.USER_UID);
 
         return dataService.deleteItem(uid, userUid)
-                .filter(success -> success)
                 .map(success -> Response.ok())
-                .orElseGet(Response::badRequest);
+                .orElse(Response.badRequest().bodyJsonError("Invalid user or item"));
     }
 
     public Response trash(Request request) {
         String userUid = request.getAttribute(Const.USER_UID);
 
         return dataService.emptyTrash(userUid)
-                .filter(success -> success)
                 .map(success -> Response.ok())
-                .orElseGet(Response::badRequest);
+                .orElse(Response.badRequest().bodyJsonError("Invalid user"));
     }
 
     public Response move(Request request, Map<String, String> data) {
@@ -84,8 +89,7 @@ public class ItemsControllerV1 {
         String uid = data.get("uid");
 
         return dataService.moveItem(uid, userUid, categoryUid)
-                .filter(success -> success)
-                .map(success -> Response.ok())
-                .orElseGet(Response::badRequest);
+                .map(success -> success ? Response.ok() : Response.internalServerError().bodyJson(Const.API_ERROR))
+                .orElse(Response.badRequest().bodyJsonError("Invalid user or category"));
     }
 }
