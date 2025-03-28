@@ -37,8 +37,8 @@ public class CategoriesControllerV1 {
     public Response poll(Request request, Map<String, String> data) {
         String userUid = request.getAttribute(Const.USER_UID);
 
-        if (!data.isEmpty() && !StringUtils.isAnyBlank(data.get("category"), data.get("count"))) {
-            long count = Long.parseLong(data.get("count"));
+        if (!data.isEmpty() && StringUtils.isNotBlank(data.get(Const.COUNT))) {
+            long count = Long.parseLong(data.get(Const.COUNT));
             long items = 0;
 
             try {
