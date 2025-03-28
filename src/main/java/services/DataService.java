@@ -223,7 +223,6 @@ public class DataService {
     public Optional<Boolean> addItem(String userUid, String url, String categoryUid) {
         Utils.checkCondition(Utils.isValidUuid(userUid), Invalid.USER_UID);
         Utils.checkCondition(Utils.isValidURL(url), Invalid.URL);
-        Utils.checkCondition(Utils.isValidUuid(categoryUid), Invalid.CATEGORY_UID);
 
         String previewImage = PLACEHOLDER_IMAGE;
         String title = messages.get("item.missing.title");
@@ -237,7 +236,7 @@ public class DataService {
         }
 
         Category category = null;
-        if (StringUtils.isNotBlank(categoryUid)) {
+        if (Utils.isValidUuid(categoryUid)) {
             category = findCategory(categoryUid, userUid);
         }
 
