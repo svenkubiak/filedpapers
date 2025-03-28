@@ -48,7 +48,7 @@ public class ApiFilter implements PerRequestFilter {
 
     private Response authorize(String authorization, Request request, Response response, boolean cookie) {
         try {
-            Token token = null;
+            Token token;
             if (cookie) {
                 token = authenticationService.parseAuthenticationCookie(authorization);
             } else {

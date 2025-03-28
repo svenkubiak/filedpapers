@@ -34,7 +34,6 @@ public class TokenFilter implements PerRequestFilter {
 
         String uri = request.getURI();
         String token = request.getParameter("token");
-
         if (StringUtils.isNoneBlank(token, uri)) {
             return dataService.findAction(token)
                     .filter(action -> LocalDateTime.now().isBefore(action.getExpires()))
