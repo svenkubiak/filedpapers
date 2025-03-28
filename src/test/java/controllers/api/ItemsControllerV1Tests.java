@@ -17,20 +17,25 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import services.DataService;
 
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
+import static com.mongodb.client.model.Filters.eq;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
+import static org.awaitility.Awaitility.await;
 
 @ExtendWith({TestExtension.class})
 public class ItemsControllerV1Tests {
+    private static Datastore datastore;
     private static String ACCESS_TOKEN;
     private static String USER_UID;
     private static String INBOX_UID;
     private static String TRASH_UID;
     private static String ITEM_UID;
+    private static String TEST_UID;
 
     @BeforeEach
     public void init() {
-        Datastore datastore = Application.getInstance(Datastore.class);
+        datastore = Application.getInstance(Datastore.class);
         datastore.dropCollection(Category.class);
         datastore.dropCollection(Item.class);
         datastore.dropCollection(User.class);
@@ -40,9 +45,11 @@ public class ItemsControllerV1Tests {
         datastore.save(user);
 
         Category inbox = new Category(Const.INBOX, user.getUid());
+        Category test = new Category("test", user.getUid());
         Category trash = new Category(Const.TRASH, user.getUid());
 
         datastore.save(inbox);
+        datastore.save(test);
         datastore.save(trash);
 
         String username = "foo@bar.com";
@@ -60,6 +67,7 @@ public class ItemsControllerV1Tests {
         USER_UID = user.getUid();
         INBOX_UID = inbox.getUid();
         TRASH_UID = trash.getUid();
+        TEST_UID = test.getUid();
 
         Item item = new Item(USER_UID, INBOX_UID, "https://svenkubiak.de", "foo", "bar");
         datastore.save(item);
@@ -201,9 +209,12 @@ public class ItemsControllerV1Tests {
     }
 
     @Test
-    void testAdd() {
+    void testAddWithCategory() {
+        //given
+        String url = "https://svenkubiak.de/" + CodecUtils.uuid();
+
         //when
-        Map<String, String> data = Map.of("url", "https://svenkubiak.de", "category", INBOX_UID);
+        Map<String, String> data = Map.of("url", url, "category", TEST_UID);
         TestResponse response = TestRequest.post("/api/v1/items")
                 .withHeader("Authorization", ACCESS_TOKEN)
                 .withStringBody(JsonUtils.toJson(data))
@@ -214,12 +225,17 @@ public class ItemsControllerV1Tests {
         assertThat(response).isNotNull();
         assertThat(response.getStatusCode()).isEqualTo(200);
         assertThat(response.getContent()).isEmpty();
+        assertThat(datastore.find(Item.class, eq("url", url))).isNotNull();
+        assertThat(datastore.find(Item.class, eq("url", url)).getCategoryUid()).isEqualTo(TEST_UID);
     }
 
     @Test
-    void testAddAsync() {
+    void testAddAsyncWithCategory() {
+        //given
+        String url = "https://svenkubiak.de/" + CodecUtils.uuid();
+
         //when
-        Map<String, String> data = Map.of("url", "https://svenkubiak.de", "category", INBOX_UID);
+        Map<String, String> data = Map.of("url", url, "category", TEST_UID);
         TestResponse response = TestRequest.post("/api/v1/items?async=true")
                 .withHeader("Authorization", ACCESS_TOKEN)
                 .withStringBody(JsonUtils.toJson(data))
@@ -230,6 +246,50 @@ public class ItemsControllerV1Tests {
         assertThat(response).isNotNull();
         assertThat(response.getStatusCode()).isEqualTo(200);
         assertThat(response.getContent()).isEmpty();
+        await().atMost(3, TimeUnit.SECONDS).untilAsserted(() -> assertThat(datastore.find(Item.class, eq("url", url))).isNotNull());
+        await().atMost(3, TimeUnit.SECONDS).untilAsserted(() -> assertThat(datastore.find(Item.class, eq("url", url)).getCategoryUid()).isEqualTo(TEST_UID));
+    }
+
+    @Test
+    void testAddWithoutCategory() {
+        //given
+        String url = "https://svenkubiak.de/" + CodecUtils.uuid();
+
+        //when
+        Map<String, String> data = Map.of("url", url);
+        TestResponse response = TestRequest.post("/api/v1/items")
+                .withHeader("Authorization", ACCESS_TOKEN)
+                .withStringBody(JsonUtils.toJson(data))
+                .withContentType("application/json")
+                .execute();
+
+        //then
+        assertThat(response).isNotNull();
+        assertThat(response.getStatusCode()).isEqualTo(200);
+        assertThat(response.getContent()).isEmpty();
+        assertThat(datastore.find(Item.class, eq("url", url))).isNotNull();
+        assertThat(datastore.find(Item.class, eq("url", url)).getCategoryUid()).isEqualTo(INBOX_UID);
+    }
+
+    @Test
+    void testAddAsyncWithoutCategory() {
+        //given
+        String url = "https://svenkubiak.de/" + CodecUtils.uuid();
+
+        //when
+        Map<String, String> data = Map.of("url", url);
+        TestResponse response = TestRequest.post("/api/v1/items?async=true")
+                .withHeader("Authorization", ACCESS_TOKEN)
+                .withStringBody(JsonUtils.toJson(data))
+                .withContentType("application/json")
+                .execute();
+
+        //then
+        assertThat(response).isNotNull();
+        assertThat(response.getStatusCode()).isEqualTo(200);
+        assertThat(response.getContent()).isEmpty();
+        await().atMost(3, TimeUnit.SECONDS).untilAsserted(() -> assertThat(datastore.find(Item.class, eq("url", url))).isNotNull());
+        await().atMost(3, TimeUnit.SECONDS).untilAsserted(() -> assertThat(datastore.find(Item.class, eq("url", url)).getCategoryUid()).isEqualTo(INBOX_UID));
     }
 
     @Test
