@@ -1,5 +1,6 @@
 package controllers;
 
+import constants.Const;
 import io.mangoo.test.TestRunner;
 import io.mangoo.test.http.TestRequest;
 import io.mangoo.test.http.TestResponse;
@@ -33,6 +34,15 @@ public class ApplicationControllerTests {
         assertThat(response, not(nullValue()));
         assertThat(response.getStatusCode(), equalTo(StatusCodes.OK));
         assertThat(response.getContent(), containsString("Success"));
+    }
+
+    @Test
+    public void testAssets() {
+        assertThat(TestRequest.get(Const.PLACEHOLDER_IMAGE).execute().getStatusCode(), equalTo(StatusCodes.OK));
+        assertThat(TestRequest.get("/robots.txt").execute().getStatusCode(), equalTo(StatusCodes.OK));
+        assertThat(TestRequest.get("/favicon.ico").execute().getStatusCode(), equalTo(StatusCodes.OK));
+        assertThat(TestRequest.get("/favicon-16x16.png").execute().getStatusCode(), equalTo(StatusCodes.OK));
+        assertThat(TestRequest.get("/favicon-32x32.png").execute().getStatusCode(), equalTo(StatusCodes.OK));
     }
 
     @Test
