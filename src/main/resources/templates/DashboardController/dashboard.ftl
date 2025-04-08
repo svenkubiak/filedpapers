@@ -6,10 +6,10 @@
             <ul>
                 <li class="is-active"><a aria-current="page"><span class="icon is-small"><i class="fas fa-bookmark"></i></span>${breadcrumb}</a></li>
                 <#if active == 'trash'>
-                    <li><span class="icon empty-trash"><i class="fas fa-trash-alt"></i></span></li>
+                    <li><span class="icon empty-trash" data-tooltip-bottom="${i18n("dashboard.empty.trash")}"><i class="fas fa-trash-alt"></i></span></li>
                 <#elseif active == 'inbox'>
                 <#else>
-                    <li><span class="icon category-trash" data-uid="${categoryUid}"><i class="fas fa-folder-minus"></i></span></li>
+                    <li><span class="icon category-trash" data-uid="${categoryUid}" data-tooltip-bottom="${i18n("dashboard.delete.category")}"><i class="fas fa-folder-minus"></i></span></li>
                 </#if>
             </ul>
         </nav>
@@ -48,9 +48,11 @@
                             <span class="icon card-move" data-tooltip="${i18n("dashboard.card.drag.tooltip")}">
                                 <i class="fas fa-folder-open dragging" draggable="true" data-uid="${item.uid}"></i>
                             </span>
-                                <span class="icon card-trash" data-tooltip="${i18n("dashboard.card.delete.tooltip")}">
+                            <#if active != 'trash'>
+                            <span class="icon card-trash" data-tooltip="${i18n("dashboard.card.delete.tooltip")}">
                                 <i class="fas fa-trash-alt"></i>
                             </span>
+                            </#if>
                         </div>
                     </div>
                     <div class="card-meta" >

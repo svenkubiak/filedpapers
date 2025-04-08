@@ -554,8 +554,8 @@
     content: attr(data-tooltip);
     position: absolute;
     bottom: 100%;
-    right: 0;
-    transform: translateY(-10px);
+    left: 50%;
+    transform: translate(-50%, 0px);
     padding: 5px 10px;
     background: rgba(0, 0, 0, 0.8);
     color: white;
@@ -572,6 +572,35 @@
     opacity: 1;
     visibility: visible;
 }
+
+[data-tooltip-bottom] {
+    position: relative;
+    cursor: pointer;
+}
+
+[data-tooltip-bottom]:before {
+    content: attr(data-tooltip-bottom);
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translate(-50%, 10px);
+    padding: 5px 10px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    border-radius: 4px;
+    font-size: 14px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s;
+    z-index: 1000;
+}
+
+[data-tooltip-bottom]:hover:before {
+    opacity: 1;
+    visibility: visible;
+}
+
 
 .image-container {
     position: relative;
