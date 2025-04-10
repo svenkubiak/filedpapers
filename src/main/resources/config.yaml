@@ -14,6 +14,8 @@ default:
     secret: JMvtA6RWYQTjWE5mT9jNCuXiAP9U90ZNdk8V3wmdWZZE8WceVjplpRNZm4WIYRG0
     language: en
     registration: true
+    images:
+      store: false
   api:
     accessToken:
       secret: 7jxYMCRL1WIyiaSn5gb0ULCnX3a5GTsnBXfv2AJVj4ZIBiUQqRuv9SrhoGor2AIk
