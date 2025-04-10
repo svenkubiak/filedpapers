@@ -6,6 +6,8 @@ default:
     url: arg{}
     secret: arg{}
     registration: arg{}
+    images:
+      store: arg{}
   connector:
     http:
       host: filedpapers-web

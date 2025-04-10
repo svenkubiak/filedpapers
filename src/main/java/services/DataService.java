@@ -15,6 +15,7 @@ import it.auties.linkpreview.LinkPreview;
 import it.auties.linkpreview.LinkPreviewMatch;
 import it.auties.linkpreview.LinkPreviewMedia;
 import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import models.Action;
 import models.Category;
 import models.Item;
@@ -33,11 +34,13 @@ import static constants.Const.PLACEHOLDER_IMAGE;
 public class DataService {
     private final Datastore datastore;
     private final Messages messages;
+    private final boolean storeImages;
 
     @Inject
-    public DataService(Datastore datastore, Messages messages) {
+    public DataService(Datastore datastore, Messages messages, @Named("application.images.store") boolean storeImages) {
         this.datastore = Objects.requireNonNull(datastore, Required.DATASTORE);
         this.messages = Objects.requireNonNull(messages, Required.MESSAGES);
+        this.storeImages = storeImages;
     }
 
     @SuppressWarnings("unchecked")
@@ -232,7 +235,12 @@ public class DataService {
             Set<LinkPreviewMedia> images = linkPreviewMatch.result().images();
             for (LinkPreviewMedia image : images) {
                 previewImage = image.uri().toString();
+                break;
             }
+        }
+
+        if (storeImages && !previewImage.equals(PLACEHOLDER_IMAGE)) {
+            previewImage = Utils.getImageAsBase64(previewImage).orElse(PLACEHOLDER_IMAGE);
         }
 
         Category category = null;

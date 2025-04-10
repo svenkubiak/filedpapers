@@ -8,6 +8,7 @@ services:
         -Dapplication.url=${APPLICATION_URL}
         -Dapplication.config=/app/config/config.yaml
         -Dapplication.secret=${APPLICATION_SECRET}
+        -Dapplication.images.store=${STORE_IMAGES}
         -Dapi.accessToken.secret=${ACCESS_TOKEN_SECRET}
         -Dapi.refreshToken.secret=${REFRESH_TOKEN_SECRET}
         -Dapi.challengeToken.secret=${CHALLENGE_TOKEN_SECRET}

@@ -18,6 +18,7 @@ echo "Creating .env file..."
 cat > .env <<EOL
 # Custom configuration
 APPLICATION_URL=http://localhost
+STORE_IMAGES=false
 ALLOW_REGISTRATION=true
 SMTP_HOST=localhost
 SMTP_PORT=25

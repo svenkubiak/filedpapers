@@ -12,7 +12,11 @@ import io.undertow.server.handlers.CookieSameSiteMode;
 import models.User;
 import org.apache.commons.lang3.StringUtils;
 
+import java.io.IOException;
 import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -134,5 +138,26 @@ public final class Utils {
         }
 
         return cookie;
+    }
+
+    public static Optional<String> getImageAsBase64(String url) {
+        Objects.requireNonNull(url, Required.URL);
+
+        String data = null;
+        try (HttpClient client = HttpClient.newHttpClient()) {
+            HttpRequest request = HttpRequest.newBuilder()
+                    .uri(URI.create(url))
+                    .build();
+
+            HttpResponse<byte[]> response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
+            String base64 = Base64.getEncoder().encodeToString(response.body());
+
+            String contentType = response.headers().firstValue("Content-Type").orElse("image/jpeg"); // fallback
+            data = "data:" + contentType + ";base64," + base64;
+        } catch (IOException | InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
+        return Optional.of(data);
     }
 }
