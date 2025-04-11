@@ -113,7 +113,7 @@ public class DataService {
             output.add(Map.of(
                     Const.UID, item.getUid(),
                     "url", item.getUrl(),
-                    "image", (item.getImage() == null) ? Strings.EMPTY : item.getImage(),
+                    "image", (storeImages && StringUtils.isNotBlank(item.getImageBase64())) ? item.getImageBase64() : (StringUtils.isBlank(item.getImage())) ? Strings.EMPTY : item.getImage(),
                     "title", item.getTitle(),
                     "sort", item.getTimestamp().toEpochSecond(ZoneOffset.UTC),
                     "added", DateUtils.getPrettyTime(item.getTimestamp()))); // FIX ME: Remove in later API version
@@ -239,10 +239,6 @@ public class DataService {
             }
         }
 
-        if (storeImages && !previewImage.equals(PLACEHOLDER_IMAGE)) {
-            previewImage = Utils.getImageAsBase64(previewImage).orElse(PLACEHOLDER_IMAGE);
-        }
-
         Category category = null;
         if (Utils.isValidUuid(categoryUid)) {
             category = findCategory(categoryUid, userUid);
@@ -257,6 +253,9 @@ public class DataService {
             String categoryResult = save(category);
 
             var item = new Item(userUid, category.getUid(), url, previewImage, title);
+            if (storeImages) {
+                item.setImageBase64(Utils.getImageAsBase64(previewImage).orElse(PLACEHOLDER_IMAGE));
+            }
             String itemResult = save(item);
 
             return Optional.of(StringUtils.isNoneBlank(categoryResult, itemResult));

@@ -26,6 +26,7 @@ public class Item extends Entity implements Serializable {
 
     private String url;
     private String image;
+    private String imageBase64;
     private String title;
 
     public Item(String userUid, String categoryUid, String url, String image, String title) {
@@ -95,5 +96,13 @@ public class Item extends Entity implements Serializable {
 
     public void setCategoryUid(String categoryUid) {
         this.categoryUid = categoryUid;
+    }
+
+    public String getImageBase64() {
+        return imageBase64;
+    }
+
+    public void setImageBase64(String imageBase64) {
+        this.imageBase64 = imageBase64;
     }
 }

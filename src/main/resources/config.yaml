@@ -15,7 +15,7 @@ default:
     language: en
     registration: true
     images:
-      store: false
+      store: true
   api:
     accessToken:
       secret: 7jxYMCRL1WIyiaSn5gb0ULCnX3a5GTsnBXfv2AJVj4ZIBiUQqRuv9SrhoGor2AIk
