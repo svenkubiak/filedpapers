@@ -444,6 +444,19 @@ if (searchInput) {
     });
 }
 
+document.addEventListener("keydown", function(event) {
+    if (event.key === "Enter") {
+        const openModal = document.querySelector(".modal.is-active");
+        if (!openModal) return;
+
+        const confirmButton = openModal.querySelector("[data-confirm]");
+        if (confirmButton) {
+            event.preventDefault(); // avoid unintended form submissions
+            confirmButton.click();
+        }
+    }
+});
+
 async function poll() {
     try {
         let count = document.querySelectorAll('.card');
