@@ -253,7 +253,7 @@ public class DataService {
             String categoryResult = save(category);
 
             var item = new Item(userUid, category.getUid(), url, previewImage, title);
-            if (storeImages) {
+            if (storeImages && !previewImage.equals(PLACEHOLDER_IMAGE)) {
                 item.setImageBase64(Utils.getImageAsBase64(previewImage).orElse(PLACEHOLDER_IMAGE));
             }
             String itemResult = save(item);
