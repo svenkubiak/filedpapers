@@ -9,13 +9,18 @@ import io.mangoo.routing.bindings.Request;
 import io.mangoo.utils.CodecUtils;
 import io.mangoo.utils.JsonUtils;
 import jakarta.inject.Inject;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import services.DataService;
+import tasks.MaintenanceTask;
 
 import java.util.Map;
 import java.util.Objects;
 
 @FilterWith(ApiFilter.class)
 public class ItemsControllerV1 {
+    private static final Logger LOG = LogManager.getLogger(ItemsControllerV1.class);
+    public static final String FAILED_TO_ADD_ITEM_WITH_URL = "Failed to add item with URL: {}";
     private final DataService dataService;
 
     @Inject
@@ -29,15 +34,22 @@ public class ItemsControllerV1 {
         String category = data.get("category");
 
         if (async) {
-            Thread.ofVirtual().start(() -> dataService.addItem(userUid, url, category));
+            Thread.ofVirtual().start(() -> dataService.addItem(userUid, url, category).orElseGet(() -> {
+                LOG.error(FAILED_TO_ADD_ITEM_WITH_URL, url);
+                return false;
+            }));
             return Response.ok();
         } else {
             try {
                 return dataService.addItem(userUid, url, category)
                         .filter(success -> success)
                         .map(success -> Response.ok())
-                        .orElse(Response.internalServerError().bodyJson(Const.API_ERROR));
+                        .orElseGet(() -> {
+                            LOG.error(FAILED_TO_ADD_ITEM_WITH_URL, url);
+                            return Response.internalServerError().bodyJson(Const.API_ERROR);
+                        });
             } catch (IllegalArgumentException e) {
+                LOG.error(FAILED_TO_ADD_ITEM_WITH_URL, url);
                 return Response.badRequest().bodyJsonError("Invalid user, category or url");
             }
         }
