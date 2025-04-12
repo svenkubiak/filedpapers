@@ -152,12 +152,12 @@ public final class Utils {
             HttpResponse<byte[]> response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
             String base64 = Base64.getEncoder().encodeToString(response.body());
 
-            String contentType = response.headers().firstValue("Content-Type").orElse("image/jpeg"); // fallback
+            String contentType = response.headers().firstValue("Content-Type").orElse("image/jpeg");
             data = "data:" + contentType + ";base64," + base64;
-        } catch (IOException | InterruptedException e) {
-            throw new RuntimeException(e);
+        } catch (Exception e) {
+            //Intentionally left blank
         }
 
-        return Optional.of(data);
+        return Optional.ofNullable(data);
     }
 }

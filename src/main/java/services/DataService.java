@@ -1,5 +1,6 @@
 package services;
 
+import com.mongodb.client.model.Sorts;
 import com.mongodb.client.model.Updates;
 import com.mongodb.client.result.DeleteResult;
 import constants.Const;
@@ -439,5 +440,18 @@ public class DataService {
         }
 
         return false;
+    }
+
+    public void convertImages() {
+        datastore.findAll(Item.class,
+                and(
+                        ne("image", null),
+                        eq("imageBase64", null),
+                        ne("image", PLACEHOLDER_IMAGE)),
+                Sorts.ascending("timestamp"))
+            .forEach(item -> {
+                    item.setImageBase64(Utils.getImageAsBase64(item.getImage()).orElse(PLACEHOLDER_IMAGE));
+                    save(item);
+        });
     }
 }
