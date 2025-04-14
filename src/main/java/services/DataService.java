@@ -36,13 +36,11 @@ import static constants.Const.PLACEHOLDER_IMAGE;
 public class DataService {
     private static final Logger LOG = LogManager.getLogger(DataService.class);
     private final Datastore datastore;
-    private final Messages messages;
     private final boolean storeImages;
 
     @Inject
-    public DataService(Datastore datastore, Messages messages, @Named("application.images.store") boolean storeImages) {
+    public DataService(Datastore datastore, @Named("application.images.store") boolean storeImages) {
         this.datastore = Objects.requireNonNull(datastore, Required.DATASTORE);
-        this.messages = Objects.requireNonNull(messages, Required.MESSAGES);
         this.storeImages = storeImages;
     }
 
@@ -451,6 +449,27 @@ public class DataService {
                 Sorts.ascending("timestamp"))
             .forEach(item -> {
                     item.setImageBase64(Utils.getImageAsBase64(item.getImage()).orElse(PLACEHOLDER_IMAGE));
+                    save(item);
+        });
+    }
+
+    public void resync(String userUid) {
+        Utils.checkCondition(Utils.isValidUuid(userUid), Invalid.USER_UID);
+
+        datastore.findAll(Item.class, eq("userUid", userUid), Sorts.ascending("timestamp"))
+                .stream().filter(item -> StringUtils.isNotBlank(item.getImage()) && !item.getImage().equals(PLACEHOLDER_IMAGE))
+                .forEach(item -> {
+                    LinkPreview linkPreview;
+                    try {
+                        linkPreview = LinkPreviewFetcher.fetch(item.getUrl());
+                        item.setImage(linkPreview.imageUrl());
+                        if (storeImages && !linkPreview.imageUrl().equals(PLACEHOLDER_IMAGE)) {
+                            item.setImageBase64(Utils.getImageAsBase64(linkPreview.imageUrl()).orElse(PLACEHOLDER_IMAGE));
+                        }
+                    } catch (Exception e) {
+                        item.setImage(PLACEHOLDER_IMAGE);
+                        LOG.error("Failed to fetch link preview", e);
+                    }
                     save(item);
         });
     }

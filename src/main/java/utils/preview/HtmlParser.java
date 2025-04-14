@@ -251,8 +251,8 @@ public class HtmlParser {
         try {
             URL url = URI.create(imageUrl).toURL();
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setConnectTimeout(2000); // 2 seconds
-            connection.setReadTimeout(2000); // 2 seconds
+            connection.setConnectTimeout(5000);
+            connection.setReadTimeout(5000);
             connection.setRequestMethod("HEAD");
             connection.setInstanceFollowRedirects(true);
 
@@ -317,8 +317,8 @@ public class HtmlParser {
         try {
             URL url = URI.create(imageUrl).toURL();
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setConnectTimeout(2000);
-            connection.setReadTimeout(2000);
+            connection.setConnectTimeout(5000);
+            connection.setReadTimeout(5000);
 
             // Check if the URL returns an image content type
             String contentType = connection.getContentType();
