@@ -39,21 +39,18 @@ public class DashboardController {
     private final Config config;
     private final Messages messages;
     private final String authRedirect;
-    private final boolean storeImages;
 
     @Inject
     public DashboardController(DataService dataService,
                                NotificationService notificationService,
                                Config config,
                                Messages messages,
-                               @Named("authentication.redirect.login") String loginRedirect,
-                               @Named("application.images.store") boolean storeImages) {
+                               @Named("authentication.redirect.login") String loginRedirect) {
         this.notificationService = Objects.requireNonNull(notificationService, Required.NOTIFICATION_SERVICE);
         this.dataService = Objects.requireNonNull(dataService, Required.DATA_SERVICE);
         this.config = Objects.requireNonNull(config, Required.CONFIG);
         this.messages = Objects.requireNonNull(messages, Required.MESSAGES);
         this.authRedirect = Objects.requireNonNull(loginRedirect, Required.LOGIN_REDIRECT);
-        this.storeImages = storeImages;
     }
 
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")

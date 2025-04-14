@@ -15,18 +15,8 @@ import java.net.URL;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
-/**
- * Utility class for extracting preview information from HTML documents
- */
 public class HtmlParser {
-    // Maximum image file size in bytes (300 KB)
-    private static final int MAX_IMAGE_SIZE = 300 * 1024;
-
-    // Connection timeout in seconds
-    private static final int CONNECTION_TIMEOUT = 5;
-
     /**
      * Extracts the title from HTML document with fallback options:
      * 1. Open Graph title (og:title)
@@ -188,37 +178,67 @@ public class HtmlParser {
         Optional<String> ogImage = Optional.ofNullable(document.select("meta[property=og:image]").first())
                 .map(element -> element.attr("content"))
                 .filter(content -> !content.isEmpty())
-                .map(content -> resolveUrl(content, baseUrl))
-                .filter(HtmlParser::isImageWithinSizeLimit);
+                .map(content -> resolveUrl(content, baseUrl));
 
         if (ogImage.isPresent()) {
-            return ogImage;
+            String imageUrl = ogImage.get();
+            ImageDimensions dimensions = getImageDimensions(imageUrl);
+            if (dimensions != null) {
+                return Optional.of(imageUrl);
+            }
         }
 
         // Try Twitter Card image
         Optional<String> twitterImage = Optional.ofNullable(document.select("meta[name=twitter:image]").first())
                 .map(element -> element.attr("content"))
                 .filter(content -> !content.isEmpty())
-                .map(content -> resolveUrl(content, baseUrl))
-                .filter(HtmlParser::isImageWithinSizeLimit);
+                .map(content -> resolveUrl(content, baseUrl));
 
         if (twitterImage.isPresent()) {
-            return twitterImage;
+            String imageUrl = twitterImage.get();
+            ImageDimensions dimensions = getImageDimensions(imageUrl);
+            if (dimensions != null) {
+                return Optional.of(imageUrl);
+            }
         }
 
         // Try image_src link
         Optional<String> imageSrc = Optional.ofNullable(document.select("link[rel=image_src]").first())
                 .map(element -> element.attr("href"))
                 .filter(href -> !href.isEmpty())
-                .map(href -> resolveUrl(href, baseUrl))
-                .filter(HtmlParser::isImageWithinSizeLimit);
+                .map(href -> resolveUrl(href, baseUrl));
 
         if (imageSrc.isPresent()) {
-            return imageSrc;
+            String imageUrl = imageSrc.get();
+            ImageDimensions dimensions = getImageDimensions(imageUrl);
+            if (dimensions != null) {
+                return Optional.of(imageUrl);
+            }
         }
 
         // Find best image from document body
-        return findBestImage(document, baseUrl);
+        Elements imgElements = document.select("img");
+
+        // Return first valid image found
+        for (Element img : imgElements) {
+            String src = img.attr("src");
+            if (src.isEmpty()) {
+                continue;
+            }
+
+            String resolvedUrl = resolveUrl(src, baseUrl);
+
+            try {
+                ImageDimensions dimensions = getImageDimensions(resolvedUrl);
+                if (dimensions != null) {
+                    return Optional.of(resolvedUrl);
+                }
+            } catch (Exception e) {
+                // Ignore errors and continue with next image
+            }
+        }
+
+        return Optional.empty();
     }
 
     /**
@@ -231,34 +251,19 @@ public class HtmlParser {
         try {
             URL url = URI.create(imageUrl).toURL();
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setConnectTimeout((int) TimeUnit.SECONDS.toMillis(CONNECTION_TIMEOUT));
-            connection.setReadTimeout((int) TimeUnit.SECONDS.toMillis(CONNECTION_TIMEOUT));
+            connection.setConnectTimeout(2000); // 2 seconds
+            connection.setReadTimeout(2000); // 2 seconds
             connection.setRequestMethod("HEAD");
+            connection.setInstanceFollowRedirects(true);
 
-            // Check if we got a valid response
             int responseCode = connection.getResponseCode();
             if (responseCode != HttpURLConnection.HTTP_OK) {
                 return false;
             }
 
-            // Check content type
             String contentType = connection.getContentType();
-            if (contentType == null || !contentType.startsWith("image/")) {
-                return false;
-            }
-
-            // Check file size
-            int contentLength = connection.getContentLength();
-
-            // If content length is not available or negative, we can't check size
-            if (contentLength <= 0) {
-                // In this case, we'll assume it's within limits to not discard potentially good images
-                return true;
-            }
-
-            return contentLength <= MAX_IMAGE_SIZE;
+            return contentType != null && contentType.startsWith("image/");
         } catch (IOException e) {
-            // If we can't check the size, we'll be conservative and not use the image
             return false;
         }
     }
@@ -277,70 +282,20 @@ public class HtmlParser {
                     // Resolve URL
                     String resolvedUrl = resolveUrl(src, baseUrl);
 
-                    // Skip images that exceed size limit
-                    if (!isImageWithinSizeLimit(resolvedUrl)) {
-                        return null;
-                    }
-
                     try {
-                        // Try to get actual image dimensions first
+                        // Try to get actual image dimensions
                         ImageDimensions dimensions = getImageDimensions(resolvedUrl);
 
-                        // If we couldn't get actual dimensions, use attributes as fallback
+                        // If we couldn't get actual dimensions, skip this image
                         if (dimensions == null) {
-                            int width = parseIntAttribute(img, "width");
-                            int height = parseIntAttribute(img, "height");
-
-                            // If attributes are missing too, skip this image
-                            if (width <= 0 || height <= 0) {
-                                return null;
-                            }
-
-                            dimensions = new ImageDimensions(width, height);
-                        }
-
-                        // Skip if either dimension is too small
-                        if (dimensions.width() < 50 || dimensions.height() < 50) {
-                            return null;
-                        }
-
-                        // Skip if aspect ratio is extreme
-                        double aspectRatio;
-                        if (dimensions.width() > dimensions.height()) {
-                            aspectRatio = (double) dimensions.width() / dimensions.height();
-                        } else {
-                            aspectRatio = (double) dimensions.height() / dimensions.width();
-                        }
-
-                        if (aspectRatio > 3.0) {
                             return null;
                         }
 
                         // Calculate area for sorting
                         int area = dimensions.width() * dimensions.height();
-
                         return new ImageCandidate(resolvedUrl, area);
                     } catch (Exception e) {
-                        // If anything goes wrong, fall back to attribute dimensions
-                        int width = parseIntAttribute(img, "width");
-                        int height = parseIntAttribute(img, "height");
-
-                        // Skip if either dimension is too small
-                        if (width < 50 || height < 50) {
-                            return null;
-                        }
-
-                        // Skip if aspect ratio is extreme
-                        if (width > height && width / height > 3) {
-                            return null;
-                        } else if (height > width && height / width > 3) {
-                            return null;
-                        }
-
-                        // Calculate area for sorting
-                        int area = width * height;
-
-                        return new ImageCandidate(resolvedUrl, area);
+                        return null;
                     }
                 })
                 .filter(java.util.Objects::nonNull)
@@ -362,9 +317,8 @@ public class HtmlParser {
         try {
             URL url = URI.create(imageUrl).toURL();
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setConnectTimeout((int) TimeUnit.SECONDS.toMillis(CONNECTION_TIMEOUT));
-            connection.setReadTimeout((int) TimeUnit.SECONDS.toMillis(CONNECTION_TIMEOUT));
-            connection.setRequestMethod("HEAD");
+            connection.setConnectTimeout(2000);
+            connection.setReadTimeout(2000);
 
             // Check if the URL returns an image content type
             String contentType = connection.getContentType();
@@ -372,8 +326,8 @@ public class HtmlParser {
                 return null;
             }
 
-            // Use ImageIO to get dimensions without downloading the entire image
-            try (ImageInputStream in = ImageIO.createImageInputStream(url.openStream())) {
+            // Read the image to get actual dimensions
+            try (ImageInputStream in = ImageIO.createImageInputStream(connection.getInputStream())) {
                 if (in == null) {
                     return null;
                 }
@@ -388,13 +342,31 @@ public class HtmlParser {
                     reader.setInput(in);
                     int width = reader.getWidth(0);
                     int height = reader.getHeight(0);
+
+                    // Validate minimum dimensions (from article)
+                    if (width < 50 || height < 50) {
+                        return null;
+                    }
+
+                    // Check aspect ratio (from article)
+                    double aspectRatio = width > height ?
+                            (double) width / height :
+                            (double) height / width;
+                    if (aspectRatio > 3.0) {
+                        return null;
+                    }
+
+                    // Check if area exceeds limit (500x500 = 250,000)
+                    if (width * height > 250000) {
+                        return null;
+                    }
+
                     return new ImageDimensions(width, height);
                 } finally {
                     reader.dispose();
                 }
             }
         } catch (IOException e) {
-            // If we can't load the image, just return null and fall back to attributes
             return null;
         }
     }
