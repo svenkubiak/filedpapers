@@ -138,7 +138,7 @@ public class HtmlParser {
                 });
         
         if (canonicalUrl.isPresent()) {
-            return getDomainName(canonicalUrl.get());
+            return getDomainName(canonicalUrl.orElseThrow());
         }
         
         // Try Open Graph URL
@@ -154,7 +154,7 @@ public class HtmlParser {
                 });
         
         if (ogUrl.isPresent()) {
-            return getDomainName(ogUrl.get());
+            return getDomainName(ogUrl.orElseThrow());
         }
         
         // Use original URL as fallback
