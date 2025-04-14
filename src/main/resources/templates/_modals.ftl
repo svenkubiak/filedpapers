@@ -44,7 +44,7 @@
             <footer class="modal-card-foot">
                 <div class="is-flex is-justify-content-space-between" style="width: 100%">
                     <button class="button">${i18n("layout.modal.delete.account.cancel")}</button>
-                    <input type="submit" class="button is-danger" id="add-category-submit" data-confirm value="${i18n("layout.modal.delete.account.delete")}">
+                    <input type="submit" class="button is-danger" id="add-category-submit" value="${i18n("layout.modal.delete.account.delete")}">
                 </div>
             </footer>
         </form>
@@ -63,7 +63,7 @@
         <footer class="modal-card-foot">
             <div class="is-flex is-justify-content-space-between" style="width: 100%">
                 <button class="button">${i18n("layout.modal.delete.bookmark.cancel")}</button>
-                <button class="button is-danger" id="confirm-delete" data-confirm>${i18n("layout.modal.delete.bookmark.delete")}</button>
+                <button class="button is-danger" id="confirm-delete">${i18n("layout.modal.delete.bookmark.delete")}</button>
             </div>
         </footer>
     </div>
@@ -81,7 +81,7 @@
         <footer class="modal-card-foot">
             <div class="is-flex is-justify-content-space-between" style="width: 100%">
                 <button class="button">${i18n("layout.modal.delete.category.cancel")}</button>
-                <button class="button is-danger" id="confirm-category-delete" data-confirm>${i18n("layout.modal.delete.category.delete")}</button>
+                <button class="button is-danger" id="confirm-category-delete">${i18n("layout.modal.delete.category.delete")}</button>
             </div>
         </footer>
     </div>
@@ -99,7 +99,7 @@
         <footer class="modal-card-foot">
             <div class="is-flex is-justify-content-space-between" style="width: 100%">
                 <button class="button">${i18n("layout.modal.trash.cancel")}</button>
-                <button class="button is-danger" id="confirm-empty-trash" data-confirm>${i18n("layout.modal.trash.empty")}</button>
+                <button class="button is-danger" id="confirm-empty-trash">${i18n("layout.modal.trash.empty")}</button>
             </div>
         </footer>
     </div>
@@ -117,7 +117,7 @@
         <footer class="modal-card-foot">
             <div class="is-flex is-justify-content-space-between" style="width: 100%">
                 <button class="button">${i18n("layout.modal.logout.devices.cancel")}</button>
-                <button class="button is-danger" id="confirm-logout-devices" data-confirm>${i18n("layout.modal.logout.devices.logout")}</button>
+                <button class="button is-danger" id="confirm-logout-devices">${i18n("layout.modal.logout.devices.logout")}</button>
             </div>
         </footer>
     </div>
