@@ -211,7 +211,7 @@ public class ItemsControllerV1Tests {
     @Test
     void testAddWithCategory() {
         //given
-        String url = "https://svenkubiak.de/" + CodecUtils.uuid();
+        String url = "https://svenkubiak.de";
 
         //when
         Map<String, String> data = Map.of("url", url, "category", TEST_UID);
@@ -232,7 +232,7 @@ public class ItemsControllerV1Tests {
     @Test
     void testAddAsyncWithCategory() {
         //given
-        String url = "https://svenkubiak.de/" + CodecUtils.uuid();
+        String url = "https://svenkubiak.de";
 
         //when
         Map<String, String> data = Map.of("url", url, "category", TEST_UID);
@@ -253,7 +253,7 @@ public class ItemsControllerV1Tests {
     @Test
     void testAddWithoutCategory() {
         //given
-        String url = "https://svenkubiak.de/" + CodecUtils.uuid();
+        String url = "https://svenkubiak.de";
 
         //when
         Map<String, String> data = Map.of("url", url);
@@ -274,7 +274,7 @@ public class ItemsControllerV1Tests {
     @Test
     void testAddAsyncWithoutCategory() {
         //given
-        String url = "https://svenkubiak.de/" + CodecUtils.uuid();
+        String url = "https://svenkubiak.de";
 
         //when
         Map<String, String> data = Map.of("url", url);
