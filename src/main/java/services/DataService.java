@@ -12,9 +12,6 @@ import io.mangoo.utils.CodecUtils;
 import io.mangoo.utils.DateUtils;
 import io.mangoo.utils.MangooUtils;
 import io.mangoo.utils.totp.TotpUtils;
-import it.auties.linkpreview.LinkPreview;
-import it.auties.linkpreview.LinkPreviewMatch;
-import it.auties.linkpreview.LinkPreviewMedia;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import models.Action;
@@ -22,8 +19,12 @@ import models.Category;
 import models.Item;
 import models.User;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.util.Strings;
 import utils.Utils;
+import utils.preview.LinkPreview;
+import utils.preview.LinkPreviewFetcher;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -33,6 +34,7 @@ import static com.mongodb.client.model.Filters.*;
 import static constants.Const.PLACEHOLDER_IMAGE;
 
 public class DataService {
+    private static final Logger LOG = LogManager.getLogger(DataService.class);
     private final Datastore datastore;
     private final Messages messages;
     private final boolean storeImages;
@@ -228,16 +230,12 @@ public class DataService {
         Utils.checkCondition(Utils.isValidUuid(userUid), Invalid.USER_UID);
         Utils.checkCondition(Utils.isValidURL(url), Invalid.URL);
 
-        String previewImage = PLACEHOLDER_IMAGE;
-        String title = messages.get("item.missing.title");
-        List<LinkPreviewMatch> previews = LinkPreview.createPreviews(url);
-        for (LinkPreviewMatch linkPreviewMatch : previews) {
-            title = linkPreviewMatch.result().title();
-            Set<LinkPreviewMedia> images = linkPreviewMatch.result().images();
-            for (LinkPreviewMedia image : images) {
-                previewImage = image.uri().toString();
-                break;
-            }
+        LinkPreview linkPreview;
+        try {
+            linkPreview = LinkPreviewFetcher.fetch(url);
+        } catch (Exception e) {
+            LOG.error("Failed to fetch link preview", e);
+            return Optional.empty();
         }
 
         Category category = null;
@@ -253,13 +251,15 @@ public class DataService {
             category.setCount(category.getCount() + 1);
             String categoryResult = save(category);
 
-            var item = new Item(userUid, category.getUid(), url, previewImage, title);
-            if (storeImages && !previewImage.equals(PLACEHOLDER_IMAGE)) {
-                item.setImageBase64(Utils.getImageAsBase64(previewImage).orElse(PLACEHOLDER_IMAGE));
+            var item = new Item(userUid, category.getUid(), url, linkPreview.imageUrl(), linkPreview.title());
+            if (storeImages && !linkPreview.imageUrl().equals(PLACEHOLDER_IMAGE)) {
+                item.setImageBase64(Utils.getImageAsBase64(linkPreview.imageUrl()).orElse(PLACEHOLDER_IMAGE));
             }
             String itemResult = save(item);
 
             return Optional.of(StringUtils.isNoneBlank(categoryResult, itemResult));
+        } else {
+            LOG.error("Failed to store item. Could not find any category.");
         }
 
         return Optional.empty();
