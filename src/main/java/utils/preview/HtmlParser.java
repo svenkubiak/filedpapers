@@ -133,7 +133,7 @@ public class HtmlParser {
                 });
 
         if (canonicalUrl.isPresent()) {
-            return getDomainName(canonicalUrl.get());
+            return getDomainName(canonicalUrl.orElseThrow());
         }
 
         // Try Open Graph URL
@@ -149,7 +149,7 @@ public class HtmlParser {
                 });
 
         if (ogUrl.isPresent()) {
-            return getDomainName(ogUrl.get());
+            return getDomainName(ogUrl.orElseThrow());
         }
 
         // Use original URL as fallback
@@ -181,7 +181,7 @@ public class HtmlParser {
                 .map(content -> resolveUrl(content, baseUrl));
 
         if (ogImage.isPresent()) {
-            String imageUrl = ogImage.get();
+            String imageUrl = ogImage.orElseThrow();
             ImageDimensions dimensions = getImageDimensions(imageUrl);
             if (dimensions != null) {
                 return Optional.of(imageUrl);
@@ -195,7 +195,7 @@ public class HtmlParser {
                 .map(content -> resolveUrl(content, baseUrl));
 
         if (twitterImage.isPresent()) {
-            String imageUrl = twitterImage.get();
+            String imageUrl = twitterImage.orElseThrow();
             ImageDimensions dimensions = getImageDimensions(imageUrl);
             if (dimensions != null) {
                 return Optional.of(imageUrl);
@@ -209,7 +209,7 @@ public class HtmlParser {
                 .map(href -> resolveUrl(href, baseUrl));
 
         if (imageSrc.isPresent()) {
-            String imageUrl = imageSrc.get();
+            String imageUrl = imageSrc.orElseThrow();
             ImageDimensions dimensions = getImageDimensions(imageUrl);
             if (dimensions != null) {
                 return Optional.of(imageUrl);
