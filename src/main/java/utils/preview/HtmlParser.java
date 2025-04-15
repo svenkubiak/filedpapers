@@ -172,7 +172,7 @@ public class HtmlParser {
         Element ogImageElement = document.select("meta[property=og:image]").first();
         if (ogImageElement != null) {
             String ogImageUrl = ogImageElement.attr("content");
-            if (ogImageUrl == null || ogImageUrl.isEmpty()) {
+            if (ogImageUrl.isEmpty()) {
                 return Optional.empty();
             }
             
@@ -234,7 +234,7 @@ public class HtmlParser {
         // Try to find images in the document body
         // Look for absolute URLs in img tags, limit to first 5
         return document.select("img").stream()
-                .limit(10)
+                .limit(5)
                 .map(element -> element.attr("src"))
                 .filter(src -> src.startsWith("http://") || src.startsWith("https://"))
                 .filter(url -> {
