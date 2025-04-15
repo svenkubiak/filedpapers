@@ -14,9 +14,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.time.Duration;
 
 public final class LinkPreviewFetcher {
     private LinkPreviewFetcher() {}
@@ -24,8 +21,11 @@ public final class LinkPreviewFetcher {
     public static LinkPreview fetch(String url) throws IOException, URISyntaxException {
         URL parsedUrl = URI.create(url).toURL();
         Result result = Http.get(url)
-                .withHeader("User-Agent", Const.USER_AGENT)
+                .withHeader("User-Agent", "Googlebot")
                 .withHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8")
+                .withHeader("Accept-Language", "en-US,en;q=0.5")
+                .withVersion(HttpClient.Version.HTTP_1_1)
+                .followRedirects()
                 .send();
 
         Document document = Jsoup.parse(result.body());
