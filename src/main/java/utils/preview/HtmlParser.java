@@ -9,7 +9,6 @@ import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
-import java.net.URI;
 import java.net.URL;
 import java.util.Iterator;
 import java.util.List;
@@ -125,7 +124,7 @@ public class HtmlParser {
                 .filter(href -> !href.isEmpty())
                 .flatMap(href -> {
                     try {
-                        return Optional.of(URI.create(href).toURL());
+                        return Optional.of(new URL(href));
                     } catch (MalformedURLException e) {
                         return Optional.empty();
                     }
@@ -141,7 +140,7 @@ public class HtmlParser {
                 .filter(content -> !content.isEmpty())
                 .flatMap(content -> {
                     try {
-                        return Optional.of(URI.create(content).toURL());
+                        return Optional.of(new URL(content));
                     } catch (MalformedURLException e) {
                         return Optional.empty();
                     }
@@ -339,7 +338,7 @@ public class HtmlParser {
         }
 
         try {
-            URL url = URI.create(imageUrl).toURL();
+            URL url = new URL(imageUrl);
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setConnectTimeout(5000);
             connection.setReadTimeout(5000);
