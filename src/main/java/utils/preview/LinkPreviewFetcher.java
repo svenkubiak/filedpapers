@@ -10,6 +10,9 @@ import org.jsoup.nodes.Document;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Duration;
 
 public final class LinkPreviewFetcher {
@@ -25,7 +28,9 @@ public final class LinkPreviewFetcher {
                 .header("Connection", "keep-alive")
                 .get();
 
-        return buildLinkPreview(document, parsedUrl);
+        System.out.println(document.html());
+
++        return buildLinkPreview(document, parsedUrl);
     }
 
     private static LinkPreview buildLinkPreview(Document document, URL url) {
