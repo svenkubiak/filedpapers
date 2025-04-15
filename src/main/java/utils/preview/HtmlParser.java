@@ -174,17 +174,25 @@ public class HtmlParser {
      */
     public static Optional<String> extractImageUrl(Document document, URL baseUrl) {
         // Try Open Graph image first
-        Optional<String> ogImage = Optional.ofNullable(document.select("meta[property=og:image]").first())
-                .map(element -> element.attr("content"))
-                .filter(content -> !content.isEmpty())
-                .map(content -> resolveUrl(content, baseUrl))
-                .filter(url -> {
-                    ImageDimensions dimensions = getImageDimensions(url);
-                    return dimensions != null;
-                });
-
-        if (ogImage.isPresent()) {
-            return ogImage;
+        Element ogImageElement = document.select("meta[property=og:image]").first();
+        if (ogImageElement != null) {
+            String ogImageUrl = ogImageElement.attr("content");
+            if (ogImageUrl == null || ogImageUrl.isEmpty()) {
+                return Optional.empty();
+            }
+            
+            // If URL is already absolute, return it
+            if (ogImageUrl.startsWith("http://") || ogImageUrl.startsWith("https://")) {
+                return Optional.of(ogImageUrl);
+            }
+            
+            // Try to resolve relative URL
+            try {
+                String resolvedUrl = new URL(baseUrl, ogImageUrl).toString();
+                return Optional.of(resolvedUrl);
+            } catch (MalformedURLException e) {
+                return Optional.empty();
+            }
         }
 
         // Try Twitter Card image second
@@ -413,32 +421,10 @@ public class HtmlParser {
                 return url;
             }
 
-            // Handle protocol-relative URLs (starting with //)
-            if (url.startsWith("//")) {
-                return baseUrl.getProtocol() + ":" + url;
-            }
-
-            // Handle root-relative URLs
-            if (url.startsWith("/")) {
-                return baseUrl.getProtocol() + "://" + baseUrl.getHost() + url;
-            }
-
-            // Handle relative URLs
-            String basePath = baseUrl.getPath();
-            if (basePath.endsWith("/")) {
-                return baseUrl.getProtocol() + "://" + baseUrl.getHost() + basePath + url;
-            } else {
-                int lastSlash = basePath.lastIndexOf('/');
-                String baseDir = lastSlash >= 0 ? basePath.substring(0, lastSlash + 1) : "/";
-                return baseUrl.getProtocol() + "://" + baseUrl.getHost() + baseDir + url;
-            }
-        } catch (Exception e) {
-            // If resolution fails, try to create an absolute URL using the base URL
-            try {
-                return new URL(baseUrl, url).toString();
-            } catch (MalformedURLException ex) {
-                return url; // Return original URL if all resolution attempts fail
-            }
+            // Use Java's built-in URL resolution
+            return new URL(baseUrl, url).toString();
+        } catch (MalformedURLException e) {
+            return url; // Return original URL if resolution fails
         }
     }
 
