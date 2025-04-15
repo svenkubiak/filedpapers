@@ -7,6 +7,7 @@ import utils.preview.LinkPreview;
 import utils.preview.LinkPreviewFetcher;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
@@ -15,7 +16,7 @@ import static org.hamcrest.Matchers.equalTo;
 public class PreviewTests {
 
     @Test
-    public void testPreview1() throws IOException {
+    public void testPreview1() throws IOException, URISyntaxException {
         //when
         LinkPreview preview = LinkPreviewFetcher.fetch("https://www.youtube.com/watch?v=jE0Q8zIrXwU");
 
@@ -25,7 +26,7 @@ public class PreviewTests {
     }
 
     @Test
-    public void testPreview2() throws IOException {
+    public void testPreview2() throws IOException, URISyntaxException {
         //when
         LinkPreview preview = LinkPreviewFetcher.fetch("https://www.mariowiki.com/Mario_Kart_8_Deluxe#Drivers.27_statistics");
 
