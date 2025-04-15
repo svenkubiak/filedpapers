@@ -30,7 +30,7 @@ public final class LinkPreviewFetcher {
 
         System.out.println(document.html());
 
-+        return buildLinkPreview(document, parsedUrl);
+        return buildLinkPreview(document, parsedUrl);
     }
 
     private static LinkPreview buildLinkPreview(Document document, URL url) {
