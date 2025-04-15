@@ -18,7 +18,6 @@ const $deleteAccountModal = document.getElementById('delete-account-modal');
 const $logoutDevicesModal = document.getElementById('logout-devices-confirm-modal');
 const $deleteCategoryModal = document.getElementById('delete-category-confirm-modal');
 const $emptyTrashModal = document.getElementById('empty-trash-confirm-modal');
-const $closeButtons = document.querySelectorAll('.modal-background, .modal-card-head .delete, .modal-card-foot .button:not(.is-danger)');
 const draggableItems = document.querySelectorAll('.dragging[draggable="true"]');
 const categoryTargets = document.querySelectorAll('.menu-list a[data-category]');
 const $addBookmarkSubmit = document.getElementById('add-category-submit');
@@ -60,12 +59,6 @@ function showLoading(element) {
 
 $addButton.addEventListener('click', () => {
     openModal($modal);
-});
-
-$closeButtons.forEach(($close) => {
-    $close.addEventListener('click', () => {
-        closeAllModals();
-    });
 });
 
 document.addEventListener('keydown', (event) => {
@@ -132,7 +125,6 @@ categoryTargets.forEach(target => {
         } else {
             sessionStorage.setItem(toastError, error);
         }
-        closeAllModals();
         window.location.href = "/dashboard";
     });
 });
@@ -191,11 +183,11 @@ document.getElementById('confirm-category-delete').addEventListener('click', asy
 
         if (response.ok) {
             sessionStorage.setItem(toastSuccess, categoryDeletedSuccess);
+            closeAllModals();
         } else {
             sessionStorage.setItem(toastError, error);
         }
 
-        closeAllModals();
         window.location.href = "/dashboard";
     }
     closeModal($deleteCategoryModal);
@@ -208,11 +200,11 @@ document.getElementById('confirm-logout-devices').addEventListener('click', asyn
 
     if (response.ok) {
         sessionStorage.setItem(toastSuccess, logoutDevicesSuccess);
+        closeAllModals();
     } else {
         sessionStorage.setItem(toastError, error);
     }
 
-    closeAllModals();
     window.location.href = "/dashboard/profile";
 });
 
@@ -225,12 +217,12 @@ document.getElementById('confirm-empty-trash').addEventListener('click', async (
     });
 
     if (response.ok) {
+        closeAllModals();
         sessionStorage.setItem(toastSuccess, trashEmptiedSuccess);
     } else {
         sessionStorage.setItem(toastError, error);
     }
 
-    closeAllModals();
     window.location.href = "/dashboard";
 });
 
@@ -252,12 +244,12 @@ document.getElementById('confirm-delete').addEventListener('click', async () => 
         });
 
         if (response.ok) {
+            closeAllModals();
             sessionStorage.setItem(toastSuccess, bookmarkDeletedSuccess);
         } else {
             sessionStorage.setItem(toastError, error);
         }
 
-        closeAllModals();
         window.location.href = "/dashboard/" + category;
     }
 });
@@ -280,13 +272,12 @@ if ($addBookmarkSubmit) {
 
             if (response.ok) {
                 sessionStorage.setItem(toastSuccess, categoryCreatedSuccess);
+                document.getElementById('category').value = '';
+                closeAllModals();
+                window.location.href = "/dashboard";
             } else {
                 sessionStorage.setItem(toastError, error);
             }
-
-            document.getElementById('category').value = '';
-            closeAllModals();
-            window.location.href = "/dashboard";
         } else {
             document.getElementById('category').classList.add('is-danger');
         }
@@ -351,6 +342,7 @@ if (fabButton) {
 if ($confirmAddBookmark) {
     $confirmAddBookmark.addEventListener('click', async (e) => {
         e.preventDefault();
+        e.stopPropagation();
 
         const url = document.getElementById('bookmark-url').value;
         const category = document.getElementById('bookmark-category').value;
@@ -359,31 +351,37 @@ if ($confirmAddBookmark) {
             $confirmAddBookmark.classList.add('is-loading');
             $confirmAddBookmark.disabled = true;
 
-            const response = await fetch('/api/v1/items', {
-                method: 'POST',
-                headers: {
-                    "Content-type" : applicationJson
-                },
-                body: JSON.stringify({
-                    url: url,
-                    category: category.toLowerCase()
-                })
-            })
+            try {
+                const response = await fetch('/api/v1/items', {
+                    method: 'POST',
+                    headers: {
+                        "Content-type": "application/json" // fix here
+                    },
+                    body: JSON.stringify({
+                        url: url,
+                        category: category.toLowerCase()
+                    })
+                });
 
-            if (response.ok) {
-                sessionStorage.setItem(toastSuccess, bookmarkCreatedSuccess);
-            } else {
+                if (response.ok) {
+                    sessionStorage.setItem(toastSuccess, bookmarkCreatedSuccess);
+
+                    closeAllModals();
+                    window.location.href = "/dashboard/" + category;
+                } else {
+                    sessionStorage.setItem(toastError, error);
+                }
+            } catch (err) {
+                console.error("Error during fetch:", err);
                 sessionStorage.setItem(toastError, error);
+            } finally {
+                $confirmAddBookmark.classList.remove('is-loading');
+                $confirmAddBookmark.disabled = false;
             }
-
-            closeAllModals();
-            window.location.href = "/dashboard/" + category;
-
-            $addBookmarkSubmit.classList.remove('is-loading');
-            $addBookmarkSubmit.disabled = false;
         }
     });
 }
+
 
 document.querySelectorAll('.image-container').forEach(container => {
     const img = container.querySelector('.image-with-fallback');
@@ -451,7 +449,7 @@ document.addEventListener("keydown", function(event) {
 
         const confirmButton = openModal.querySelector("[data-confirm]");
         if (confirmButton) {
-            event.preventDefault(); // avoid unintended form submissions
+            event.preventDefault();
             confirmButton.click();
         }
     }
