@@ -180,15 +180,16 @@ public class HtmlParser {
                 return Optional.empty();
             }
             
-            // If URL is already absolute, return it
-            if (ogImageUrl.startsWith("http://") || ogImageUrl.startsWith("https://")) {
-                return Optional.of(ogImageUrl);
-            }
-            
-            // Try to resolve relative URL
+            String resolvedUrl;
             try {
-                String resolvedUrl = new URL(baseUrl, ogImageUrl).toString();
-                return Optional.of(resolvedUrl);
+                // Always resolve URL against baseUrl to handle relative paths
+                resolvedUrl = new URL(baseUrl, ogImageUrl).toString();
+                
+                // Validate image dimensions and size
+                ImageDimensions dimensions = getImageDimensions(resolvedUrl);
+                if (dimensions != null) {
+                    return Optional.of(resolvedUrl);
+                }
             } catch (MalformedURLException e) {
                 return Optional.empty();
             }
@@ -198,7 +199,13 @@ public class HtmlParser {
         Optional<String> twitterImage = Optional.ofNullable(document.select("meta[name=twitter:image]").first())
                 .map(element -> element.attr("content"))
                 .filter(content -> !content.isEmpty())
-                .map(content -> resolveUrl(content, baseUrl))
+                .map(content -> {
+                    try {
+                        return new URL(baseUrl, content).toString();
+                    } catch (MalformedURLException e) {
+                        return null;
+                    }
+                })
                 .filter(url -> {
                     ImageDimensions dimensions = getImageDimensions(url);
                     return dimensions != null;
@@ -212,7 +219,13 @@ public class HtmlParser {
         Optional<String> imageSrc = Optional.ofNullable(document.select("link[rel=image_src]").first())
                 .map(element -> element.attr("href"))
                 .filter(href -> !href.isEmpty())
-                .map(href -> resolveUrl(href, baseUrl))
+                .map(href -> {
+                    try {
+                        return new URL(baseUrl, href).toString();
+                    } catch (MalformedURLException e) {
+                        return null;
+                    }
+                })
                 .filter(url -> {
                     ImageDimensions dimensions = getImageDimensions(url);
                     return dimensions != null;
@@ -238,8 +251,10 @@ public class HtmlParser {
                 continue;
             }
 
-            String resolvedUrl = resolveUrl(src, baseUrl);
-            if (resolvedUrl == null) {
+            String resolvedUrl;
+            try {
+                resolvedUrl = new URL(baseUrl, src).toString();
+            } catch (MalformedURLException e) {
                 continue;
             }
 
@@ -342,7 +357,7 @@ public class HtmlParser {
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setConnectTimeout(5000);
             connection.setReadTimeout(5000);
-            connection.setRequestMethod("GET");
+            connection.setRequestMethod("HEAD"); // Use HEAD request first to check content length
             connection.setInstanceFollowRedirects(true);
 
             // Check if the URL returns an image content type
@@ -356,6 +371,13 @@ public class HtmlParser {
             if (contentLength > 1024 * 1024) { // 1MB
                 return null;
             }
+
+            // If content length is acceptable, make a GET request to get the image
+            connection = (HttpURLConnection) url.openConnection();
+            connection.setConnectTimeout(5000);
+            connection.setReadTimeout(5000);
+            connection.setRequestMethod("GET");
+            connection.setInstanceFollowRedirects(true);
 
             // Read the image to get actual dimensions
             try (ImageInputStream in = ImageIO.createImageInputStream(connection.getInputStream())) {
@@ -378,12 +400,12 @@ public class HtmlParser {
                         return null;
                     }
 
-                    // Check minimum dimensions (50px as mentioned in the article)
+                    // Check minimum dimensions (50px)
                     if (width < 50 || height < 50) {
                         return null;
                     }
 
-                    // Only check aspect ratio
+                    // Check aspect ratio (max 3:1)
                     double aspectRatio = width > height ?
                             (double) width / height :
                             (double) height / width;
