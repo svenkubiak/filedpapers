@@ -403,22 +403,26 @@ public class HtmlParser {
     }
 
     private static String resolveUrl(String url, URL baseUrl) {
+        if (url == null || url.isEmpty()) {
+            return url;
+        }
+
         try {
+            // If URL is already absolute, return it
+            if (url.startsWith("http://") || url.startsWith("https://")) {
+                return url;
+            }
+
             // Handle protocol-relative URLs (starting with //)
             if (url.startsWith("//")) {
                 return baseUrl.getProtocol() + ":" + url;
             }
-            
-            // Handle absolute URLs
-            if (url.startsWith("http://") || url.startsWith("https://")) {
-                return url;
-            }
-            
+
             // Handle root-relative URLs
             if (url.startsWith("/")) {
                 return baseUrl.getProtocol() + "://" + baseUrl.getHost() + url;
             }
-            
+
             // Handle relative URLs
             String basePath = baseUrl.getPath();
             if (basePath.endsWith("/")) {
@@ -429,7 +433,12 @@ public class HtmlParser {
                 return baseUrl.getProtocol() + "://" + baseUrl.getHost() + baseDir + url;
             }
         } catch (Exception e) {
-            return url; // Return original URL if resolution fails
+            // If resolution fails, try to create an absolute URL using the base URL
+            try {
+                return new URL(baseUrl, url).toString();
+            } catch (MalformedURLException ex) {
+                return url; // Return original URL if all resolution attempts fail
+            }
         }
     }
 
