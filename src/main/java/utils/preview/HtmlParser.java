@@ -7,12 +7,10 @@ import org.jsoup.select.Elements;
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
 import javax.imageio.stream.ImageInputStream;
-import java.io.IOException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
-import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
@@ -229,7 +227,7 @@ public class HtmlParser {
         for (int i = 0; i < maxImagesToCheck; i++) {
             Element img = imgElements.get(i);
             String src = img.attr("src");
-            if (src == null || src.isEmpty()) {
+            if (src.isEmpty()) {
                 continue;
             }
 
@@ -284,7 +282,7 @@ public class HtmlParser {
                     .map(img -> {
                         try {
                             String src = img.attr("src");
-                            if (src == null || src.isEmpty()) {
+                            if (src.isEmpty()) {
                                 return null;
                             }
 
@@ -315,7 +313,7 @@ public class HtmlParser {
                 return Optional.empty();
             }
 
-            return Optional.of(imageCandidates.get(0).url());
+            return Optional.of(imageCandidates.getFirst().url());
         } catch (Exception e) {
             return Optional.empty();
         }
@@ -391,8 +389,6 @@ public class HtmlParser {
                     reader.dispose();
                 }
             }
-        } catch (IOException e) {
-            return null;
         } catch (Exception e) {
             return null;
         }
