@@ -11,19 +11,18 @@ import org.jsoup.nodes.Document;
 
 import java.io.IOException;
 import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.http.HttpClient;
 
 public final class LinkPreviewFetcher {
     private LinkPreviewFetcher() {}
 
-    public static LinkPreview fetch(String url) throws IOException, URISyntaxException {
+    public static LinkPreview fetch(String url, String language) throws IOException {
         URL parsedUrl = URI.create(url).toURL();
         Result result = Http.get(url)
                 .withHeader("User-Agent", "Googlebot")
                 .withHeader("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8")
-                .withHeader("Accept-Language", "en-US,en;q=0.5")
+                .withHeader("Accept-Language", language + ", en;q=0.8, *;q=0.5")
                 .withVersion(HttpClient.Version.HTTP_1_1)
                 .followRedirects()
                 .send();

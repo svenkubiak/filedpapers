@@ -18,7 +18,7 @@ public class PreviewTests {
     @Test
     public void testPreview1() throws IOException, URISyntaxException {
         //when
-        LinkPreview preview = LinkPreviewFetcher.fetch("https://www.youtube.com/watch?v=jE0Q8zIrXwU");
+        LinkPreview preview = LinkPreviewFetcher.fetch("https://www.youtube.com/watch?v=jE0Q8zIrXwU", "en");
 
         //then
         assertThat(preview.title(), equalTo("The Silence Was So Loud"));
@@ -28,7 +28,7 @@ public class PreviewTests {
     @Test
     public void testPreview2() throws IOException, URISyntaxException {
         //when
-        LinkPreview preview = LinkPreviewFetcher.fetch("https://www.mariowiki.com/Mario_Kart_8_Deluxe#Drivers.27_statistics");
+        LinkPreview preview = LinkPreviewFetcher.fetch("https://www.mariowiki.com/Mario_Kart_8_Deluxe#Drivers.27_statistics", "en");
 
         //then
         assertThat(preview.title(), equalTo("Mario Kart 8 Deluxe"));

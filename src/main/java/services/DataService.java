@@ -226,10 +226,11 @@ public class DataService {
     public Optional<Boolean> addItem(String userUid, String url, String categoryUid) {
         Utils.checkCondition(Utils.isValidUuid(userUid), Invalid.USER_UID);
         Utils.checkCondition(Utils.isValidURL(url), Invalid.URL);
+        User user = findUser(userUid);
 
         LinkPreview linkPreview;
         try {
-            linkPreview = LinkPreviewFetcher.fetch(url);
+            linkPreview = LinkPreviewFetcher.fetch(url, user.getLanguage());
         } catch (Exception e) {
             LOG.error("Failed to fetch link preview", e);
             return Optional.empty();
@@ -454,13 +455,14 @@ public class DataService {
 
     public void resync(String userUid) {
         Utils.checkCondition(Utils.isValidUuid(userUid), Invalid.USER_UID);
+        User user = findUserByUid(userUid);
 
         datastore.findAll(Item.class, eq("userUid", userUid), Sorts.ascending("timestamp"))
                 .stream().filter(item -> StringUtils.isNotBlank(item.getImage()) && !item.getImage().equals(PLACEHOLDER_IMAGE))
                 .forEach(item -> {
                     LinkPreview linkPreview;
                     try {
-                        linkPreview = LinkPreviewFetcher.fetch(item.getUrl());
+                        linkPreview = LinkPreviewFetcher.fetch(item.getUrl(), user.getLanguage());
                         item.setImage(linkPreview.imageUrl());
                         if (storeImages && !linkPreview.imageUrl().equals(PLACEHOLDER_IMAGE)) {
                             item.setImageBase64(Utils.getImageAsBase64(linkPreview.imageUrl()).orElse(PLACEHOLDER_IMAGE));
