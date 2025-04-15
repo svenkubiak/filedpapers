@@ -23,12 +23,7 @@ public final class LinkPreviewFetcher {
         Document document = Jsoup.connect(url)
                 .userAgent(Const.USER_AGENT)
                 .timeout((int) Duration.ofSeconds(10).toMillis())
-                .header("Accept", "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8")
-                .header("Accept-Language", "en-US,en;q=0.5")
-                .header("Connection", "keep-alive")
                 .get();
-
-        System.out.println(document.html());
 
         return buildLinkPreview(document, parsedUrl);
     }
