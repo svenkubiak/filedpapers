@@ -42,6 +42,10 @@ AUTHENTICATION_SECRET=$(generate_secret)
 FLASH_SECRET=$(generate_secret)
 EOL
 
+# Create logs folder
+echo "Creating logs folder..."
+mkdir -p logs
+
 # Create the config folder
 echo "Creating config folder..."
 mkdir -p config

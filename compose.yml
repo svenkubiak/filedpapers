@@ -1,6 +1,6 @@
 services:
   filedpapers-web:
-    image: ghcr.io/svenkubiak/filedpapers/filedpapers:2.2.3
+    image: ghcr.io/svenkubiak/filedpapers/filedpapers:2.3.6
     container_name: filedpapers-web
     restart: always
     environment:
