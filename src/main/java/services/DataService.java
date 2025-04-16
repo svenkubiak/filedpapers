@@ -226,7 +226,11 @@ public class DataService {
     public Optional<Boolean> addItem(String userUid, String url, String categoryUid) {
         Utils.checkCondition(Utils.isValidUuid(userUid), Invalid.USER_UID);
         Utils.checkCondition(Utils.isValidURL(url), Invalid.URL);
-        User user = findUser(userUid);
+        User user = findUserByUid(userUid);
+
+        if (user == null) {
+            return Optional.empty();
+        }
 
         LinkPreview linkPreview;
         try {

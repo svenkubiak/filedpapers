@@ -5,6 +5,7 @@ import de.svenkubiak.http.Http;
 import de.svenkubiak.http.Result;
 import io.mangoo.core.Application;
 import io.mangoo.i18n.Messages;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.util.Strings;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -13,11 +14,14 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URL;
 import java.net.http.HttpClient;
+import java.util.Optional;
 
 public final class LinkPreviewFetcher {
     private LinkPreviewFetcher() {}
 
     public static LinkPreview fetch(String url, String language) throws IOException {
+        if (StringUtils.isBlank(language)) { language = "en"; };
+
         URL parsedUrl = URI.create(url).toURL();
         Result result = Http.get(url)
                 .withHeader("User-Agent", "Googlebot")
