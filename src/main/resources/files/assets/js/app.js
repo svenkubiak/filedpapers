@@ -61,12 +61,6 @@ $addButton.addEventListener('click', () => {
     openModal($modal);
 });
 
-document.addEventListener('keydown', (event) => {
-    if (event.code === 'Escape') {
-        closeAllModals();
-    }
-});
-
 draggableItems.forEach(item => {
     item.addEventListener('dragstart', (e) => {
         const dragIcon = document.createElement('div');
@@ -372,7 +366,6 @@ if ($confirmAddBookmark) {
                     sessionStorage.setItem(toastError, error);
                 }
             } catch (err) {
-                console.error("Error during fetch:", err);
                 sessionStorage.setItem(toastError, error);
             } finally {
                 $confirmAddBookmark.classList.remove('is-loading');
@@ -452,6 +445,10 @@ document.addEventListener("keydown", function(event) {
             event.preventDefault();
             confirmButton.click();
         }
+    }
+
+    if (event.code === 'Escape') {
+        closeAllModals();
     }
 });
 
