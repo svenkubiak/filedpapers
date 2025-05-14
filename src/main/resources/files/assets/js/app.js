@@ -18,6 +18,7 @@ const $deleteAccountModal = document.getElementById('delete-account-modal');
 const $logoutDevicesModal = document.getElementById('logout-devices-confirm-modal');
 const $deleteCategoryModal = document.getElementById('delete-category-confirm-modal');
 const $emptyTrashModal = document.getElementById('empty-trash-confirm-modal');
+const $closeButtons = document.querySelectorAll('.modal-background, .modal-card-head .delete, .modal-card-foot .button:not(.is-danger)');
 const draggableItems = document.querySelectorAll('.dragging[draggable="true"]');
 const categoryTargets = document.querySelectorAll('.menu-list a[data-category]');
 const $addBookmarkSubmit = document.getElementById('add-category-submit');
@@ -475,5 +476,11 @@ async function poll() {
         setTimeout(poll, 3000);
     } catch (error) {}
 }
+
+$closeButtons.forEach(($close) => {
+    $close.addEventListener('click', () => {
+        closeAllModals();
+    });
+});
 
 poll();
