@@ -22,13 +22,11 @@ public final class Required {
     public static final String NAME = "name can not be null";
     public static final String NOTIFICATION_SERVICE = "notificationService can not be null";
     public static final String OBJECT = "object can not be null";
-    public static final String OTP = "otp can not be null";
     public static final String PASSWORD = "password can not be null";
     public static final String REFRESH_TOKEN_SECRET = "refreshTokenSecret can not be null";
     public static final String SECRET = "secret can not be null";
     public static final String TITLE = "title can not be null";
     public static final String TOKEN = "token can not be null";
-    public static final String UID = "uid can not be null";
     public static final String URL = "url can not be null";
     public static final String USER_UID = "userUid can not be null";
     public static final String USERNAME = "username can not be null";
