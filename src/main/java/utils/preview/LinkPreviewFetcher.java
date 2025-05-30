@@ -30,6 +30,10 @@ public final class LinkPreviewFetcher {
         if (StringUtils.isBlank(language)) { language = "en"; };
 
         String metascraper = System.getProperty("application.metascraper.url");
+        if (StringUtils.isBlank(metascraper)) {
+            metascraper = "http://filedpapers-metascraper:3000";
+        }
+
         Result result = Http.get(metascraper + "/preview?lang=" + language + "&url=" + URLEncoder.encode(url, StandardCharsets.UTF_8))
                 .withTimeout(Duration.ofSeconds(10))
                 .send();
