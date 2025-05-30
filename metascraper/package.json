@@ -1,0 +1,21 @@
+{
+  "name": "metascraper",
+  "version": "1.0.0",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "cheerio": "^1.0.0",
+    "sharp": "^0.34.2",
+    "axios": "^1.9.0",
+    "metascraper": "^5.46.18",
+    "metascraper-description": "^5.46.18",
+    "metascraper-image": "^5.46.18",
+    "metascraper-title": "^5.46.18",
+    "metascraper-url": "^5.46.18",
+    "express": "^5.1.0"
+  }
+}
+

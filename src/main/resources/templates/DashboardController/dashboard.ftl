@@ -35,7 +35,7 @@
                     <div class="card-image">
                         <div class="image-container">
                             <div class="spinner"></div>
-                            <img src="${item.image}" class="image-with-fallback" alt="Thumbnail">
+                            <img src="${item.image}" class="image-with-fallback" alt="${item.description}" title="${item.description}">
                         </div>
                     </div>
                 </a>
@@ -56,7 +56,7 @@
                         </div>
                     </div>
                     <div class="card-meta" >
-                        <span class="card-domain"><a href="${item.url}" target="_blank">${item.url?truncate(30, '...')}</a></span>
+                        <span class="card-domain"><a href="${item.url}" target="_blank" title="${item.url}"><#if item.domain??>${item.domain?truncate(30, '...')}<#else>${item.url?truncate(30, '...')}</#if></a></span>
                         <span class="card-added">${i18n("dashboard.card.added")} ${prettytime(item.sort)}</span>
                     </div>
                 </div>

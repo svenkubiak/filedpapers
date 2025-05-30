@@ -2,6 +2,7 @@
 set -e
 
 IMAGE_NAME="filedpapers"
+IMAGE_NAME_METASCRAPER="filedpapers-metascraper"
 GHCR_USERNAME="svenkubiak"
 REPO_NAME="filedpapers"
 GHCR_URL="ghcr.io"
@@ -21,7 +22,9 @@ STATUS=$?
 mvn clean verify -DskipTests=true
 IMAGE_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
 IMAGE_FULL_PATH="$GHCR_URL/$GHCR_USERNAME/$REPO_NAME/$IMAGE_NAME:$IMAGE_VERSION"
+IMAGE_METASCRAPER_FULL_PATH="$GHCR_URL/$GHCR_USERNAME/$REPO_NAME/$IMAGE_NAME_METASCRAPER:$IMAGE_VERSION"
 IMAGE_LATEST_PATH="$GHCR_URL/$GHCR_USERNAME/$REPO_NAME/$IMAGE_NAME:latest"
+IMAGE_LATEST_METASCRAPER_PATH="$GHCR_URL/$GHCR_USERNAME/$REPO_NAME/$IMAGE_NAME_METASCRAPER:latest"
 
 # Function to check if the release is stable
 is_stable_release() {
@@ -38,40 +41,75 @@ if [ $STATUS -ne 0 ]; then
     echo "Failed to set new version! Exiting..."
     exit 1
 else
-    echo "Building Version Docker image..."
+    echo "Building Filedpapers Version Docker image..."
     docker build --no-cache -t "$IMAGE_NAME:$IMAGE_VERSION" .
 
     # Check if this is a stable release
     if is_stable_release; then
-        echo "Building Latest Docker image..."
+        echo "Building Latest Filedpapers Docker image..."
         docker tag "$IMAGE_NAME:$IMAGE_VERSION" "$IMAGE_NAME:latest"
     else
-        echo "Skipping build of Latest Docker image as this is a pre-release"
+        echo "Skipping build of Latest Filedpapers Docker image as this is a pre-release"
     fi
 
-    echo "Tagging version as $IMAGE_FULL_PATH..."
+    echo "Tagging Filedpapers version as $IMAGE_FULL_PATH..."
     docker tag "$IMAGE_NAME:$IMAGE_VERSION" "$IMAGE_FULL_PATH"
 
     if is_stable_release; then
-        echo "Tagging latest as $IMAGE_LATEST_PATH..."
+        echo "Tagging Filedpapers latest as $IMAGE_LATEST_PATH..."
         docker tag "$IMAGE_NAME:latest" "$IMAGE_LATEST_PATH"
     else
-        echo "Skipping tag latest as this is a pre-release"
+        echo "Skipping tag of Filedpapers latest as this is a pre-release"
     fi
 
-    echo "Pushing version to GitHub Container Registry..."
+    echo "Pushing Filedpapers version to GitHub Container Registry..."
     docker push "$IMAGE_FULL_PATH"
 
     if is_stable_release; then
-        echo "Pushing latest to GitHub Container Registry..."
+        echo "Pushing Filedpapers latest to GitHub Container Registry..."
         docker push "$IMAGE_LATEST_PATH"
     else
-        echo "Skipping push latest as this is a pre-release"
+        echo "Skipping push of Filedpapers latest as this is a pre-release"
     fi
+
+    cd metascraper
+
+    echo "Building Filedpapers-Metascraper Version Docker image..."
+    docker build --no-cache -t "$IMAGE_NAME_METASCRAPER:$IMAGE_VERSION" .
+
+    # Check if this is a stable release
+    if is_stable_release; then
+        echo "Building Latest Filedpapers-Metascraper Docker image..."
+        docker tag "$IMAGE_NAME_METASCRAPER:$IMAGE_VERSION" "$IMAGE_NAME_METASCRAPER:latest"
+    else
+        echo "Skipping build of Latest Filedpapers Docker image as this is a pre-release"
+    fi
+
+    echo "Tagging Filedpapers-Metascraper version as $IMAGE_FULL_PATH..."
+    docker tag "$IMAGE_NAME_METASCRAPER:$IMAGE_VERSION" "$IMAGE_METASCRAPER_FULL_PATH"
+
+    if is_stable_release; then
+        echo "Tagging Filedpapers-Metascraper latest as $IMAGE_LATEST_METASCRAPER_PATH..."
+        docker tag "$IMAGE_NAME_METASCRAPER:latest" "$IMAGE_LATEST_METASCRAPER_PATH"
+    else
+        echo "Skipping tag of Filedpapers-Mezascraper latest as this is a pre-release"
+    fi
+
+    echo "Pushing Filedpapers-Metascraper version to GitHub Container Registry..."
+    docker push "$IMAGE_METASCRAPER_FULL_PATH"
+
+    if is_stable_release; then
+        echo "Pushing Filedpapers-Metascraper latest to GitHub Container Registry..."
+        docker push "$IMAGE_LATEST_METASCRAPER_PATH"
+    else
+        echo "Skipping push of Filedpapers-Metascraper latest as this is a pre-release"
+    fi
+
+    cd ..
 
     # Push tags and update versions if the push succeeds
     if [ $? -eq 0 ]; then
-        echo "Image successfully pushed to $IMAGE_FULL_PATH"
+        echo "Tagging repo and pushing..."
         git tag $IMAGE_VERSION
         mvn release:update-versions
         git commit -am "Updated version after release"

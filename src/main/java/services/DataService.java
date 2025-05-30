@@ -115,6 +115,8 @@ public class DataService {
                     "url", item.getUrl(),
                     "image", (storeImages && StringUtils.isNotBlank(item.getImageBase64())) ? item.getImageBase64() : (StringUtils.isBlank(item.getImage())) ? Strings.EMPTY : item.getImage(),
                     "title", item.getTitle(),
+                    "description", StringUtils.isNotBlank(item.getDescription()) ? item.getDescription() : Strings.EMPTY,
+                    "domain", StringUtils.isNotBlank(item.getDomain()) ? item.getDomain() : Strings.EMPTY,
                     "sort", item.getTimestamp().toEpochSecond(ZoneOffset.UTC),
                     "added", DateUtils.getPrettyTime(item.getTimestamp()))); // FIX ME: Remove in later API version
         }
@@ -253,9 +255,9 @@ public class DataService {
             category.setCount(category.getCount() + 1);
             String categoryResult = save(category);
 
-            var item = new Item(userUid, category.getUid(), url, linkPreview.imageUrl(), linkPreview.title());
-            if (storeImages && !linkPreview.imageUrl().equals(PLACEHOLDER_IMAGE)) {
-                item.setImageBase64(Utils.getImageAsBase64(linkPreview.imageUrl()).orElse(PLACEHOLDER_IMAGE));
+            var item = new Item(userUid, category.getUid(), url, linkPreview.image(), linkPreview.title(), linkPreview.domain(), linkPreview.description());
+            if (storeImages && !linkPreview.image().equals(PLACEHOLDER_IMAGE)) {
+                item.setImageBase64(Utils.getImageAsBase64(linkPreview.image()).orElse(PLACEHOLDER_IMAGE));
             }
             String itemResult = save(item);
 
@@ -467,9 +469,9 @@ public class DataService {
                     LinkPreview linkPreview;
                     try {
                         linkPreview = LinkPreviewFetcher.fetch(item.getUrl(), user.getLanguage());
-                        item.setImage(linkPreview.imageUrl());
-                        if (storeImages && !linkPreview.imageUrl().equals(PLACEHOLDER_IMAGE)) {
-                            item.setImageBase64(Utils.getImageAsBase64(linkPreview.imageUrl()).orElse(PLACEHOLDER_IMAGE));
+                        item.setImage(linkPreview.image());
+                        if (storeImages && !linkPreview.image().equals(PLACEHOLDER_IMAGE)) {
+                            item.setImageBase64(Utils.getImageAsBase64(linkPreview.image()).orElse(PLACEHOLDER_IMAGE));
                         }
                     } catch (Exception e) {
                         item.setImage(PLACEHOLDER_IMAGE);

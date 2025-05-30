@@ -28,8 +28,10 @@ public class Item extends Entity implements Serializable {
     private String image;
     private String imageBase64;
     private String title;
+    private String description;
+    private String domain;
 
-    public Item(String userUid, String categoryUid, String url, String image, String title) {
+    public Item(String userUid, String categoryUid, String url, String image, String title, String domain, String description) {
         this.userUid = Objects.requireNonNull(userUid, Required.USER_UID);
         this.categoryUid = Objects.requireNonNull(categoryUid, Required.CATEGORY_UID);
         this.url = Objects.requireNonNull(url, Required.URL);
@@ -37,6 +39,8 @@ public class Item extends Entity implements Serializable {
         this.title = Objects.requireNonNull(title, Required.TITLE);
         this.uid = CodecUtils.uuid();
         this.timestamp = LocalDateTime.now();
+        this.domain = domain;
+        this.description = description;
     }
 
     public Item() {
@@ -104,5 +108,21 @@ public class Item extends Entity implements Serializable {
 
     public void setImageBase64(String imageBase64) {
         this.imageBase64 = imageBase64;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String getDomain() {
+        return domain;
+    }
+
+    public void setDomain(String domain) {
+        this.domain = domain;
     }
 }

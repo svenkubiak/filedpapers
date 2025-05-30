@@ -1,0 +1,240 @@
+const express = require('express');
+const axios = require('axios');
+const cheerio = require('cheerio');
+const sharp = require('sharp');
+const { URL } = require('url');
+
+const app = express();
+const PORT = 3000;
+
+// Constants
+const MAX_IMAGE_SIZE = 1024;
+const MAX_IMAGE_AREA = MAX_IMAGE_SIZE * MAX_IMAGE_SIZE; // 1MB in pixels
+const MAX_IMAGE_CANDIDATES = 5;
+
+// Helper function to clean text
+const cleanText = (text) => {
+  return text ? text.trim().replace(/\s+/g, ' ') : null;
+};
+
+// Helper function to resolve URLs
+const resolveUrl = (url, baseUrl) => {
+  try {
+    if (!url || url.startsWith('data:')) return null;
+    const baseUrlWithoutFragment = baseUrl.split('#')[0];
+    const resolvedUrl = new URL(url, baseUrlWithoutFragment);
+    return resolvedUrl.href;
+  } catch (e) {
+    return null;
+  }
+};
+
+// Helper function to check image dimensions
+const getImageDimensions = async (imageUrl) => {
+  try {
+    const response = await axios.get(imageUrl, {
+      responseType: 'arraybuffer',
+      timeout: 5000,
+      maxContentLength: 10 * 1024 * 1024
+    });
+    
+    const metadata = await sharp(response.data).metadata();
+    const area = metadata.width * metadata.height;
+    if (area <= MAX_IMAGE_AREA) {
+      return true;
+    }
+    return false;
+  } catch (e) {
+    return false;
+  }
+};
+
+// Extract title following the specified rules
+const extractTitle = ($) => {
+  // Open Graph title
+  const ogTitle = $('meta[property="og:title"]').attr('content');
+  if (ogTitle) return cleanText(ogTitle);
+
+  // Twitter Card title
+  const twitterTitle = $('meta[name="twitter:title"]').attr('content');
+  if (twitterTitle) return cleanText(twitterTitle);
+
+  // Meta title
+  const metaTitle = $('meta[name="title"]').attr('content');
+  if (metaTitle) return cleanText(metaTitle);
+
+  // Document title
+  const docTitle = $('title').text();
+  if (docTitle) return cleanText(docTitle);
+
+  // H1 tag
+  const h1Title = $('h1').first().text();
+  if (h1Title) return cleanText(h1Title);
+
+  // H2 tag
+  const h2Title = $('h2').first().text();
+  if (h2Title) return cleanText(h2Title);
+
+  // Try to find any heading that might contain the title
+  const anyHeading = $('h1, h2, h3, h4, h5, h6').first().text();
+  if (anyHeading) return cleanText(anyHeading);
+
+  // If we still don't have a title, try to find the first non-empty text node
+  const firstText = $('body').clone().children().remove().end().text();
+  if (firstText) return cleanText(firstText);
+
+  return null;
+};
+
+// Extract image following the specified rules
+const extractImage = async ($, baseUrl) => {
+  // Open Graph image
+  const ogImage = $('meta[property="og:image"]').attr('content');
+  if (ogImage) {
+    const resolvedUrl = resolveUrl(ogImage, baseUrl);
+    if (resolvedUrl && await getImageDimensions(resolvedUrl)) {
+      return resolvedUrl;
+    }
+  }
+
+  // Twitter Card image
+  const twitterImage = $('meta[name="twitter:image"]').attr('content');
+  if (twitterImage) {
+    const resolvedUrl = resolveUrl(twitterImage, baseUrl);
+    if (resolvedUrl && await getImageDimensions(resolvedUrl)) {
+      return resolvedUrl;
+    }
+  }
+
+  // Image_src link
+  const imageSrc = $('link[rel="image_src"]').attr('href');
+  if (imageSrc) {
+    const resolvedUrl = resolveUrl(imageSrc, baseUrl);
+    if (resolvedUrl && await getImageDimensions(resolvedUrl)) {
+      return resolvedUrl;
+    }
+  }
+
+  // Best image from document body (limited to 5 candidates)
+  let candidates = 0;
+  for (const el of $('img').get()) {
+    if (candidates >= MAX_IMAGE_CANDIDATES) break;
+    
+    const src = $(el).attr('src');
+    if (!src || src.startsWith('data:')) continue;
+    
+    const resolvedUrl = resolveUrl(src, baseUrl);
+    if (resolvedUrl && await getImageDimensions(resolvedUrl)) {
+      return resolvedUrl;
+    }
+    candidates++;
+  }
+
+  return null;
+};
+
+// Extract domain following the specified rules
+const extractDomain = ($, originalUrl) => {
+  try {
+    // Canonical link
+    const canonicalUrl = $('link[rel="canonical"]').attr('href');
+    if (canonicalUrl) {
+      const domain = new URL(canonicalUrl).hostname;
+      return domain.startsWith('www.') ? domain.substring(4) : domain;
+    }
+
+    // Open Graph URL
+    const ogUrl = $('meta[property="og:url"]').attr('content');
+    if (ogUrl) {
+      const domain = new URL(ogUrl).hostname;
+      return domain.startsWith('www.') ? domain.substring(4) : domain;
+    }
+
+    // Original URL
+    const domain = new URL(originalUrl).hostname;
+    return domain.startsWith('www.') ? domain.substring(4) : domain;
+  } catch (e) {
+    return null;
+  }
+};
+
+// Extract description following the specified rules
+const extractDescription = ($) => {
+  // Open Graph description
+  const ogDesc = $('meta[property="og:description"]').attr('content');
+  if (ogDesc) return cleanText(ogDesc);
+
+  // Twitter Card description
+  const twitterDesc = $('meta[name="twitter:description"]').attr('content');
+  if (twitterDesc) return cleanText(twitterDesc);
+
+  // Meta description
+  const metaDesc = $('meta[name="description"]').attr('content');
+  if (metaDesc) return cleanText(metaDesc);
+
+  // First visible paragraph
+  const firstParagraph = $('p').first().text();
+  if (firstParagraph) return cleanText(firstParagraph);
+
+  return null;
+};
+
+// Main endpoint
+app.get('/preview', async (req, res) => {
+  const url = req.query.url;
+  if (!url) return res.status(400).json({ error: 'Missing ?url=' });
+
+  try {
+    // Try with a generic User-Agent first
+    let axiosResponse;
+    try {
+      axiosResponse = await axios.get(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (compatible; LinkPreviewBot/1.0; +http://example.com/bot)',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.5',
+          'Accept-Encoding': 'gzip, deflate, br',
+          'Connection': 'keep-alive'
+        },
+        timeout: 15000,
+        maxRedirects: 5
+      });
+    } catch (firstError) {
+      // If first attempt fails, try with Googlebot
+      axiosResponse = await axios.get(url, {
+        headers: {
+          'User-Agent': 'Googlebot/2.1 (+http://www.google.com/bot.html)',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.5',
+          'Accept-Encoding': 'gzip, deflate, br',
+          'Connection': 'keep-alive'
+        },
+        timeout: 15000,
+        maxRedirects: 5
+      });
+    }
+
+    const html = axiosResponse.data;
+    const $ = cheerio.load(html);
+    
+    const metadataResponse = {
+      title: extractTitle($),
+      description: extractDescription($),
+      image: await extractImage($, url),
+      domain: extractDomain($, url)
+    };
+
+    res.json(metadataResponse);
+  } catch (err) {
+    console.error('Error fetching metadata:', err.message);
+    if (err.response) {
+      console.error('Response status:', err.response.status);
+      console.error('Response headers:', err.response.headers);
+    }
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.listen(PORT, () => {
+  console.log(`Metadata service running on http://localhost:${PORT}`);
+});
