@@ -92,7 +92,7 @@ else
         echo "Tagging Filedpapers-Metascraper latest as $IMAGE_LATEST_METASCRAPER_PATH..."
         docker tag "$IMAGE_NAME_METASCRAPER:latest" "$IMAGE_LATEST_METASCRAPER_PATH"
     else
-        echo "Skipping tag of Filedpapers-Mezascraper latest as this is a pre-release"
+        echo "Skipping tag of Filedpapers-Metascraper latest as this is a pre-release"
     fi
 
     echo "Pushing Filedpapers-Metascraper version to GitHub Container Registry..."
