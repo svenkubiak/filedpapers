@@ -41,68 +41,71 @@ if [ $STATUS -ne 0 ]; then
     echo "Failed to set new version! Exiting..."
     exit 1
 else
-    echo "Building Filedpapers Version Docker image..."
+    ### Filedpapers image ###
+    echo "[Filedpapers] Building Version Docker image..."
     docker build --no-cache -t "$IMAGE_NAME:$IMAGE_VERSION" .
 
     # Check if this is a stable release
     if is_stable_release; then
-        echo "Building Latest Filedpapers Docker image..."
+        echo "[Filedpapers] Building Latest Docker image..."
         docker tag "$IMAGE_NAME:$IMAGE_VERSION" "$IMAGE_NAME:latest"
     else
-        echo "Skipping build of Latest Filedpapers Docker image as this is a pre-release"
+        echo "[Filedpapers] Skipping Latest Docker image as this is a pre-release"
     fi
 
-    echo "Tagging Filedpapers version as $IMAGE_FULL_PATH..."
+    echo "[Filedpapers] Tagging version as $IMAGE_FULL_PATH..."
     docker tag "$IMAGE_NAME:$IMAGE_VERSION" "$IMAGE_FULL_PATH"
 
     if is_stable_release; then
-        echo "Tagging Filedpapers latest as $IMAGE_LATEST_PATH..."
+        echo "[Filedpapers] Tagging latest as $IMAGE_LATEST_PATH..."
         docker tag "$IMAGE_NAME:latest" "$IMAGE_LATEST_PATH"
     else
-        echo "Skipping tag of Filedpapers latest as this is a pre-release"
+        echo "[Filedpapers] Skipping tagging latest as this is a pre-release"
     fi
 
-    echo "Pushing Filedpapers version to GitHub Container Registry..."
+    echo "[Filedpapers] Pushing version to GitHub Container Registry..."
     docker push "$IMAGE_FULL_PATH"
 
     if is_stable_release; then
-        echo "Pushing Filedpapers latest to GitHub Container Registry..."
+        echo "[Filedpapers] Pushing latest to GitHub Container Registry..."
         docker push "$IMAGE_LATEST_PATH"
     else
-        echo "Skipping push of Filedpapers latest as this is a pre-release"
+        echo "[Filedpapers] Skipping push of latest as this is a pre-release"
     fi
+
+    ### Filedpapers Metascraper ###
 
     cd metascraper
 
-    echo "Building Filedpapers-Metascraper Version Docker image..."
+    echo "[Filedpapers-Metascraper] Building Version Docker image..."
     docker build --no-cache -t "$IMAGE_NAME_METASCRAPER:$IMAGE_VERSION" .
 
     # Check if this is a stable release
     if is_stable_release; then
-        echo "Building Latest Filedpapers-Metascraper Docker image..."
+        echo "[Filedpapers-Metascraper] Building Latest Docker image..."
         docker tag "$IMAGE_NAME_METASCRAPER:$IMAGE_VERSION" "$IMAGE_NAME_METASCRAPER:latest"
     else
-        echo "Skipping build of Latest Filedpapers Docker image as this is a pre-release"
+        echo "[Filedpapers-Metascraper] Skipping build of Latest Docker image as this is a pre-release"
     fi
 
-    echo "Tagging Filedpapers-Metascraper version as $IMAGE_FULL_PATH..."
+    echo "[Filedpapers-Metascraper] Tagging version as $IMAGE_FULL_PATH..."
     docker tag "$IMAGE_NAME_METASCRAPER:$IMAGE_VERSION" "$IMAGE_METASCRAPER_FULL_PATH"
 
     if is_stable_release; then
-        echo "Tagging Filedpapers-Metascraper latest as $IMAGE_LATEST_METASCRAPER_PATH..."
+        echo "[Filedpapers-Metascraper] Tagging latest as $IMAGE_LATEST_METASCRAPER_PATH..."
         docker tag "$IMAGE_NAME_METASCRAPER:latest" "$IMAGE_LATEST_METASCRAPER_PATH"
     else
-        echo "Skipping tag of Filedpapers-Metascraper latest as this is a pre-release"
+        echo "[Filedpapers-Metascraper] Skipping tag of latest as this is a pre-release"
     fi
 
-    echo "Pushing Filedpapers-Metascraper version to GitHub Container Registry..."
+    echo "[Filedpapers-Metascraper] Pushing version to GitHub Container Registry..."
     docker push "$IMAGE_METASCRAPER_FULL_PATH"
 
     if is_stable_release; then
-        echo "Pushing Filedpapers-Metascraper latest to GitHub Container Registry..."
+        echo "[Filedpapers-Metascraper] Pushing latest to GitHub Container Registry..."
         docker push "$IMAGE_LATEST_METASCRAPER_PATH"
     else
-        echo "Skipping push of Filedpapers-Metascraper latest as this is a pre-release"
+        echo "[Filedpapers-Metascraper] Skipping push of latest as this is a pre-release"
     fi
 
     cd ..
@@ -114,7 +117,7 @@ else
         mvn release:update-versions
         git commit -am "Updated version after release"
         git push --tags origin main
-        echo "Released!"
+        echo "Released!!!"
     else
         echo "Failed to push the image. Exiting..."
     exit 1

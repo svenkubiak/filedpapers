@@ -185,33 +185,53 @@ app.get('/preview', async (req, res) => {
   if (!url) return res.status(400).json({ error: 'Missing ?url=' });
 
   try {
-    // Try with a generic User-Agent first
     let axiosResponse;
-    try {
-      axiosResponse = await axios.get(url, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (compatible; LinkPreviewBot/1.0; +http://example.com/bot)',
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-          'Accept-Language': 'en-US,en;q=0.5',
-          'Accept-Encoding': 'gzip, deflate, br',
-          'Connection': 'keep-alive'
-        },
-        timeout: 15000,
-        maxRedirects: 5
-      });
-    } catch (firstError) {
-      // If first attempt fails, try with Googlebot
-      axiosResponse = await axios.get(url, {
-        headers: {
-          'User-Agent': 'Googlebot/2.1 (+http://www.google.com/bot.html)',
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-          'Accept-Language': 'en-US,en;q=0.5',
-          'Accept-Encoding': 'gzip, deflate, br',
-          'Connection': 'keep-alive'
-        },
-        timeout: 15000,
-        maxRedirects: 5
-      });
+    const urlObj = new URL(url);
+    const domain = urlObj.hostname;
+
+    // Select User-Agents based on domain
+    let userAgents;
+    if (domain.includes('youtube.com')) {
+      userAgents = [
+        'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      ];
+    } else if (domain.includes('google.com')) {
+      userAgents = [
+        'Mozilla/5.0 (compatible; LinkPreviewBot/1.0; +http://example.com/bot)',
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      ];
+    } else {
+      // Default User-Agents for other sites
+      userAgents = [
+        'Mozilla/5.0 (compatible; LinkPreviewBot/1.0; +http://example.com/bot)',
+        'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      ];
+    }
+
+    let lastError;
+    for (const userAgent of userAgents) {
+      try {
+        axiosResponse = await axios.get(url, {
+          headers: {
+            'User-Agent': userAgent,
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Encoding': 'gzip, deflate, br',
+            'Connection': 'keep-alive'
+          },
+          timeout: 15000,
+          maxRedirects: 5
+        });
+        break;
+      } catch (error) {
+        lastError = error;
+      }
+    }
+
+    if (!axiosResponse) {
+      throw lastError || new Error('All User-Agent attempts failed');
     }
 
     const html = axiosResponse.data;
@@ -226,11 +246,6 @@ app.get('/preview', async (req, res) => {
 
     res.json(metadataResponse);
   } catch (err) {
-    console.error('Error fetching metadata:', err.message);
-    if (err.response) {
-      console.error('Response status:', err.response.status);
-      console.error('Response headers:', err.response.headers);
-    }
     res.status(500).json({ error: err.message });
   }
 });

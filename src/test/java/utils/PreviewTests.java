@@ -23,6 +23,7 @@ public class PreviewTests {
 
     @Container
     private static final GenericContainer<?> metadataService = new GenericContainer<>(IMAGE_NAME)
+            .withReuse(false)
             .withExposedPorts(3000);
 
     @BeforeAll
