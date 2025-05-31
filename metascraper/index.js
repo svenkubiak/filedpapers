@@ -182,6 +182,7 @@ const extractDescription = ($) => {
 // Main endpoint
 app.get('/preview', async (req, res) => {
   const url = req.query.url;
+  const lang = req.query.lang || 'en-US';
   if (!url) return res.status(400).json({ error: 'Missing ?url=' });
 
   try {
@@ -217,7 +218,7 @@ app.get('/preview', async (req, res) => {
           headers: {
             'User-Agent': userAgent,
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.5',
+            'Accept-Language': `${lang},en;q=0.8,*;q=0.5"`,
             'Accept-Encoding': 'gzip, deflate, br',
             'Connection': 'keep-alive'
           },
@@ -251,5 +252,5 @@ app.get('/preview', async (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Metadata service running on http://localhost:${PORT}`);
+  console.log(`Filedpapers-Metascraper running on http://localhost:${PORT}`);
 });
