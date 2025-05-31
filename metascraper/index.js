@@ -40,10 +40,8 @@ const getImageDimensions = async (imageUrl) => {
     
     const metadata = await sharp(response.data).metadata();
     const area = metadata.width * metadata.height;
-    if (area <= MAX_IMAGE_AREA) {
-      return true;
-    }
-    return false;
+
+    return area <= MAX_IMAGE_AREA;
   } catch (e) {
     return false;
   }

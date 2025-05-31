@@ -1,6 +1,6 @@
 services:
   filedpapers-web:
-    image: ghcr.io/svenkubiak/filedpapers/filedpapers:2.3.6
+    image: ghcr.io/svenkubiak/filedpapers/filedpapers:${VERSION}
     container_name: filedpapers-web
     restart: always
     environment:
@@ -36,11 +36,12 @@ services:
       - ./logs:/logs
     depends_on:
       - filedpapers-database
+      - filedpapers-metascraper
     networks:
       - filedpapers-network
 
   filedpapers-database:
-    image: mongodb/mongodb-community-server:8.0.4-ubuntu2204
+    image: mongodb/mongodb-community-server:8.0.9-ubuntu2204
     container_name: filedpapers-database
     restart: always
     environment:
@@ -49,6 +50,13 @@ services:
       - MONGODB_INITDB_DATABASE=${MONGODB_INITDB_DATABASE}
     volumes:
       - filed_papers_mongodb_data:/data/db
+    networks:
+      - filedpapers-network
+
+  filedpapers-metascraper:
+    container_name: filedpapers-metascraper
+    image: ghcr.io/svenkubiak/filedpapers/filedpapers-metascraper:${VERSION}
+    restart: always
     networks:
       - filedpapers-network
 

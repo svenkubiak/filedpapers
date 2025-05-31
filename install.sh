@@ -17,6 +17,8 @@ echo "Creating .env file..."
 
 cat > .env <<EOL
 # Custom configuration
+VERSION=latest
+
 APPLICATION_URL=http://localhost
 STORE_IMAGES=false
 ALLOW_REGISTRATION=true
