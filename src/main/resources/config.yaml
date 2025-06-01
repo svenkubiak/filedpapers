@@ -14,8 +14,6 @@ default:
     secret: JMvtA6RWYQTjWE5mT9jNCuXiAP9U90ZNdk8V3wmdWZZE8WceVjplpRNZm4WIYRG0
     language: en
     registration: true
-    metascraper:
-      url: arg{}
     images:
       store: true
   api:
@@ -65,9 +63,6 @@ default:
 
 environments:
   test:
-    application:
-      metascraper:
-        url: arg{}
     connector:
       http:
         port: 9999

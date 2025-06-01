@@ -24,6 +24,8 @@ public final class Required {
     public static final String OBJECT = "object can not be null";
     public static final String PASSWORD = "password can not be null";
     public static final String REFRESH_TOKEN_SECRET = "refreshTokenSecret can not be null";
+    public static final String REQUEST = "request can not be null";
+    public static final String RESPONSE = "response can not be null";
     public static final String SECRET = "secret can not be null";
     public static final String TITLE = "title can not be null";
     public static final String TOKEN = "token can not be null";
@@ -31,8 +33,6 @@ public final class Required {
     public static final String USER_UID = "userUid can not be null";
     public static final String USERNAME = "username can not be null";
     public static final String VALUE = "value can not be null";
-    public static final String REQUEST = "request can not be null";
-    public static final String RESPONSE = "response can not be null";
 
     private Required() {}
 }

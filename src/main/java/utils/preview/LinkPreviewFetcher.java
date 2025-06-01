@@ -4,20 +4,12 @@ import constants.Const;
 import de.svenkubiak.http.Http;
 import de.svenkubiak.http.Result;
 import io.mangoo.core.Application;
-import io.mangoo.core.Config;
 import io.mangoo.i18n.Messages;
 import io.mangoo.utils.JsonUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.util.Strings;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URL;
 import java.net.URLEncoder;
-import java.net.http.HttpClient;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Map;
@@ -26,22 +18,20 @@ import java.util.Optional;
 public final class LinkPreviewFetcher {
     private LinkPreviewFetcher() {}
 
-    public static LinkPreview fetch(String url, String language) throws IOException {
+    public static LinkPreview fetch(String url, String language) {
         if (StringUtils.isBlank(language)) { language = "en"; };
 
-        String metascraper = System.getProperty("application.metascraper.url");
-        if (StringUtils.isBlank(metascraper)) {
-            metascraper = "http://filedpapers-metascraper:3000";
-        }
+        String metascraper = Optional.ofNullable(System.getProperty(Const.METASCRAPER_KEY))
+                .orElse(Const.METASCRAPER_URL);
 
         Result result = Http.get(metascraper + "/preview?lang=" + language + "&url=" + URLEncoder.encode(url, StandardCharsets.UTF_8))
-                .withTimeout(Duration.ofSeconds(10))
+                .withTimeout(Duration.ofSeconds(30))
                 .send();
 
         return buildLinkPreview(result.body(), url);
     }
 
-    private static LinkPreview buildLinkPreview(String json, String url) throws MalformedURLException {
+    private static LinkPreview buildLinkPreview(String json, String url) {
         Map<String, String> flatMap = JsonUtils.toFlatMap(json);
 
         String title = Optional.ofNullable(flatMap.get("title")).orElse(Application.getInstance(Messages.class).get("item.missing.title"));
