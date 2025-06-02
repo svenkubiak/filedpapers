@@ -16,6 +16,8 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public final class LinkPreviewFetcher {
     private LinkPreviewFetcher() {}
@@ -37,6 +39,11 @@ public final class LinkPreviewFetcher {
 
     private static LinkPreview buildLinkPreview(String json, String url) throws MalformedURLException {
         Map<String, String> flatMap = JsonUtils.toFlatMap(json);
+
+        if (flatMap.get("title").equals("null")) { flatMap.put("title", null); }
+        if (flatMap.get("image").equals("null")) { flatMap.put("image", null); }
+        if (flatMap.get("description").equals("null")) { flatMap.put("description", null); }
+        if (flatMap.get("domain").equals("null")) { flatMap.put("domain", null); }
 
         String title = Optional.ofNullable(flatMap.get("title")).orElse(Application.getInstance(Messages.class).get("item.missing.title"));
         String description = Optional.ofNullable(flatMap.get("description")).orElse(Strings.EMPTY);

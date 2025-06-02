@@ -256,7 +256,7 @@ public class DataService {
             String categoryResult = save(category);
 
             var item = new Item(userUid, category.getUid(), url, linkPreview.image(), linkPreview.title(), linkPreview.domain(), linkPreview.description());
-            if (storeImages && !linkPreview.image().equals(PLACEHOLDER_IMAGE)) {
+            if (storeImages && !linkPreview.image().equals(PLACEHOLDER_IMAGE) && StringUtils.isNotBlank(linkPreview.image())) {
                 item.setImageBase64(Utils.getImageAsBase64(linkPreview.image()).orElse(PLACEHOLDER_IMAGE));
             }
             String itemResult = save(item);
