@@ -1,40 +1,55 @@
 package utils;
 
 import io.mangoo.test.TestRunner;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.testcontainers.containers.GenericContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 import utils.preview.LinkPreview;
 import utils.preview.LinkPreviewFetcher;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 
-@Disabled
-@Testcontainers
 @ExtendWith({TestRunner.class})
 public class PreviewTests {
-    private static final String IMAGE_NAME = System.getProperty("metadata.service.image", "metascraper:latest");
-
-    @Container
-    private static final GenericContainer<?> metadataService = new GenericContainer<>(IMAGE_NAME)
-            .withReuse(false)
-            .withExposedPorts(3000);
+    private static Process nodeProcess;
 
     @BeforeAll
-    public static void setUp() {
-        var url = String.format("http://%s:%d",
-                metadataService.getHost(),
-                metadataService.getMappedPort(3000));
+    public static void setup() throws IOException, InterruptedException {
+        Path nodeAppPath = Path.of("metascraper");
+        Assertions.assertTrue(Files.exists(nodeAppPath.resolve("package.json")));
+        var nodeAppDir = nodeAppPath.toAbsolutePath().toFile();
 
+        Process install = new ProcessBuilder("npm", "install")
+                .directory(nodeAppDir)
+                .inheritIO()
+                .start();
+
+        if (install.waitFor() != 0) {
+            throw new RuntimeException("npm install failed");
+        }
+
+        nodeProcess = new ProcessBuilder("npm", "start")
+                .directory(nodeAppDir)
+                .inheritIO()
+                .start();
+
+        Thread.sleep(3000);
         System.setProperty("application.metascraper.url", "http://localhost:3000");
+    }
+
+    @AfterAll
+    public static void teardown() {
+        if (nodeProcess != null && nodeProcess.isAlive()) {
+            nodeProcess.destroy();
+        }
     }
 
     @Test
