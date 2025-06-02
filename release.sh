@@ -76,6 +76,8 @@ else
     ### Filedpapers Metascraper ###
 
     cd metascraper
+    rm -rf node_modules/
+    rm package-lock.json
 
     echo "[Filedpapers-Metascraper] Building Version Docker image..."
     docker build --no-cache -t "$IMAGE_NAME_METASCRAPER:$IMAGE_VERSION" .
