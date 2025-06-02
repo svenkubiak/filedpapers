@@ -289,10 +289,12 @@ app.get('/preview', async (req, res) => {
         }
 
         const currentImage = await extractImage($, url);
+        console.log('Current image found:', currentImage);
         // Always update image if we find a better one (not the default Google Maps icon)
         if (currentImage && (!bestMetadata.image || 
             (currentImage.includes('googleusercontent.com') && !bestMetadata.image.includes('googleusercontent.com')))) {
           bestMetadata.image = currentImage;
+          console.log('Updated bestMetadata.image to:', currentImage);
         }
 
         const currentDomain = extractDomain($, url);
@@ -310,9 +312,11 @@ app.get('/preview', async (req, res) => {
       }
     }
 
+    console.log('Final metadata being sent:', JSON.stringify(bestMetadata, null, 2));
     // Always return the metadata, even if some fields are null
     res.json(bestMetadata);
   } catch (err) {
+    console.error('Error in main endpoint:', err);
     // In case of any unexpected errors, return all null values
     res.json({
       title: null,
