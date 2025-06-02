@@ -11,6 +11,9 @@ import io.undertow.server.handlers.CookieImpl;
 import io.undertow.server.handlers.CookieSameSiteMode;
 import models.User;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import services.DataService;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -22,6 +25,8 @@ import java.time.ZoneOffset;
 import java.util.*;
 
 public final class Utils {
+    private static final Logger LOG = LogManager.getLogger(Utils.class);
+
     private static final Pattern UUID_PATTERN = Pattern.compile(
             "^[0-9a-f]{8}-[0-9a-f]{4}-6[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
             Pattern.CASE_INSENSITIVE
@@ -145,16 +150,20 @@ public final class Utils {
         String data = null;
         try (HttpClient client = HttpClient.newHttpClient()) {
             HttpRequest request = HttpRequest.newBuilder()
+                    .GET()
+                    .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
                     .uri(URI.create(url))
                     .build();
 
             HttpResponse<byte[]> response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
-            String base64 = Base64.getEncoder().encodeToString(response.body());
+            if (response.statusCode() == 200) {
+                String base64 = Base64.getEncoder().encodeToString(response.body());
 
-            String contentType = response.headers().firstValue("Content-Type").orElse("image/jpeg");
-            data = "data:" + contentType + ";base64," + base64;
+                String contentType = response.headers().firstValue("Content-Type").orElse("image/jpeg");
+                data = "data:" + contentType + ";base64," + base64;
+            }
         } catch (Exception e) {
-            //Intentionally left blank
+            LOG.error("Failed to get an convert image to base64", e);
         }
 
         return Optional.ofNullable(data);
