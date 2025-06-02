@@ -9,7 +9,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import utils.preview.LinkPreview;
 import utils.preview.LinkPreviewFetcher;
 
-import java.io.IOException;
+import java.io.*;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -27,14 +27,16 @@ public class PreviewTests {
         Assertions.assertTrue(Files.exists(nodeAppPath.resolve("package.json")));
         var nodeAppDir = nodeAppPath.toAbsolutePath().toFile();
 
-        Process install = new ProcessBuilder("npm", "install")
+        Process process = new ProcessBuilder("npm", "install")
                 .directory(nodeAppDir)
-                .inheritIO()
                 .start();
 
-        if (install.waitFor() != 0) {
+        if (process.waitFor() != 0) {
             throw new RuntimeException("npm install failed");
         }
+
+        consumeStream(process.getInputStream(), System.out);
+        consumeStream(process.getErrorStream(), System.err);
 
         nodeProcess = new ProcessBuilder("npm", "start")
                 .directory(nodeAppDir)
@@ -43,6 +45,16 @@ public class PreviewTests {
 
         Thread.sleep(3000);
         System.setProperty("application.metascraper.url", "http://localhost:3000");
+    }
+
+    private static void consumeStream(InputStream input, PrintStream target) {
+        new Thread(() -> {
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(input))) {
+                reader.lines().forEach(target::println);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }).start();
     }
 
     @AfterAll
