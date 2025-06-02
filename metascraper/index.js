@@ -49,6 +49,13 @@ const getImageDimensions = async (imageUrl) => {
     });
     
     const metadata = await sharp(response.data).metadata();
+    
+    // Check if the format is one of the allowed formats
+    const validFormats = ['png', 'jpeg', 'jpg', 'jp2', 'webp'];
+    if (!validFormats.includes(metadata.format)) {
+      return false;
+    }
+    
     const area = metadata.width * metadata.height;
     
     // Calculate aspect ratio (both width/height and height/width to handle both orientations)
