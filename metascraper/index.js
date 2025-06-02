@@ -42,6 +42,7 @@ const resolveUrl = (url, baseUrl) => {
 // Helper function to check image dimensions
 const getImageDimensions = async (imageUrl) => {
   try {
+    console.log('Checking dimensions for:', imageUrl);
     const response = await axios.get(imageUrl, {
       responseType: 'arraybuffer',
       timeout: 5000,
@@ -49,10 +50,16 @@ const getImageDimensions = async (imageUrl) => {
     });
     
     const metadata = await sharp(response.data).metadata();
+    console.log('Image metadata:', {
+      format: metadata.format,
+      width: metadata.width,
+      height: metadata.height
+    });
     
     // Check if the format is one of the allowed formats
     const validFormats = ['png', 'jpeg', 'jpg', 'jp2', 'webp'];
     if (!validFormats.includes(metadata.format)) {
+      console.log('Invalid format:', metadata.format);
       return false;
     }
     
@@ -62,15 +69,26 @@ const getImageDimensions = async (imageUrl) => {
     const aspectRatioWidth = metadata.width / metadata.height;
     const aspectRatioHeight = metadata.height / metadata.width;
     
-    // Check dimensions and aspect ratio
-    return metadata.width >= MIN_IMAGE_SIZE &&
+    const isValid = metadata.width >= MIN_IMAGE_SIZE &&
         metadata.height >= MIN_IMAGE_SIZE &&
         area >= MIN_IMAGE_AREA &&
         area <= MAX_IMAGE_AREA &&
         aspectRatioWidth <= MAX_ASPECT_RATIO &&
         aspectRatioHeight <= MAX_ASPECT_RATIO;
 
+    console.log('Image validation result:', {
+      isValid,
+      width: metadata.width,
+      height: metadata.height,
+      area,
+      aspectRatioWidth,
+      aspectRatioHeight
+    });
+
+    return isValid;
+
   } catch (e) {
+    console.error('Error checking image dimensions:', e.message);
     return false;
   }
 };
@@ -114,48 +132,68 @@ const extractTitle = ($) => {
 
 // Extract image following the specified rules
 const extractImage = async ($, baseUrl) => {
+  console.log('Starting image extraction for:', baseUrl);
+  
   // Open Graph image
   const ogImage = $('meta[property="og:image"]').attr('content');
+  console.log('OG Image found:', ogImage);
   if (ogImage) {
     const resolvedUrl = resolveUrl(ogImage, baseUrl);
+    console.log('Resolved OG Image URL:', resolvedUrl);
     if (resolvedUrl && await getImageDimensions(resolvedUrl)) {
+      console.log('OG Image passed dimension check');
       return resolvedUrl;
     }
+    console.log('OG Image failed dimension check');
   }
 
   // Twitter Card image
   const twitterImage = $('meta[name="twitter:image"]').attr('content');
+  console.log('Twitter Image found:', twitterImage);
   if (twitterImage) {
     const resolvedUrl = resolveUrl(twitterImage, baseUrl);
+    console.log('Resolved Twitter Image URL:', resolvedUrl);
     if (resolvedUrl && await getImageDimensions(resolvedUrl)) {
+      console.log('Twitter Image passed dimension check');
       return resolvedUrl;
     }
+    console.log('Twitter Image failed dimension check');
   }
 
   // Image_src link
   const imageSrc = $('link[rel="image_src"]').attr('href');
+  console.log('Image Src found:', imageSrc);
   if (imageSrc) {
     const resolvedUrl = resolveUrl(imageSrc, baseUrl);
+    console.log('Resolved Image Src URL:', resolvedUrl);
     if (resolvedUrl && await getImageDimensions(resolvedUrl)) {
+      console.log('Image Src passed dimension check');
       return resolvedUrl;
     }
+    console.log('Image Src failed dimension check');
   }
 
   // Best image from document body (limited to 5 candidates)
   let candidates = 0;
+  console.log('Checking body images...');
   for (const el of $('img').get()) {
     if (candidates >= MAX_IMAGE_CANDIDATES) break;
     
     const src = $(el).attr('src');
     if (!src || src.startsWith('data:')) continue;
     
+    console.log('Body image found:', src);
     const resolvedUrl = resolveUrl(src, baseUrl);
+    console.log('Resolved body image URL:', resolvedUrl);
     if (resolvedUrl && await getImageDimensions(resolvedUrl)) {
+      console.log('Body image passed dimension check');
       return resolvedUrl;
     }
+    console.log('Body image failed dimension check');
     candidates++;
   }
 
+  console.log('No valid image found');
   return null;
 };
 
