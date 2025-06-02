@@ -14,7 +14,7 @@ const PORT = 3000;
 
 const MAX_IMAGE_SIZE = 1024;
 const MAX_IMAGE_AREA = MAX_IMAGE_SIZE * MAX_IMAGE_SIZE; // 1MB in pixels
-const MAX_IMAGE_CANDIDATES = 5;
+const MAX_IMAGE_CANDIDATES = 10;
 
 const USER_AGENTS = [
   'Mozilla/5.0 (compatible; LinkPreviewBot/1.0; +http://example.com/bot)',
@@ -62,8 +62,20 @@ const getImageDimensions = async (imageUrl) => {
     });
     
     const metadata = await sharp(response.data).metadata();
-    const area = metadata.width * metadata.height;
+    const { width, height } = metadata;
+    
+    // Check minimum dimensions (50px)
+    if (width < 50 || height < 50) {
+      return false;
+    }
 
+    // Check aspect ratio (should not be greater than 3:1)
+    const aspectRatio = Math.max(width, height) / Math.min(width, height);
+    if (aspectRatio > 3) {
+      return false;
+    }
+
+    const area = width * height;
     return area <= MAX_IMAGE_AREA;
   } catch (e) {
     console.error('Error checking image dimensions:', e.message);
@@ -125,7 +137,7 @@ const extractImage = async ($, baseUrl) => {
     }
   }
 
-  // Try images from document body (limited to 5 candidates)
+  // Try images from document body
   let candidates = 0;
   for (const el of $('img').get()) {
     if (candidates >= MAX_IMAGE_CANDIDATES) break;
