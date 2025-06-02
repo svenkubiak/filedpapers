@@ -158,14 +158,16 @@ const extractDomain = ($, originalUrl) => {
     // Canonical link
     const canonicalUrl = $('link[rel="canonical"]').attr('href');
     if (canonicalUrl) {
-      const domain = new URL(canonicalUrl).hostname;
+      const fullUrl = new URL(canonicalUrl, originalUrl).href;
+      const domain = new URL(fullUrl).hostname;
       return domain.startsWith('www.') ? domain.substring(4) : domain;
     }
 
     // Open Graph URL
     const ogUrl = $('meta[property="og:url"]').attr('content');
     if (ogUrl) {
-      const domain = new URL(ogUrl).hostname;
+      const fullUrl = new URL(ogUrl, originalUrl).href;
+      const domain = new URL(fullUrl).hostname;
       return domain.startsWith('www.') ? domain.substring(4) : domain;
     }
 
