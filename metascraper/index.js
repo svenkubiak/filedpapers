@@ -10,7 +10,10 @@ const PORT = 3000;
 // Constants
 const MAX_IMAGE_SIZE = 1024;
 const MAX_IMAGE_AREA = MAX_IMAGE_SIZE * MAX_IMAGE_SIZE; // 1MB in pixels
-const MAX_IMAGE_CANDIDATES = 5;
+const MIN_IMAGE_SIZE = 50;
+const MIN_IMAGE_AREA = MIN_IMAGE_SIZE * MIN_IMAGE_SIZE; // 2.5KB in pixels
+const MAX_IMAGE_CANDIDATES = 10;
+const MAX_ASPECT_RATIO = 3; // Maximum width/height or height/width ratio
 
 // Helper function to clean text
 const cleanText = (text) => {
@@ -40,8 +43,21 @@ const getImageDimensions = async (imageUrl) => {
     
     const metadata = await sharp(response.data).metadata();
     const area = metadata.width * metadata.height;
-
-    return area <= MAX_IMAGE_AREA;
+    
+    // Calculate aspect ratio (both width/height and height/width to handle both orientations)
+    const aspectRatioWidth = metadata.width / metadata.height;
+    const aspectRatioHeight = metadata.height / metadata.width;
+    
+    // Check dimensions and aspect ratio
+    if (metadata.width >= MIN_IMAGE_SIZE && 
+        metadata.height >= MIN_IMAGE_SIZE && 
+        area >= MIN_IMAGE_AREA && 
+        area <= MAX_IMAGE_AREA &&
+        aspectRatioWidth <= MAX_ASPECT_RATIO &&
+        aspectRatioHeight <= MAX_ASPECT_RATIO) {
+      return true;
+    }
+    return false;
   } catch (e) {
     return false;
   }
