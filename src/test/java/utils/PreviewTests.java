@@ -13,35 +13,43 @@ import java.io.*;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 
+import static java.util.function.Predicate.not;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.notNullValue;
 
 @ExtendWith({TestRunner.class})
 public class PreviewTests {
-    private static Process nodeProcess;
+    private static final List<Process> processes = new ArrayList<>();
+    private static File nodeAppDir;
 
     @BeforeAll
     public static void setup() throws IOException, InterruptedException {
         Path nodeAppPath = Path.of("metascraper");
         Assertions.assertTrue(Files.exists(nodeAppPath.resolve("package.json")));
-        var nodeAppDir = nodeAppPath.toAbsolutePath().toFile();
+        nodeAppDir = nodeAppPath.toAbsolutePath().toFile();
 
-        Process process = new ProcessBuilder("npm", "install")
-                .directory(nodeAppDir)
-                .start();
-
-        if (process.waitFor() != 0) {
+        Process npmInstall = initProcess("npm", "install");
+        if (npmInstall.waitFor() != 0) {
             throw new RuntimeException("npm install failed");
         }
 
-        consumeStream(process.getInputStream(), System.out);
-        consumeStream(process.getErrorStream(), System.err);
+        processes.add(npmInstall);
 
-        nodeProcess = new ProcessBuilder("npm", "start")
-                .directory(nodeAppDir)
-                .inheritIO()
-                .start();
+        Process npmAudit = initProcess("npm", "audit", "--audit-level=high");
+        int exitCode = npmAudit.waitFor();
+        if (exitCode != 0) {
+            throw new RuntimeException("npm audit found vulnerabilities");
+        }
+
+        processes.add(npmAudit);
+
+        Process npmStart = initProcess("npm", "start");
+
+        processes.add(npmStart);
 
         Thread.sleep(3000);
         System.setProperty("application.metascraper.url", "http://localhost:3000");
@@ -52,16 +60,25 @@ public class PreviewTests {
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(input))) {
                 reader.lines().forEach(target::println);
             } catch (IOException e) {
-                e.printStackTrace();
+                throw new RuntimeException("failed to consume stream", e);
             }
         }).start();
     }
 
+    private static Process initProcess(String... command) throws IOException, InterruptedException {
+        Process process = new ProcessBuilder(command).directory(nodeAppDir).start();
+
+        consumeStream(process.getInputStream(), System.out);
+        consumeStream(process.getErrorStream(), System.err);
+
+        return process;
+    }
+
     @AfterAll
     public static void teardown() {
-        if (nodeProcess != null && nodeProcess.isAlive()) {
-            nodeProcess.destroy();
-        }
+        processes.stream()
+                .filter(process -> !process.isAlive())
+                .forEach(Process::destroy);
     }
 
     @Test
@@ -72,6 +89,8 @@ public class PreviewTests {
         //then
         assertThat(preview.title(), equalTo("The Silence Was So Loud"));
         assertThat(preview.image(), equalTo("https://i.ytimg.com/vi/jE0Q8zIrXwU/maxresdefault.jpg"));
+        assertThat(preview.domain(), equalTo("youtube.com"));
+        assertThat(preview.description(), notNullValue());
     }
 
     @Test
@@ -82,6 +101,8 @@ public class PreviewTests {
         //then
         assertThat(preview.title(), equalTo("Mario Kart 8 Deluxe"));
         assertThat(preview.image(), equalTo("https://mario.wiki.gallery/images/thumb/9/9b/MK8_Deluxe_-_Box_NA.png/250px-MK8_Deluxe_-_Box_NA.png"));
+        assertThat(preview.domain(), equalTo("mariowiki.com"));
+        assertThat(preview.description(), notNullValue());
     }
 
     @Test
@@ -92,5 +113,19 @@ public class PreviewTests {
         //then
         assertThat(preview.title(), equalTo("Al-lord Arabische Süßigkeiten · Hansemannstraße 23, 45879 Gelsenkirchen"));
         assertThat(preview.image(), equalTo("https://lh3.googleusercontent.com/p/AF1QipMhSZ68K3lODLzmFL0arjx5fwh0KsizwUjLZGOz=w900-h900-p-k-no"));
+        assertThat(preview.domain(), equalTo("google.de"));
+        assertThat(preview.description(), notNullValue());
+    }
+
+    @Test
+    public void testPreview4() throws IOException, URISyntaxException {
+        //when
+        LinkPreview preview = LinkPreviewFetcher.fetch("https://github.com/svenkubiak", "en");
+
+        //then
+        assertThat(preview.title(), equalTo("svenkubiak - Overview"));
+        assertThat(preview.image(), equalTo("https://avatars.githubusercontent.com/u/67564?v=4?s=400"));
+        assertThat(preview.domain(), equalTo("github.com"));
+        assertThat(preview.description(), notNullValue());
     }
 }

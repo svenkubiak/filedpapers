@@ -207,7 +207,6 @@ app.get('/preview', async (req, res) => {
   if (!url) return res.status(400).json({ error: 'Missing ?url=' });
 
   try {
-    let lastError;
     let bestMetadata = {
       title: null,
       description: null,
@@ -261,17 +260,21 @@ app.get('/preview', async (req, res) => {
           break;
         }
       } catch (error) {
-        lastError = error;
+        console.error(`Error with User-Agent ${userAgent}:`, error.message);
+        // Continue with next User-Agent
       }
     }
 
-    if (!hasAllRequiredMetadata(bestMetadata)) {
-      throw lastError || new Error('Failed to get all required metadata');
-    }
-
+    // Always return the metadata, even if some fields are null
     res.json(bestMetadata);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    // In case of any unexpected errors, return all null values
+    res.json({
+      title: null,
+      description: null,
+      image: null,
+      domain: null
+    });
   }
 });
 
