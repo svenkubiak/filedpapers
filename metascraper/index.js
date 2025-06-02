@@ -15,6 +15,13 @@ const MIN_IMAGE_AREA = MIN_IMAGE_SIZE * MIN_IMAGE_SIZE; // 2.5KB in pixels
 const MAX_IMAGE_CANDIDATES = 10;
 const MAX_ASPECT_RATIO = 3; // Maximum width/height or height/width ratio
 
+// Common set of User-Agents for all URLs
+const USER_AGENTS = [
+  'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+  'Mozilla/5.0 (compatible; LinkPreviewBot/1.0; +http://example.com/bot)',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+];
+
 // Helper function to clean text
 const cleanText = (text) => {
   return text ? text.trim().replace(/\s+/g, ' ') : null;
@@ -49,15 +56,13 @@ const getImageDimensions = async (imageUrl) => {
     const aspectRatioHeight = metadata.height / metadata.width;
     
     // Check dimensions and aspect ratio
-    if (metadata.width >= MIN_IMAGE_SIZE && 
-        metadata.height >= MIN_IMAGE_SIZE && 
-        area >= MIN_IMAGE_AREA && 
+    return metadata.width >= MIN_IMAGE_SIZE &&
+        metadata.height >= MIN_IMAGE_SIZE &&
+        area >= MIN_IMAGE_AREA &&
         area <= MAX_IMAGE_AREA &&
         aspectRatioWidth <= MAX_ASPECT_RATIO &&
-        aspectRatioHeight <= MAX_ASPECT_RATIO) {
-      return true;
-    }
-    return false;
+        aspectRatioHeight <= MAX_ASPECT_RATIO;
+
   } catch (e) {
     return false;
   }
@@ -200,35 +205,18 @@ app.get('/preview', async (req, res) => {
   if (!url) return res.status(400).json({ error: 'Missing ?url=' });
 
   try {
-    let axiosResponse;
-    const urlObj = new URL(url);
-    const domain = urlObj.hostname;
-
-    // Select User-Agents based on domain
-    let userAgents;
-    if (domain.includes('youtube.com')) {
-      userAgents = [
-        'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-      ];
-    } else if (domain.includes('google.com')) {
-      userAgents = [
-        'Mozilla/5.0 (compatible; LinkPreviewBot/1.0; +http://example.com/bot)',
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-      ];
-    } else {
-      // Default User-Agents for other sites
-      userAgents = [
-        'Mozilla/5.0 (compatible; LinkPreviewBot/1.0; +http://example.com/bot)',
-        'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-      ];
-    }
-
     let lastError;
-    for (const userAgent of userAgents) {
+    let bestMetadata = {
+      title: null,
+      description: null,
+      image: null,
+      domain: null
+    };
+
+    // Try each User-Agent
+    for (const userAgent of USER_AGENTS) {
       try {
-        axiosResponse = await axios.get(url, {
+        const axiosResponse = await axios.get(url, {
           headers: {
             'User-Agent': userAgent,
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -239,32 +227,57 @@ app.get('/preview', async (req, res) => {
           timeout: 15000,
           maxRedirects: 5
         });
-        break;
+        
+        const html = axiosResponse.data;
+        const $ = cheerio.load(html);
+        
+        // Try to get each field, only update if we don't have it yet or if it's better
+        const currentTitle = extractTitle($);
+        if (currentTitle && (!bestMetadata.title || currentTitle.length > bestMetadata.title.length)) {
+          bestMetadata.title = currentTitle;
+        }
+
+        const currentDescription = extractDescription($);
+        if (currentDescription && (!bestMetadata.description || currentDescription.length > bestMetadata.description.length)) {
+          bestMetadata.description = currentDescription;
+        }
+
+        const currentImage = await extractImage($, url);
+        // Always update image if we find a better one (not the default Google Maps icon)
+        if (currentImage && (!bestMetadata.image || 
+            (currentImage.includes('googleusercontent.com') && !bestMetadata.image.includes('googleusercontent.com')))) {
+          bestMetadata.image = currentImage;
+        }
+
+        const currentDomain = extractDomain($, url);
+        if (currentDomain && !bestMetadata.domain) {
+          bestMetadata.domain = currentDomain;
+        }
+
+        // If we have all required metadata, we can stop trying
+        if (hasAllRequiredMetadata(bestMetadata)) {
+          break;
+        }
       } catch (error) {
         lastError = error;
       }
     }
 
-    if (!axiosResponse) {
-      throw lastError || new Error('All User-Agent attempts failed');
+    if (!hasAllRequiredMetadata(bestMetadata)) {
+      throw lastError || new Error('Failed to get all required metadata');
     }
 
-    const html = axiosResponse.data;
-    const $ = cheerio.load(html);
-    
-    const metadataResponse = {
-      title: extractTitle($),
-      description: extractDescription($),
-      image: await extractImage($, url),
-      domain: extractDomain($, url)
-    };
-
-    res.json(metadataResponse);
+    res.json(bestMetadata);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
+// Helper function to check if we have all required metadata
+const hasAllRequiredMetadata = (metadata) => {
+  return metadata.title && metadata.image && metadata.domain;
+};
+
 app.listen(PORT, () => {
-  console.log(`Filedpapers-Metascraper running on http://localhost:${PORT}`);
+  console.log(`Filedpapers-Metascraper up and running.`);
 });

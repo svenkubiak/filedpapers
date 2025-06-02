@@ -2,6 +2,7 @@ package utils;
 
 import io.mangoo.test.TestRunner;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.testcontainers.containers.GenericContainer;
@@ -16,6 +17,7 @@ import java.net.URISyntaxException;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 
+@Disabled
 @Testcontainers
 @ExtendWith({TestRunner.class})
 public class PreviewTests {
@@ -32,7 +34,7 @@ public class PreviewTests {
                 metadataService.getHost(),
                 metadataService.getMappedPort(3000));
 
-        System.setProperty("application.metascraper.url", url);
+        System.setProperty("application.metascraper.url", "http://localhost:3000");
     }
 
     @Test

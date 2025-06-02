@@ -3,7 +3,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<artifactId>filedpapers</artifactId>
 	<groupId>de.svenkubiak</groupId>
-	<version>3.0.0-Beta9-SNAPSHOT</version>
+	<version>3.0.0-Beta10-SNAPSHOT</version>
 	<packaging>jar</packaging>
 	<url>https://github.com/svenkubiak/mangooio</url>
 	<properties>
@@ -11,6 +11,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<jdk.version>21</jdk.version>
 		<maven.compiler.optimze>true</maven.compiler.optimze>
+		<testcontainers-version>1.21.1</testcontainers-version>
 	</properties>
 	<build>
 		<resources>
@@ -295,13 +296,13 @@
 		<dependency>
 			<groupId>org.testcontainers</groupId>
 			<artifactId>testcontainers</artifactId>
-			<version>1.21.0</version>
+			<version>${testcontainers-version}</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.testcontainers</groupId>
 			<artifactId>junit-jupiter</artifactId>
-			<version>1.21.0</version>
+			<version>${testcontainers-version}</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
