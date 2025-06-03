@@ -7,7 +7,10 @@ import io.mangoo.core.Application;
 import io.mangoo.i18n.Messages;
 import io.mangoo.utils.JsonUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.util.Strings;
+import services.NotificationService;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -18,6 +21,7 @@ import java.util.Map;
 import java.util.Optional;
 
 public final class LinkPreviewFetcher {
+    private static final Logger LOG = LogManager.getLogger(LinkPreviewFetcher.class);
     private LinkPreviewFetcher() {}
 
     public static LinkPreview fetch(String url, String language) throws IOException {
@@ -26,6 +30,8 @@ public final class LinkPreviewFetcher {
         Result result = Http.get(getUrl() + "/preview?lang=" + language + "&url=" + URLEncoder.encode(url, StandardCharsets.UTF_8))
                 .withTimeout(Duration.ofSeconds(10))
                 .send();
+
+        LOG.info("Link preview fetch result: {}", result.body());
 
         return buildLinkPreview(result.body(), url);
     }
@@ -42,6 +48,11 @@ public final class LinkPreviewFetcher {
         String description = Optional.ofNullable(flatMap.get("description")).orElse(Strings.EMPTY);
         String image = Optional.ofNullable(flatMap.get("image")).orElse(Const.PLACEHOLDER_IMAGE);
         String domain = Optional.ofNullable(flatMap.get("domain")).orElse(Strings.EMPTY);
+
+        LOG.info("LinkPreview title: {}", title);
+        LOG.info("LinkPreview description: {}", description);
+        LOG.info("LinkPreview image: {}", image);
+        LOG.info("LinkPreview domain: {}", domain);
 
         return new LinkPreview(title, description, url, domain, image);
     }
