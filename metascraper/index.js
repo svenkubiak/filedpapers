@@ -10,7 +10,7 @@ const PORT = 3000;
 // Constants
 const MAX_IMAGE_SIZE = 1024;
 const MAX_IMAGE_AREA = MAX_IMAGE_SIZE * MAX_IMAGE_SIZE; // 1MB in pixels
-const MIN_IMAGE_SIZE = 50;
+const MIN_IMAGE_SIZE = 100;
 const MIN_IMAGE_AREA = MIN_IMAGE_SIZE * MIN_IMAGE_SIZE; // 2.5KB in pixels
 const MAX_IMAGE_CANDIDATES = 10;
 const MAX_ASPECT_RATIO = 3; // Maximum width/height or height/width ratio
