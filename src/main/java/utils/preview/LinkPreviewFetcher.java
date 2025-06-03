@@ -16,8 +16,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public final class LinkPreviewFetcher {
     private LinkPreviewFetcher() {}
@@ -25,12 +23,7 @@ public final class LinkPreviewFetcher {
     public static LinkPreview fetch(String url, String language) throws IOException {
         if (StringUtils.isBlank(language)) { language = "en"; };
 
-        String metascraper = System.getProperty("application.metascraper.url");
-        if (StringUtils.isBlank(metascraper)) {
-            metascraper = "http://filedpapers-metascraper:3000";
-        }
-
-        Result result = Http.get(metascraper + "/preview?lang=" + language + "&url=" + URLEncoder.encode(url, StandardCharsets.UTF_8))
+        Result result = Http.get(getUrl() + "/preview?lang=" + language + "&url=" + URLEncoder.encode(url, StandardCharsets.UTF_8))
                 .withTimeout(Duration.ofSeconds(10))
                 .send();
 
@@ -52,4 +45,17 @@ public final class LinkPreviewFetcher {
 
         return new LinkPreview(title, description, url, domain, image);
     }
+
+    private static String getUrl() {
+        String url = System.getProperty("application.metascraper.url");
+
+        if (StringUtils.isNotBlank(url)) { return url; }
+
+        if (Application.inProdMode()) {
+            return "http://filedpapers-metascraer:3000";
+        }
+
+        return "http://localhost:3000";
+    }
+
 } 
