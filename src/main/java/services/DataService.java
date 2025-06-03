@@ -470,7 +470,7 @@ public class DataService {
                     try {
                         linkPreview = LinkPreviewFetcher.fetch(item.getUrl(), user.getLanguage());
                         item.setImage(linkPreview.image());
-                        if (storeImages && !linkPreview.image().equals(PLACEHOLDER_IMAGE)) {
+                        if (storeImages && !linkPreview.image().equals(PLACEHOLDER_IMAGE) && StringUtils.isNotBlank(linkPreview.image())) {
                             item.setImageBase64(Utils.getImageAsBase64(linkPreview.image()).orElse(PLACEHOLDER_IMAGE));
                         }
                     } catch (Exception e) {

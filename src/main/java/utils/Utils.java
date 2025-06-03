@@ -156,10 +156,8 @@ public final class Utils {
                 .send();
 
         if (result.isValid()) {
-            String base64 = Base64.getEncoder().encodeToString(result.binaryBody());
-
-            String contentType = result.header("Content-Type");
-            data = "data:" + contentType + ";base64," + base64;
+            String contentType = Optional.ofNullable(result.header("Content-Type")).orElse("image/jpeg");
+            data = "data:" + contentType + ";base64," + Base64.getEncoder().encodeToString(result.binaryBody());
         } else {
             LOG.error("Failed to get and convert image to base64");
         }
