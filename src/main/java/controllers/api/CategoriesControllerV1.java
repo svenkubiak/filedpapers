@@ -38,7 +38,7 @@ public class CategoriesControllerV1 {
         String userUid = request.getAttribute(Const.USER_UID);
 
         if (!data.isEmpty() && StringUtils.isNotBlank(data.get(Const.COUNT))) {
-            long count = Long.parseLong(data.get(Const.COUNT));
+            var count = Long.parseLong(data.get(Const.COUNT));
             long items = 0;
 
             try {

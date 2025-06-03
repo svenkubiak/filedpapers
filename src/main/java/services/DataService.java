@@ -228,7 +228,7 @@ public class DataService {
     public Optional<Boolean> addItem(String userUid, String url, String categoryUid) {
         Utils.checkCondition(Utils.isValidUuid(userUid), Invalid.USER_UID);
         Utils.checkCondition(Utils.isValidURL(url), Invalid.URL);
-        User user = findUserByUid(userUid);
+        var user = findUserByUid(userUid);
 
         if (user == null) {
             return Optional.empty();
@@ -462,7 +462,7 @@ public class DataService {
     public void resync(String userUid) {
         Utils.checkCondition(Utils.isValidUuid(userUid), Invalid.USER_UID);
         LOG.info("Started resync");
-        User user = findUserByUid(userUid);
+        var user = findUserByUid(userUid);
 
         datastore.findAll(Item.class, eq("userUid", userUid), Sorts.ascending("timestamp"))
                 .forEach(item -> {

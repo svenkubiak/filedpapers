@@ -19,8 +19,6 @@ import models.Action;
 import models.Item;
 import models.enums.Type;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.util.Strings;
 import services.DataService;
 import services.NotificationService;
@@ -36,7 +34,6 @@ import java.util.*;
 import static constants.Const.TOAST_ERROR;
 
 public class DashboardController {
-    private static final Logger LOG = LogManager.getLogger(DashboardController.class);
     private final DataService dataService;
     private final NotificationService notificationService;
     private final Config config;

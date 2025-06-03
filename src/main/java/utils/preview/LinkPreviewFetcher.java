@@ -10,7 +10,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.util.Strings;
-import services.NotificationService;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -24,10 +23,10 @@ public final class LinkPreviewFetcher {
     private static final Logger LOG = LogManager.getLogger(LinkPreviewFetcher.class);
     private LinkPreviewFetcher() {}
 
-    public static LinkPreview fetch(String url, String language) throws IOException {
-        if (StringUtils.isBlank(language)) { language = "en"; };
+    public static LinkPreview fetch(String url, String language) {
+        if (StringUtils.isBlank(language)) { language = "en"; }
 
-        Result result = Http.get(getUrl() + "/preview?lang=" + language + "&url=" + URLEncoder.encode(url, StandardCharsets.UTF_8))
+        var result = Http.get(getUrl() + "/preview?lang=" + language + "&url=" + URLEncoder.encode(url, StandardCharsets.UTF_8))
                 .withTimeout(Duration.ofSeconds(10))
                 .send();
 
@@ -36,7 +35,7 @@ public final class LinkPreviewFetcher {
         return buildLinkPreview(result.body(), url);
     }
 
-    private static LinkPreview buildLinkPreview(String json, String url) throws MalformedURLException {
+    private static LinkPreview buildLinkPreview(String json, String url) {
         Map<String, String> flatMap = JsonUtils.toFlatMap(json);
 
         if (("null").equals(flatMap.get("title"))) { flatMap.put("title", null); }

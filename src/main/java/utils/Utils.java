@@ -6,7 +6,6 @@ import constants.Required;
 import de.svenkubiak.http.Http;
 import de.svenkubiak.http.Result;
 import io.mangoo.core.Config;
-import io.mangoo.routing.Response;
 import io.mangoo.utils.DateUtils;
 import io.mangoo.utils.MangooUtils;
 import io.undertow.server.handlers.Cookie;
@@ -18,9 +17,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.net.URI;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -150,7 +146,7 @@ public final class Utils {
         Objects.requireNonNull(url, Required.URL);
 
         String data = null;
-        Result result = Http.get(url)
+        var result = Http.get(url)
                 .withHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
                 .binaryResponse()
                 .send();
