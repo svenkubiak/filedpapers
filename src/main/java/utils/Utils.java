@@ -3,7 +3,10 @@ package utils;
 import com.google.re2j.Pattern;
 import constants.Const;
 import constants.Required;
+import de.svenkubiak.http.Http;
+import de.svenkubiak.http.Result;
 import io.mangoo.core.Config;
+import io.mangoo.routing.Response;
 import io.mangoo.utils.DateUtils;
 import io.mangoo.utils.MangooUtils;
 import io.undertow.server.handlers.Cookie;
@@ -147,22 +150,18 @@ public final class Utils {
         Objects.requireNonNull(url, Required.URL);
 
         String data = null;
-        try (HttpClient client = HttpClient.newHttpClient()) {
-            HttpRequest request = HttpRequest.newBuilder()
-                    .GET()
-                    .header("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
-                    .uri(URI.create(url))
-                    .build();
+        Result result = Http.get(url)
+                .withHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+                .binaryResponse()
+                .send();
 
-            HttpResponse<byte[]> response = client.send(request, HttpResponse.BodyHandlers.ofByteArray());
-            if (response.statusCode() == 200) {
-                String base64 = Base64.getEncoder().encodeToString(response.body());
+        if (result.isValid()) {
+            String base64 = Base64.getEncoder().encodeToString(result.binaryBody());
 
-                String contentType = response.headers().firstValue("Content-Type").orElse("image/jpeg");
-                data = "data:" + contentType + ";base64," + base64;
-            }
-        } catch (Exception e) {
-            LOG.error("Failed to get an convert image to base64", e);
+            String contentType = result.header("Content-Type");
+            data = "data:" + contentType + ";base64," + base64;
+        } else {
+            LOG.error("Failed to get and convert image to base64");
         }
 
         return Optional.ofNullable(data);
