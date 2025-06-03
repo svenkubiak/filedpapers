@@ -63,7 +63,7 @@ public final class LinkPreviewFetcher {
         if (StringUtils.isNotBlank(url)) { return url; }
 
         if (Application.inProdMode()) {
-            return "http://filedpapers-metascraer:3000";
+            return "http://filedpapers-metascraper:3000";
         }
 
         return "http://localhost:3000";
