@@ -112,9 +112,8 @@ public class DataService {
             output.add(Map.of(
                     Const.UID, item.getUid(),
                     "url", item.getUrl(),
-                    "image", (StringUtils.isNotBlank(item.getImageBase64())) ? item.getImageBase64() : (StringUtils.isBlank(item.getImage())) ? Strings.EMPTY : item.getImage(),
+                    "image", getImage(item),
                     "title", item.getTitle(),
-                    "mediaUid", StringUtils.isNotBlank(item.getMediaUid()) ? item.getMediaUid() : Strings.EMPTY,
                     "description", StringUtils.isNotBlank(item.getDescription()) ? item.getDescription() : Strings.EMPTY,
                     "domain", StringUtils.isNotBlank(item.getDomain()) ? item.getDomain() : Strings.EMPTY,
                     "sort", item.getTimestamp().toEpochSecond(ZoneOffset.UTC),
@@ -122,6 +121,16 @@ public class DataService {
         }
 
         return Optional.of(output);
+    }
+
+    private String getImage(Item item) {
+        if (StringUtils.isNotBlank(item.getMediaUid())) {
+            return "/media/image/" + item.getMediaUid();
+        } else if (StringUtils.isNotBlank(item.getImageBase64())) {
+            return item.getImageBase64();
+        }
+
+        return item.getImage();
     }
 
     public Optional<Boolean> deleteItem(String itemUid, String userUid) {
