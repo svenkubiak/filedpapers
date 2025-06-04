@@ -376,50 +376,6 @@ if ($confirmAddBookmark) {
     });
 }
 
-
-document.querySelectorAll('.image-container').forEach(container => {
-    const img = container.querySelector('.image-with-fallback');
-    const spinner = container.querySelector('.spinner');
-    const timeout = 4000;
-    let timeoutReached = false;
-
-    const showImage = () => {
-        spinner.style.display = 'none';
-        img.style.display = 'block';
-    };
-
-    const handleSuccess = () => {
-        if (!timeoutReached) {
-            timeoutReached = true;
-            showImage();
-        }
-    };
-
-    const handleError = () => {
-        if (!timeoutReached) {
-            timeoutReached = true;
-            spinner.style.display = 'none';
-            img.style.display = 'block';
-            img.src = '/assets/images/placeholder.svg';
-        }
-    };
-
-    img.onload = handleSuccess;
-    img.onerror = handleError;
-
-    if (img.complete) {
-        if (img.naturalWidth > 0) {
-            handleSuccess();
-        } else {
-            handleError();
-        }
-    } else {
-        setTimeout(() => {
-            if (!timeoutReached) handleError();
-        }, timeout);
-    }
-});
-
 if (searchInput) {
     searchInput.addEventListener('input', function(e) {
         const searchTerm = e.target.value.toLowerCase();
