@@ -22,11 +22,11 @@ import java.util.Optional;
 import static com.mongodb.client.model.Filters.and;
 import static com.mongodb.client.model.Filters.eq;
 
-
 public class MediaService {
     private static final Logger LOG = LogManager.getLogger(MediaService.class);
-    public static final String METADATA_UID = "metadata.uid";
-    public static final String METADATA_USER_UID = "metadata.userUid";
+    private static final String METADATA_UID = "metadata.uid";
+    private static final String METADATA_USER_UID = "metadata.userUid";
+    private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36";
     private final GridFSBucket bucket;
 
     @Inject
@@ -93,7 +93,7 @@ public class MediaService {
 
         String uid = null;
         var result = Http.get(url)
-                .withHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
+                .withHeader("User-Agent", USER_AGENT)
                 .binaryResponse()
                 .send();
 
