@@ -33,6 +33,9 @@ public final class Required {
     public static final String VALUE = "value can not be null";
     public static final String REQUEST = "request can not be null";
     public static final String RESPONSE = "response can not be null";
+    public static final String MEDIA_SERVICE = "mediaService can not be null";
+    public static final String MEDIA_UID = "mediaUid can not be null";
+    public static final String DATA = "data can not be null";
 
     private Required() {}
 }

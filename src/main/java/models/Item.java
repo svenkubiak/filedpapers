@@ -30,6 +30,7 @@ public class Item extends Entity implements Serializable {
     private String title;
     private String description;
     private String domain;
+    private String mediaUid;
 
     public Item(String userUid, String categoryUid, String url, String image, String title, String domain, String description) {
         this.userUid = Objects.requireNonNull(userUid, Required.USER_UID);
@@ -124,5 +125,13 @@ public class Item extends Entity implements Serializable {
 
     public void setDomain(String domain) {
         this.domain = domain;
+    }
+
+    public String getMediaUid() {
+        return mediaUid;
+    }
+
+    public void setMediaUid(String mediaUid) {
+        this.mediaUid = mediaUid;
     }
 }

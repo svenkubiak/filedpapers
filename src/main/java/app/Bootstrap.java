@@ -3,6 +3,7 @@ package app;
 import controllers.ApplicationController;
 import controllers.AuthenticationController;
 import controllers.DashboardController;
+import controllers.MediaController;
 import controllers.api.CategoriesControllerV1;
 import controllers.api.ItemsControllerV1;
 import controllers.api.UserControllerV1;
@@ -21,6 +22,10 @@ public class Bootstrap implements MangooBootstrap {
                 On.get().to("/error").respondeWith("error"),
                 On.get().to("/success").respondeWith("success"),
                 On.get().to("/health").respondeWith("health")
+        );
+
+        Bind.controller(MediaController.class).withRoutes(
+                On.get().to("/media/image/{uid}").respondeWith("media")
         );
 
         Bind.controller(DashboardController.class).withAuthentication().withRoutes(

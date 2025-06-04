@@ -3,8 +3,6 @@ package utils;
 import com.google.re2j.Pattern;
 import constants.Const;
 import constants.Required;
-import de.svenkubiak.http.Http;
-import de.svenkubiak.http.Result;
 import io.mangoo.core.Config;
 import io.mangoo.utils.DateUtils;
 import io.mangoo.utils.MangooUtils;
@@ -140,24 +138,5 @@ public final class Utils {
         }
 
         return cookie;
-    }
-
-    public static Optional<String> getImageAsBase64(String url) {
-        Objects.requireNonNull(url, Required.URL);
-
-        String data = null;
-        var result = Http.get(url)
-                .withHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
-                .binaryResponse()
-                .send();
-
-        if (result.isValid()) {
-            String contentType = Optional.ofNullable(result.header("Content-Type")).orElse("image/jpeg");
-            data = "data:" + contentType + ";base64," + Base64.getEncoder().encodeToString(result.binaryBody());
-        } else {
-            LOG.error("Failed to get and convert image to base64");
-        }
-
-        return Optional.ofNullable(data);
     }
 }

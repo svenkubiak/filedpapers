@@ -2,7 +2,7 @@ package controllers.api;
 
 import constants.Const;
 import constants.Required;
-import filters.ApiFilter;
+import filters.TokenFilter;
 import io.mangoo.annotations.FilterWith;
 import io.mangoo.routing.Response;
 import io.mangoo.routing.bindings.Request;
@@ -13,7 +13,7 @@ import services.DataService;
 import java.util.Map;
 import java.util.Objects;
 
-@FilterWith(ApiFilter.class)
+@FilterWith(TokenFilter.class)
 public class CategoriesControllerV1 {
     private final DataService dataService;
 

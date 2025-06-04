@@ -35,12 +35,12 @@ import static constants.Const.PLACEHOLDER_IMAGE;
 public class DataService {
     private static final Logger LOG = LogManager.getLogger(DataService.class);
     private final Datastore datastore;
-    private final boolean storeImages;
+    private final MediaService mediaService;
 
     @Inject
-    public DataService(Datastore datastore, @Named("application.images.store") boolean storeImages) {
+    public DataService(Datastore datastore, MediaService mediaService) {
         this.datastore = Objects.requireNonNull(datastore, Required.DATASTORE);
-        this.storeImages = storeImages;
+        this.mediaService = Objects.requireNonNull(mediaService, Required.MEDIA_SERVICE);
     }
 
     @SuppressWarnings("unchecked")
@@ -113,8 +113,9 @@ public class DataService {
             output.add(Map.of(
                     Const.UID, item.getUid(),
                     "url", item.getUrl(),
-                    "image", (storeImages && StringUtils.isNotBlank(item.getImageBase64())) ? item.getImageBase64() : (StringUtils.isBlank(item.getImage())) ? Strings.EMPTY : item.getImage(),
+                    "image", (StringUtils.isNotBlank(item.getImageBase64())) ? item.getImageBase64() : (StringUtils.isBlank(item.getImage())) ? Strings.EMPTY : item.getImage(),
                     "title", item.getTitle(),
+                    "mediaUid", StringUtils.isNotBlank(item.getMediaUid()) ? item.getMediaUid() : Strings.EMPTY,
                     "description", StringUtils.isNotBlank(item.getDescription()) ? item.getDescription() : Strings.EMPTY,
                     "domain", StringUtils.isNotBlank(item.getDomain()) ? item.getDomain() : Strings.EMPTY,
                     "sort", item.getTimestamp().toEpochSecond(ZoneOffset.UTC),
@@ -256,8 +257,8 @@ public class DataService {
             String categoryResult = save(category);
 
             var item = new Item(userUid, category.getUid(), url, linkPreview.image(), linkPreview.title(), linkPreview.domain(), linkPreview.description());
-            if (storeImages && !linkPreview.image().equals(PLACEHOLDER_IMAGE) && StringUtils.isNotBlank(linkPreview.image())) {
-                item.setImageBase64(Utils.getImageAsBase64(linkPreview.image()).orElse(PLACEHOLDER_IMAGE));
+            if (!linkPreview.image().equals(PLACEHOLDER_IMAGE) && StringUtils.isNotBlank(linkPreview.image())) {
+                item.setMediaUid(mediaService.fetchAndStore(linkPreview.image(), userUid).orElse(null));
             }
             String itemResult = save(item);
 
@@ -368,18 +369,18 @@ public class DataService {
     public String changeMfa(String userUid, boolean mfa) {
         Utils.checkCondition(Utils.isValidUuid(userUid), Invalid.USER_UID);
 
-        String fallaback = null;
+        String fallback = null;
         var user = findUserByUid(userUid);
         if (mfa) {
-            fallaback = MangooUtils.randomString(32);
+            fallback = MangooUtils.randomString(32);
             user.setMfaSecret(MangooUtils.randomString(64));
-            user.setMfaFallback(CodecUtils.hashArgon2(fallaback, user.getSalt()));
+            user.setMfaFallback(CodecUtils.hashArgon2(fallback, user.getSalt()));
         }
         user.setMfa(mfa);
 
         save(user);
 
-        return fallaback;
+        return fallback;
     }
 
     public Optional<Action> findAction(String token) {
@@ -454,7 +455,7 @@ public class DataService {
                         ne("image", PLACEHOLDER_IMAGE)),
                 Sorts.ascending("timestamp"))
             .forEach(item -> {
-                    item.setImageBase64(Utils.getImageAsBase64(item.getImage()).orElse(PLACEHOLDER_IMAGE));
+                    item.setMediaUid(mediaService.fetchAndStore(item.getImage(), item.getUserUid()).orElse(null));
                     save(item);
         });
     }
@@ -470,8 +471,8 @@ public class DataService {
                     try {
                         linkPreview = LinkPreviewFetcher.fetch(item.getUrl(), user.getLanguage());
                         item.setImage(linkPreview.image());
-                        if (storeImages && !linkPreview.image().equals(PLACEHOLDER_IMAGE) && StringUtils.isNotBlank(linkPreview.image())) {
-                            item.setImageBase64(Utils.getImageAsBase64(linkPreview.image()).orElse(PLACEHOLDER_IMAGE));
+                        if (!linkPreview.image().equals(PLACEHOLDER_IMAGE) && StringUtils.isNotBlank(linkPreview.image())) {
+                            item.setMediaUid(mediaService.fetchAndStore(item.getImage(), item.getUserUid()).orElse(null));
                         }
                     } catch (Exception e) {
                         item.setImage(PLACEHOLDER_IMAGE);
@@ -481,4 +482,6 @@ public class DataService {
         });
         LOG.info("Finished resync");
     }
+
+
 }

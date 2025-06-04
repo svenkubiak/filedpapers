@@ -16,8 +16,6 @@ default:
     registration: true
     metascraper:
       url: arg{}
-    images:
-      store: true
   api:
     accessToken:
       secret: 7jxYMCRL1WIyiaSn5gb0ULCnX3a5GTsnBXfv2AJVj4ZIBiUQqRuv9SrhoGor2AIk
