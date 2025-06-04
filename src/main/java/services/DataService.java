@@ -154,6 +154,10 @@ public class DataService {
                 eq(Const.UID, itemUid)),
                     Updates.set(Const.CATEGORY_UID, trash.getUid()));
 
+        if (updateResult.getModifiedCount() == 1) {
+            mediaService.delete(item.getMediaUid(), userUid);
+        }
+
         return updateResult.getModifiedCount() == 1 ? Optional.of(true) : Optional.empty();
     }
 
@@ -352,6 +356,9 @@ public class DataService {
 
         var user = findUserByUid(userUid);
         if (user != null && user.getPassword().equals(CodecUtils.hashArgon2(password, user.getSalt()))) {
+            List<Item> items = datastore.findAll(Item.class, eq(Const.USER_UID, userUid), Sorts.ascending(Const.USER_UID));
+            items.forEach(item -> mediaService.delete(item.getMediaUid(), userUid));
+
             DeleteResult deleteCategories = datastore.query(Category.class).deleteMany(eq(Const.USER_UID, userUid));
             DeleteResult deleteItems = datastore.query(Item.class).deleteMany(eq(Const.USER_UID, userUid));
             DeleteResult deleteUser = datastore.query(User.class).deleteOne(eq(Const.UID, userUid));

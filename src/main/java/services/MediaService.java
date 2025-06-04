@@ -11,6 +11,7 @@ import constants.Required;
 import de.svenkubiak.http.Http;
 import io.mangoo.persistence.interfaces.Datastore;
 import io.mangoo.utils.CodecUtils;
+import io.mangoo.utils.MangooUtils;
 import jakarta.inject.Inject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -38,7 +39,7 @@ public class MediaService {
         Objects.requireNonNull(data, Required.DATA);
         Objects.requireNonNull(userUid, Required.USER_UID);
 
-        String uid = CodecUtils.uuid();
+        String uid = MangooUtils.randomString(32);
 
         GridFSUploadOptions options = new GridFSUploadOptions()
                 .metadata(new Document(Const.UID, uid).append(Const.USER_UID, userUid));
@@ -54,13 +55,12 @@ public class MediaService {
     }
 
     @SuppressWarnings("ResultOfMethodCallIgnored")
-    public Optional<byte[]> retrieve(String uid, String userUid) {
+    public Optional<byte[]> retrieve(String uid) {
         Objects.requireNonNull(uid, Required.MEDIA_UID);
-        Objects.requireNonNull(uid, Required.USER_UID);
 
         byte[] data = null;
         GridFSFile gridFSFile = bucket
-                .find(and(eq(METADATA_UID, uid), eq(METADATA_USER_UID, userUid)))
+                .find(eq(METADATA_UID, uid))
                 .first();
 
         if (gridFSFile != null) {
