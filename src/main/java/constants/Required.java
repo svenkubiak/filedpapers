@@ -36,6 +36,7 @@ public final class Required {
     public static final String MEDIA_SERVICE = "mediaService can not be null";
     public static final String MEDIA_UID = "mediaUid can not be null";
     public static final String DATA = "data can not be null";
+    public static final String APPLICATION_URL = "applicationUrl can not be null";
 
     private Required() {}
 }

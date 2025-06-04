@@ -12,6 +12,7 @@ import io.mangoo.utils.DateUtils;
 import io.mangoo.utils.MangooUtils;
 import io.mangoo.utils.totp.TotpUtils;
 import jakarta.inject.Inject;
+import jakarta.inject.Named;
 import models.Action;
 import models.Category;
 import models.Item;
@@ -35,11 +36,13 @@ public class DataService {
     private static final Logger LOG = LogManager.getLogger(DataService.class);
     private final Datastore datastore;
     private final MediaService mediaService;
+    private final String applicationUrl;
 
     @Inject
-    public DataService(Datastore datastore, MediaService mediaService) {
+    public DataService(Datastore datastore, MediaService mediaService, @Named("application.url") String applicationUrl) {
         this.datastore = Objects.requireNonNull(datastore, Required.DATASTORE);
         this.mediaService = Objects.requireNonNull(mediaService, Required.MEDIA_SERVICE);
+        this.applicationUrl = Objects.requireNonNull(applicationUrl, Required.APPLICATION_URL);
     }
 
     @SuppressWarnings("unchecked")
@@ -125,7 +128,7 @@ public class DataService {
 
     private String getImage(Item item) {
         if (StringUtils.isNotBlank(item.getMediaUid())) {
-            return "/media/image/" + item.getMediaUid();
+            return applicationUrl + "/media/image/" + item.getMediaUid();
         } else if (StringUtils.isNotBlank(item.getImageBase64())) {
             return item.getImageBase64();
         }

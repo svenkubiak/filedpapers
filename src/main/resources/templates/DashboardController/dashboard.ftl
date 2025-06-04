@@ -35,11 +35,7 @@
                     <div class="card-image">
                         <div class="image-container">
                             <div class="spinner"></div>
-                            <#if item.mediaUid?? && item.mediaUid?has_content>
-                                <img src="/media/image/${item.mediaUid}" class="image-with-fallback" alt="${item.description}" title="${item.description}">
-                            <#else>
-                                <img src="${item.image}" class="image-with-fallback" alt="${item.description}" title="${item.description}">
-                            </#if>
+                            <img src="${item.image}" class="image-with-fallback" alt="${item.description}" title="${item.description}">
                         </div>
                     </div>
                 </a>
