@@ -4,6 +4,7 @@ public class Const {
     public static final String ACCESS_TOKEN = "accessToken";
     public static final String ACTION = "action";
     public static final String API_ERROR = "An error occurred. Please try again.";
+    public static final String IMAGE_CACHE_PREFIX = "image-cache-";
     public static final String CATEGORY_UID = "categoryUid";
     public static final String CHALLENGE_TOKEN = "challengeToken";
     public static final String COUNT = "count";

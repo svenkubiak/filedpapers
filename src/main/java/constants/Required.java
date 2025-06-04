@@ -5,6 +5,7 @@ public final class Required {
     public static final String ACTION = "action can not be null";
     public static final String APPLICATION_URL = "applicationUrl can not be null";
     public static final String AUTHENTICATION_SERVICE = "authenticationService can not be null";
+    public static final String CACHE = "cache can not be null";
     public static final String CATEGORIES = "categories can not be null";
     public static final String CATEGORY_NAME = "name can not be null";
     public static final String CATEGORY_UID = "categoryUid can not be null";
@@ -37,6 +38,7 @@ public final class Required {
     public static final String USER_UID = "userUid can not be null";
     public static final String USERNAME = "username can not be null";
     public static final String VALUE = "value can not be null";
+
 
     private Required() {}
 }
