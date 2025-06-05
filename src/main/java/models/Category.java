@@ -4,7 +4,7 @@ import constants.Required;
 import io.mangoo.annotations.Collection;
 import io.mangoo.annotations.Indexed;
 import io.mangoo.persistence.Entity;
-import io.mangoo.utils.CodecUtils;
+import utils.Utils;
 
 import java.io.Serializable;
 import java.util.Objects;
@@ -25,7 +25,7 @@ public class Category extends Entity implements Serializable {
     public Category(String name, String userUid) {
         this.name = Objects.requireNonNull(name, Required.NAME);
         this.userUid = Objects.requireNonNull(userUid, Required.USER_UID);
-        this.uid = CodecUtils.uuid();
+        this.uid = Utils.randomString();
         this.count = 0;
     }
 

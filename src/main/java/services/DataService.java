@@ -9,7 +9,6 @@ import constants.Required;
 import io.mangoo.persistence.interfaces.Datastore;
 import io.mangoo.utils.CodecUtils;
 import io.mangoo.utils.DateUtils;
-import io.mangoo.utils.MangooUtils;
 import io.mangoo.utils.totp.TotpUtils;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
@@ -47,7 +46,7 @@ public class DataService {
 
     @SuppressWarnings("unchecked")
     public Optional<List<Map<String, Object>>> findCategories(String userUid) {
-        Utils.checkCondition(Utils.isValidUuid(userUid), Invalid.USER_UID);
+        Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
 
         List<Category> categories = new ArrayList<>();
         datastore
@@ -71,7 +70,7 @@ public class DataService {
     }
 
     public long countItems(String userUid, String categoryUid) {
-        Utils.checkCondition(Utils.isValidUuid(userUid), Invalid.USER_UID);
+        Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
 
         if (StringUtils.isBlank(categoryUid) || ("null").equals(categoryUid)) {
             categoryUid = findInbox(userUid).getUid();
@@ -82,7 +81,7 @@ public class DataService {
     }
 
     public boolean userExists(String userUid) {
-        Utils.checkCondition(Utils.isValidUuid(userUid), Invalid.USER_UID);
+        Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
         return datastore.find(User.class, eq(Const.UID, userUid)) != null;
     }
 
@@ -100,8 +99,8 @@ public class DataService {
 
     @SuppressWarnings("unchecked")
     public Optional<List<Map<String, Object>>> findItems(String userUid, String categoryUid) {
-        Utils.checkCondition(Utils.isValidUuid(userUid), Invalid.USER_UID);
-        Utils.checkCondition(Utils.isValidUuid(categoryUid), Invalid.CATEGORY_UID);
+        Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
+        Utils.checkCondition(Utils.isValidRandom(categoryUid), Invalid.CATEGORY_UID);
 
         List<Item> items = new ArrayList<>();
         datastore
@@ -137,8 +136,8 @@ public class DataService {
     }
 
     public Optional<Boolean> deleteItem(String itemUid, String userUid) {
-        Utils.checkCondition(Utils.isValidUuid(itemUid), Invalid.ITEM_UID);
-        Utils.checkCondition(Utils.isValidUuid(userUid), Invalid.USER_UID);
+        Utils.checkCondition(Utils.isValidRandom(itemUid), Invalid.ITEM_UID);
+        Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
 
         var item = findItem(itemUid, userUid);
         var category = findCategory(item.getCategoryUid(), userUid);
@@ -154,29 +153,37 @@ public class DataService {
                 eq(Const.UID, itemUid)),
                     Updates.set(Const.CATEGORY_UID, trash.getUid()));
 
-        if (updateResult.getModifiedCount() == 1 && StringUtils.isNotBlank(item.getMediaUid())) {
-            mediaService.delete(item.getMediaUid(), userUid);
-        }
-
         return updateResult.getModifiedCount() == 1 ? Optional.of(true) : Optional.empty();
     }
 
+    @SuppressWarnings("unchecked")
     public Optional<Boolean> emptyTrash(String userUid) {
-        Utils.checkCondition(Utils.isValidUuid(userUid), Invalid.USER_UID);
+        Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
 
         Category trash = findTrash(userUid);
         trash.setCount(0);
         save(trash);
 
+        List<Item> items = new ArrayList<>();
+        datastore.query(Item.class).find(and(
+                eq(Const.USER_UID, userUid),
+                eq(Const.CATEGORY_UID, trash.getUid()))).into(items);
+
         var deleteResult = datastore.query(Item.class).deleteMany(and(
                 eq(Const.USER_UID, userUid),
                 eq(Const.CATEGORY_UID, trash.getUid())));
+
+        if (deleteResult.wasAcknowledged()) {
+            items.stream()
+                    .filter(item -> StringUtils.isNotBlank(item.getMediaUid()))
+                    .forEach(item -> mediaService.delete(item.getMediaUid(), userUid));
+        }
 
         return deleteResult.wasAcknowledged() ? Optional.of(true) : Optional.empty();
     }
 
     private Category findTrash(String userUid) {
-        Utils.checkCondition(Utils.isValidUuid(userUid), Invalid.USER_UID);
+        Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
 
         return datastore.find(Category.class,
                 and(
@@ -185,7 +192,7 @@ public class DataService {
     }
 
     public Category findInbox(String userUid) {
-        Utils.checkCondition(Utils.isValidUuid(userUid), Invalid.USER_UID);
+        Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
 
         return datastore.find(Category.class,
                 and(
@@ -194,8 +201,8 @@ public class DataService {
     }
 
     public Category findCategory(String categoryUid, String userUid) {
-        Utils.checkCondition(Utils.isValidUuid(categoryUid), Invalid.CATEGORY_UID);
-        Utils.checkCondition(Utils.isValidUuid(userUid), Invalid.USER_UID);
+        Utils.checkCondition(Utils.isValidRandom(categoryUid), Invalid.CATEGORY_UID);
+        Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
 
         return datastore.find(Category.class,
                 and(
@@ -204,8 +211,8 @@ public class DataService {
     }
 
     public Item findItem(String itemUid, String userUid) {
-        Utils.checkCondition(Utils.isValidUuid(itemUid), Invalid.ITEM_UID);
-        Utils.checkCondition(Utils.isValidUuid(userUid), Invalid.USER_UID);
+        Utils.checkCondition(Utils.isValidRandom(itemUid), Invalid.ITEM_UID);
+        Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
 
         return datastore.find(Item.class,
                 and(
@@ -214,9 +221,9 @@ public class DataService {
     }
 
     public Optional<Boolean> moveItem(String itemUid, String userUid, String categoryUid) {
-        Utils.checkCondition(Utils.isValidUuid(itemUid), Invalid.ITEM_UID);
-        Utils.checkCondition(Utils.isValidUuid(userUid), Invalid.USER_UID);
-        Utils.checkCondition(Utils.isValidUuid(categoryUid), Invalid.CATEGORY_UID);
+        Utils.checkCondition(Utils.isValidRandom(itemUid), Invalid.ITEM_UID);
+        Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
+        Utils.checkCondition(Utils.isValidRandom(categoryUid), Invalid.CATEGORY_UID);
 
         var item = findItem(itemUid, userUid);
         var sourceCategory = findCategory(item.getCategoryUid(), userUid);
@@ -242,7 +249,7 @@ public class DataService {
     }
 
     public Optional<Boolean> addItem(String userUid, String url, String categoryUid) {
-        Utils.checkCondition(Utils.isValidUuid(userUid), Invalid.USER_UID);
+        Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
         Utils.checkCondition(Utils.isValidURL(url), Invalid.URL);
         var user = findUserByUid(userUid);
 
@@ -259,7 +266,7 @@ public class DataService {
         }
 
         Category category = null;
-        if (Utils.isValidUuid(categoryUid)) {
+        if (Utils.isValidRandom(categoryUid)) {
             category = findCategory(categoryUid, userUid);
         }
 
@@ -286,7 +293,7 @@ public class DataService {
     }
 
     public Optional<Boolean> addCategory(String userUid, String name) {
-        Utils.checkCondition(Utils.isValidUuid(userUid), Invalid.USER_UID);
+        Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
         Objects.requireNonNull(name, Required.CATEGORY_NAME);
 
         String result = save(new Category(name, userUid));
@@ -295,8 +302,8 @@ public class DataService {
     }
 
     public Optional<Boolean> deleteCategory(String userUid, String categoryUid) {
-        Utils.checkCondition(Utils.isValidUuid(userUid), Invalid.USER_UID);
-        Utils.checkCondition(Utils.isValidUuid(categoryUid), Invalid.CATEGORY_UID);
+        Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
+        Utils.checkCondition(Utils.isValidRandom(categoryUid), Invalid.CATEGORY_UID);
 
         Category inbox = findInbox(userUid);
         Category trash = findTrash(userUid);
@@ -332,7 +339,7 @@ public class DataService {
     }
 
     public User findUserByUid(String userUid) {
-        Utils.checkCondition(Utils.isValidUuid(userUid), Invalid.USER_UID);
+        Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
 
         return datastore.find(User.class, eq(Const.UID, userUid));
     }
@@ -345,14 +352,14 @@ public class DataService {
 
     public Category findCategoryByName(String categoryName, String userUid) {
         Objects.requireNonNull(categoryName, Required.CATEGORY_NAME);
-        Utils.checkCondition(Utils.isValidUuid(userUid), Invalid.USER_UID);
+        Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
 
         return datastore.find(Category.class, and(eq(Const.NAME, categoryName), eq(Const.USER_UID, userUid)));
     }
 
     public boolean deleteAccount(String password, String userUid) {
         Objects.requireNonNull(password, Required.PASSWORD);
-        Utils.checkCondition(Utils.isValidUuid(userUid), Invalid.USER_UID);
+        Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
 
         var user = findUserByUid(userUid);
         if (user != null && user.getPassword().equals(CodecUtils.hashArgon2(password, user.getSalt()))) {
@@ -372,14 +379,14 @@ public class DataService {
     }
 
     public boolean userHasMfa(String userUid) {
-        Utils.checkCondition(Utils.isValidUuid(userUid), Invalid.USER_UID);
+        Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
 
         var user = findUserByUid(userUid);
         return user != null && user.isMfa();
     }
 
     public boolean isValidMfa(String userUid, String otp) {
-        Utils.checkCondition(Utils.isValidUuid(userUid), Invalid.USER_UID);
+        Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
         Utils.checkCondition(Utils.isValidOtp(otp), Invalid.OTP);
 
         var user = findUserByUid(userUid);
@@ -387,13 +394,13 @@ public class DataService {
     }
 
     public String changeMfa(String userUid, boolean mfa) {
-        Utils.checkCondition(Utils.isValidUuid(userUid), Invalid.USER_UID);
+        Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
 
         String fallback = null;
         var user = findUserByUid(userUid);
         if (mfa) {
-            fallback = MangooUtils.randomString(32);
-            user.setMfaSecret(MangooUtils.randomString(64));
+            fallback = Utils.randomString();
+            user.setMfaSecret(Utils.randomString());
             user.setMfaFallback(CodecUtils.hashArgon2(fallback, user.getSalt()));
         }
         user.setMfa(mfa);
@@ -410,7 +417,7 @@ public class DataService {
     }
 
     public void setPassword(String userUid, String password) {
-        Utils.checkCondition(Utils.isValidUuid(userUid), Invalid.USER_UID);
+        Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
         Objects.requireNonNull(password, Required.PASSWORD);
 
         var user = findUserByUid(userUid);
@@ -427,7 +434,7 @@ public class DataService {
     }
 
     public void confirmEmail(String userUid) {
-        Utils.checkCondition(Utils.isValidUuid(userUid), Invalid.USER_UID);
+        Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
 
         var user = findUserByUid(userUid);
         if (user != null) {
@@ -443,7 +450,7 @@ public class DataService {
     }
 
     public boolean updateLanguage(String userUid, String language) {
-        Utils.checkCondition(Utils.isValidUuid(userUid), Invalid.USER_UID);
+        Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
         Objects.requireNonNull(language, Required.LANGUAGE);
 
         var user = findUserByUid(userUid);
@@ -456,32 +463,19 @@ public class DataService {
     }
 
     public boolean updatePepper(String userUid) {
-        Utils.checkCondition(Utils.isValidUuid(userUid), Invalid.USER_UID);
+        Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
 
         var user = findUserByUid(userUid);
         if (user != null) {
-            user.setPepper(MangooUtils.randomString(64));
+            user.setPepper(Utils.randomString());
             return save(user) != null;
         }
 
         return false;
     }
 
-    public void convertImages() {
-        datastore.findAll(Item.class,
-                and(
-                        ne("image", null),
-                        eq("imageBase64", null),
-                        ne("image", PLACEHOLDER_IMAGE)),
-                Sorts.ascending("timestamp"))
-            .forEach(item -> {
-                    item.setMediaUid(mediaService.fetchAndStore(item.getImage(), item.getUserUid()).orElse(null));
-                    save(item);
-        });
-    }
-
     public void resync(String userUid) {
-        Utils.checkCondition(Utils.isValidUuid(userUid), Invalid.USER_UID);
+        Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
         LOG.info("Started resync");
         var user = findUserByUid(userUid);
 
@@ -492,6 +486,7 @@ public class DataService {
                         linkPreview = LinkPreviewFetcher.fetch(item.getUrl(), user.getLanguage());
                         item.setImage(linkPreview.image());
                         if (!linkPreview.image().equals(PLACEHOLDER_IMAGE) && StringUtils.isNotBlank(linkPreview.image())) {
+                            mediaService.clean(item.getMediaUid(), item.getUserUid());
                             item.setMediaUid(mediaService.fetchAndStore(item.getImage(), item.getUserUid()).orElse(null));
                         }
                     } catch (Exception e) {
@@ -502,6 +497,4 @@ public class DataService {
         });
         LOG.info("Finished resync");
     }
-
-
 }

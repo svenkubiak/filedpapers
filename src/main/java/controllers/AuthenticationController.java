@@ -9,7 +9,6 @@ import io.mangoo.i18n.Messages;
 import io.mangoo.routing.Response;
 import io.mangoo.routing.bindings.*;
 import io.mangoo.utils.CodecUtils;
-import io.mangoo.utils.MangooUtils;
 import io.mangoo.utils.totp.TotpUtils;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
@@ -168,7 +167,7 @@ public class AuthenticationController {
         if (form.isValid()) {
             var user = dataService.findUser(form.get("username"));
             if (user != null) {
-                var token = MangooUtils.randomString(64);
+                var token = Utils.randomString();
                 dataService.save(new Action(user.getUid(), token, Type.RESET_PASSWORD));
                 notificationService.forgotPassword(form.get("username"), token);
             }
@@ -207,7 +206,7 @@ public class AuthenticationController {
                 dataService.save(new Category(Const.INBOX, user.getUid()));
                 dataService.save(new Category(Const.TRASH, user.getUid()));
 
-                var token = MangooUtils.randomString(64);
+                var token = Utils.randomString();
                 dataService.save(new Action(user.getUid(), token, Type.CONFIRM_EMAIL));
                 notificationService.confirmEmail(username, token);
 

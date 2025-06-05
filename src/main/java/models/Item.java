@@ -4,7 +4,7 @@ import constants.Required;
 import io.mangoo.annotations.Collection;
 import io.mangoo.annotations.Indexed;
 import io.mangoo.persistence.Entity;
-import io.mangoo.utils.CodecUtils;
+import utils.Utils;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -38,7 +38,7 @@ public class Item extends Entity implements Serializable {
         this.url = Objects.requireNonNull(url, Required.URL);
         this.image = Objects.requireNonNull(image, Required.IMAGE);
         this.title = Objects.requireNonNull(title, Required.TITLE);
-        this.uid = CodecUtils.uuid();
+        this.uid = Utils.randomString();
         this.timestamp = LocalDateTime.now();
         this.domain = domain;
         this.description = description;

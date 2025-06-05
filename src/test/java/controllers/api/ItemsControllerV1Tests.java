@@ -15,6 +15,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import services.DataService;
+import utils.Utils;
 
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -78,7 +79,7 @@ public class ItemsControllerV1Tests {
     @Test
     void testListUnauthorized() {
         //when
-        TestResponse response = TestRequest.get("/api/v1/items/" + CodecUtils.uuid())
+        TestResponse response = TestRequest.get("/api/v1/items/" + Utils.randomString())
                 .withContentType("application/json")
                 .execute();
 
@@ -162,7 +163,7 @@ public class ItemsControllerV1Tests {
     @Test
     void testDeleteUnauthorized() {
         //when
-        TestResponse response = TestRequest.put("/api/v1/items/" + CodecUtils.uuid())
+        TestResponse response = TestRequest.put("/api/v1/items/" + Utils.randomString())
                 .withContentType("application/json")
                 .execute();
 
@@ -211,7 +212,7 @@ public class ItemsControllerV1Tests {
     @Test
     void testAddWithCategory() {
         //given
-        String url = "https://svenkubiak.de?uid=" + CodecUtils.uuid();
+        String url = "https://svenkubiak.de?uid=" + Utils.randomString();
 
         //when
         Map<String, String> data = Map.of("url", url, "category", TEST_UID);
@@ -232,7 +233,7 @@ public class ItemsControllerV1Tests {
     @Test
     void testAddAsyncWithCategory() {
         //given
-        String url = "https://svenkubiak.de?uid=" + CodecUtils.uuid();
+        String url = "https://svenkubiak.de?uid=" + Utils.randomString();
 
         //when
         Map<String, String> data = Map.of("url", url, "category", TEST_UID);
@@ -253,7 +254,7 @@ public class ItemsControllerV1Tests {
     @Test
     void testAddWithoutCategory() {
         //given
-        String url = "https://svenkubiak.de?uid=" + CodecUtils.uuid();
+        String url = "https://svenkubiak.de?uid=" + Utils.randomString();
 
         //when
         Map<String, String> data = Map.of("url", url);
@@ -274,7 +275,7 @@ public class ItemsControllerV1Tests {
     @Test
     void testAddAsyncWithoutCategory() {
         //given
-        String url = "https://svenkubiak.de?uid=" + CodecUtils.uuid();
+        String url = "https://svenkubiak.de?uid=" + Utils.randomString();
 
         //when
         Map<String, String> data = Map.of("url", url);

@@ -13,12 +13,12 @@ import constants.Required;
 import de.svenkubiak.http.Http;
 import io.mangoo.cache.Cache;
 import io.mangoo.persistence.interfaces.Datastore;
-import io.mangoo.utils.CodecUtils;
-import io.mangoo.utils.MangooUtils;
 import jakarta.inject.Inject;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.bson.Document;
+import utils.Utils;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -53,11 +53,11 @@ public class MediaService {
         Objects.requireNonNull(data, Required.DATA);
         Objects.requireNonNull(userUid, Required.USER_UID);
 
-        String uid = MangooUtils.randomString(42);
+        String uid = Utils.randomString();
 
         GridFSUploadOptions options = new GridFSUploadOptions()
                 .metadata(new Document(Const.UID, uid).append(Const.USER_UID, userUid));
-        try (GridFSUploadStream uploadStream = bucket.openUploadStream(CodecUtils.uuid(), options)) {
+        try (GridFSUploadStream uploadStream = bucket.openUploadStream(uid, options)) {
             uploadStream.write(data);
             uploadStream.flush();
         } catch (Exception e) {
@@ -125,5 +125,11 @@ public class MediaService {
         }
 
         return Optional.ofNullable(uid);
+    }
+
+    public void clean(String mediaUid, String userUid) {
+        if (StringUtils.isNotBlank(mediaUid) && StringUtils.isNotBlank(userUid)) {
+            delete(mediaUid, userUid);
+        }
     }
 }

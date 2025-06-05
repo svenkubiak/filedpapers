@@ -15,6 +15,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import services.DataService;
+import utils.Utils;
 
 import java.util.Map;
 
@@ -97,7 +98,7 @@ public class CategoriesControllerV1Tests {
     @Test
     void testDelete() {
         //when
-        String name = CodecUtils.uuid();
+        String name = Utils.randomString();
         Category category = new Category(name, USER_UID);
         Application.getInstance(DataService.class).save(category);
         TestResponse response = TestRequest.delete("/api/v1/categories/" + category.getUid())
@@ -128,7 +129,7 @@ public class CategoriesControllerV1Tests {
     @Test
     void testAdd() {
         //when
-        String name = CodecUtils.uuid();
+        String name = Utils.randomString();
         Map<String, String> body = Map.of("name", name);
         TestResponse response = TestRequest.post("/api/v1/categories")
                 .withHeader("Authorization", ACCESS_TOKEN)

@@ -23,8 +23,8 @@ import java.util.*;
 public final class Utils {
     private static final Logger LOG = LogManager.getLogger(Utils.class);
 
-    private static final Pattern UUID_PATTERN = Pattern.compile(
-            "^[0-9a-f]{8}-[0-9a-f]{4}-6[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+    private static final Pattern PATTERN = Pattern.compile(
+            "^[A-Za-z0-9-]+$",
             Pattern.CASE_INSENSITIVE
     );
     private static final Pattern MFA_PATTERN = Pattern.compile("\\d{6}");
@@ -32,8 +32,8 @@ public final class Utils {
     private Utils() {
     }
 
-    public static boolean isValidUuid(String uuid) {
-        return StringUtils.isNotBlank(uuid) && UUID_PATTERN.matcher(uuid).matches();
+    public static boolean isValidRandom(String value) {
+        return StringUtils.isNotBlank(value) && PATTERN.matcher(value).matches();
     }
 
     public static void sortCategories(List<Map<String, Object>> categories) {
@@ -138,5 +138,9 @@ public final class Utils {
         }
 
         return cookie;
+    }
+
+    public static String randomString() {
+        return MangooUtils.randomString(32);
     }
 }

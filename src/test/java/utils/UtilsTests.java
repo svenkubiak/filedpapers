@@ -13,10 +13,10 @@ public class UtilsTests {
     @Test
     public void testValidUuid() {
         //given
-        String uuid = "1f0088c3-2e22-6350-913f-b0b6f26ac060";
+        String uuid = "1f0088c32e226350913fb0b6f26ac0ac";
 
         //when
-        boolean valid = Utils.isValidUuid(uuid);
+        boolean valid = Utils.isValidRandom(uuid);
 
         //then
         assertThat(valid, equalTo(true));
@@ -28,7 +28,7 @@ public class UtilsTests {
         String uuid = "0f37d26a-d9ce-423b-b320-f95483f77e1d";
 
         //when
-        boolean valid = Utils.isValidUuid(uuid);
+        boolean valid = Utils.isValidRandom(uuid);
 
         //then
         assertThat(valid, equalTo(false));

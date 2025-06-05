@@ -11,7 +11,6 @@ import io.mangoo.routing.bindings.Flash;
 import io.mangoo.routing.bindings.Form;
 import io.mangoo.routing.bindings.Session;
 import io.mangoo.utils.CodecUtils;
-import io.mangoo.utils.MangooUtils;
 import io.mangoo.utils.totp.TotpUtils;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
@@ -177,7 +176,7 @@ public class DashboardController {
 
         var user = dataService.findUserByUid(userUid);
         if (user != null && !user.isConfirmed()) {
-            var token = MangooUtils.randomString(64);
+            var token = Utils.randomString();
             dataService.save(new Action(userUid, token, Type.CONFIRM_EMAIL));
             notificationService.confirmEmail(user.getUsername(), token);
 
@@ -214,7 +213,7 @@ public class DashboardController {
                             item.setUrl(child.getUrl());
                             item.setCategoryUid(category.getUid());
                             item.setUserUid(userUid);
-                            item.setUid(CodecUtils.uuid());
+                            item.setUid(Utils.randomString());
                             item.setImage(child.getDataCover());
                             item.setTimestamp(child.getAddDate().atZone(ZoneId.systemDefault()).toLocalDateTime());
 
@@ -311,7 +310,7 @@ public class DashboardController {
                 user.setConfirmed(false);
                 dataService.save(user);
 
-                var token = MangooUtils.randomString(64);
+                var token = Utils.randomString();
                 dataService.save(new Action(user.getUid(), token, Type.CONFIRM_EMAIL));
                 notificationService.confirmEmail(username, token);
 
