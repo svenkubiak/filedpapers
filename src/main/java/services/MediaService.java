@@ -84,7 +84,7 @@ public class MediaService {
             try (GridFSDownloadStream downloadStream = bucket.openDownloadStream(gridFSFile.getObjectId())) {
                 int fileLength = (int) downloadStream.getGridFSFile().getLength();
                 data = new byte[fileLength];
-                int offset = 0;
+                var offset = 0;
                 int bytesRead;
 
                 while (offset < fileLength && (bytesRead = downloadStream.read(data, offset, fileLength - offset)) != -1) {
@@ -108,7 +108,7 @@ public class MediaService {
         Objects.requireNonNull(uid, Required.MEDIA_UID);
         Objects.requireNonNull(uid, Required.USER_UID);
 
-        GridFSFile gridFSFile = bucket
+        var gridFSFile = bucket
                 .find(and(eq(Const.METADATA_UID, uid), eq(Const.METADATA_USER_UID, userUid)))
                 .first();
 

@@ -69,7 +69,10 @@ public final class Utils {
     }
 
     public static Map<String, String> getLanguages() {
-        Map<String, String> languages = new HashMap<>();
+        int size = MangooUtils.getLanguages().size();
+        int initialCapacity = (int) (size / 0.75f) + 1;
+        Map<String, String> languages = new HashMap<>(initialCapacity);
+
         for (String language : MangooUtils.getLanguages()) {
             var locale = Locale.of(language);
             languages.put(language, locale.getDisplayLanguage(locale));
@@ -81,13 +84,13 @@ public final class Utils {
     public static List<Map<String, Object>> convertItems(List<Map<String, Object>> items) {
         Objects.requireNonNull(items, Required.ITEMS);
 
-        List<Map<String, Object>> list = new ArrayList<>();
+        List<Map<String, Object>> list = new ArrayList<>(items.size());
         for (Map<String, Object> item : items) {
-            Map<String, Object> map = new HashMap<>(item);
+            Map<String, Object> map = new HashMap<>((int)((item.size() + 1) / 0.75f) + 1);
+            map.putAll(item);
 
             var instant = Instant.ofEpochSecond(((long) item.get("sort")));
-            var localDateTime = LocalDateTime
-                    .ofInstant(instant, ZoneOffset.UTC);
+            var localDateTime = LocalDateTime.ofInstant(instant, ZoneOffset.UTC);
 
             map.put("sort", localDateTime);
             list.add(map);

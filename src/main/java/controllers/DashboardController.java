@@ -133,7 +133,7 @@ public class DashboardController {
     public Response doLanguage(Authentication authentication, Form form, Flash flash) {
         String userUid = authentication.getSubject();
         form.expectValue("language");
-        form.expectTrue("language", form.get("language").equals("de") || form.get("language").equals("en"));
+        form.expectTrue("language", "de".equals(form.get("language")) || "en".equals(form.get("language")));
 
         if (form.isValid() && dataService.updateLanguage(userUid, form.get("language"))) {
             flash.put(Const.TOAST_SUCCESS, messages.get("toast.language.success"));
