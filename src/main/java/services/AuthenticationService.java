@@ -5,7 +5,6 @@ import constants.Invalid;
 import constants.Required;
 import io.mangoo.constants.Key;
 import io.mangoo.exceptions.MangooTokenException;
-import io.mangoo.utils.MangooUtils;
 import io.mangoo.utils.paseto.PasetoBuilder;
 import io.mangoo.utils.paseto.PasetoParser;
 import io.mangoo.utils.paseto.Token;
@@ -47,14 +46,14 @@ public class AuthenticationService {
     }
 
     public Map<String, String> getChallengeToken(String userUid) throws MangooTokenException {
-        Utils.checkCondition(Utils.isValidUuid(userUid), Invalid.USER_UID);
+        Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
 
         var now = LocalDateTime.now();
 
         String challengeToken = PasetoBuilder.create()
                 .withSecret(challengeTokenSecret)
                 .withExpires(now.plusMinutes(5))
-                .withClaim(Const.NONCE, MangooUtils.randomString(32))
+                .withClaim(Const.NONCE, Utils.randomString())
                 .withSubject(userUid)
                 .build();
 
@@ -62,13 +61,13 @@ public class AuthenticationService {
     }
 
     public Map<String, String> getAccessTokens(String userUid) throws MangooTokenException {
-        Utils.checkCondition(Utils.isValidUuid(userUid), Invalid.USER_UID);
+        Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
 
         var now = LocalDateTime.now();
         String accessToken = PasetoBuilder.create()
                 .withSecret(accessTokenSecret)
                 .withExpires(now.plusMinutes(accessTokenExpires))
-                .withClaim(Const.NONCE, MangooUtils.randomString(32))
+                .withClaim(Const.NONCE, Utils.randomString())
                 .withClaim(Const.PEPPER, getPepper(userUid))
                 .withSubject(userUid)
                 .build();
@@ -76,7 +75,7 @@ public class AuthenticationService {
         String refreshToken = PasetoBuilder.create()
                 .withSecret(refreshTokenSecret)
                 .withExpires(now.plusMinutes(refreshTokenExpires))
-                .withClaim(Const.NONCE, MangooUtils.randomString(32))
+                .withClaim(Const.NONCE, Utils.randomString())
                 .withClaim(Const.PEPPER, getPepper(userUid))
                 .withSubject(userUid)
                 .build();
@@ -85,14 +84,14 @@ public class AuthenticationService {
     }
 
     private String getPepper(String userUid) {
-        Utils.checkCondition(Utils.isValidUuid(userUid), Invalid.USER_UID);
+        Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
 
         String pepper = Strings.EMPTY;
         var user = dataService.findUserByUid(userUid);
         if (user != null) {
             pepper = user.getPepper();
             if (StringUtils.isBlank(pepper)) {
-                pepper = MangooUtils.randomString(64);
+                pepper = Utils.randomString();
                 user.setPepper(pepper);
                 dataService.save(user);
             }
@@ -140,7 +139,7 @@ public class AuthenticationService {
 
         LocalDateTime expires = token.getExpires();
         String userUid = token.getSubject();
-        if (expires != null && expires.isAfter(LocalDateTime.now()) && Utils.isValidUuid(userUid)) {
+        if (expires != null && expires.isAfter(LocalDateTime.now()) && Utils.isValidRandom(userUid)) {
             return Optional.of(userUid);
         }
 

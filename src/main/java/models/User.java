@@ -5,8 +5,7 @@ import constants.Required;
 import io.mangoo.annotations.Collection;
 import io.mangoo.annotations.Indexed;
 import io.mangoo.persistence.Entity;
-import io.mangoo.utils.CodecUtils;
-import io.mangoo.utils.MangooUtils;
+import utils.Utils;
 
 import java.io.Serializable;
 import java.util.Objects;
@@ -32,10 +31,10 @@ public class User extends Entity implements Serializable  {
 
     public User(String username) {
         this.username = Objects.requireNonNull(username, Required.USERNAME);
-        this.uid = CodecUtils.uuid();
-        this.salt = MangooUtils.randomString(64);
-        this.pepper = MangooUtils.randomString(64);
-        this.mfaSecret = MangooUtils.randomString(64);
+        this.uid = Utils.randomString();
+        this.salt = Utils.randomString();
+        this.pepper = Utils.randomString();
+        this.mfaSecret = Utils.randomString();
         this.language = Const.DEFAULT_LANGUAGE;
     }
 

@@ -2,14 +2,13 @@ package controllers;
 
 import constants.Const;
 import constants.Required;
-import filters.TokenFilter;
+import filters.AuthenticationFilter;
 import io.mangoo.annotations.FilterWith;
 import io.mangoo.core.Config;
 import io.mangoo.i18n.Messages;
 import io.mangoo.routing.Response;
 import io.mangoo.routing.bindings.*;
 import io.mangoo.utils.CodecUtils;
-import io.mangoo.utils.MangooUtils;
 import io.mangoo.utils.totp.TotpUtils;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
@@ -128,13 +127,13 @@ public class AuthenticationController {
         return Response.ok().render();
     }
 
-    @FilterWith(TokenFilter.class)
+    @FilterWith(AuthenticationFilter.class)
     public Response resetPassword(Request request) {
         Action action = request.getAttribute(Const.ACTION);
         return Response.ok().render("token", action.getToken());
     }
 
-    @FilterWith(TokenFilter.class)
+    @FilterWith(AuthenticationFilter.class)
     public Response doResetPassword(Request request, Form form) {
         Action action = request.getAttribute(Const.ACTION);
         form.expectValue("password", messages.get("validation.required.current.password"));
@@ -151,7 +150,7 @@ public class AuthenticationController {
         return Response.redirect("/auth/reset-password/" + action.getToken());
     }
 
-    @FilterWith(TokenFilter.class)
+    @FilterWith(AuthenticationFilter.class)
     public Response confirm(Request request) {
         Action action = request.getAttribute(Const.ACTION);
         dataService.confirmEmail(action.getUserUid());
@@ -168,7 +167,7 @@ public class AuthenticationController {
         if (form.isValid()) {
             var user = dataService.findUser(form.get("username"));
             if (user != null) {
-                var token = MangooUtils.randomString(64);
+                var token = Utils.randomString();
                 dataService.save(new Action(user.getUid(), token, Type.RESET_PASSWORD));
                 notificationService.forgotPassword(form.get("username"), token);
             }
@@ -207,7 +206,7 @@ public class AuthenticationController {
                 dataService.save(new Category(Const.INBOX, user.getUid()));
                 dataService.save(new Category(Const.TRASH, user.getUid()));
 
-                var token = MangooUtils.randomString(64);
+                var token = Utils.randomString();
                 dataService.save(new Action(user.getUid(), token, Type.CONFIRM_EMAIL));
                 notificationService.confirmEmail(username, token);
 

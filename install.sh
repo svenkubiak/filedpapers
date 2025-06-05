@@ -20,7 +20,6 @@ cat > .env <<EOL
 VERSION=latest
 
 APPLICATION_URL=http://localhost
-STORE_IMAGES=false
 ALLOW_REGISTRATION=true
 SMTP_HOST=localhost
 SMTP_PORT=25

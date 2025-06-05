@@ -34,8 +34,7 @@
                 <a href="${item.url}" target="_blank" class="card-link">
                     <div class="card-image">
                         <div class="image-container">
-                            <div class="spinner"></div>
-                            <img src="${item.image}" class="image-with-fallback" alt="${item.description}" title="${item.description}">
+                            <img src="${item.image}" alt="${item.description}" title="${item.description}">
                         </div>
                     </div>
                 </a>

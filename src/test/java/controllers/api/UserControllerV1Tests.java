@@ -8,7 +8,6 @@ import io.mangoo.test.http.TestRequest;
 import io.mangoo.test.http.TestResponse;
 import io.mangoo.utils.CodecUtils;
 import io.mangoo.utils.JsonUtils;
-import io.mangoo.utils.MangooUtils;
 import io.mangoo.utils.totp.TotpUtils;
 import models.Category;
 import models.Item;
@@ -16,6 +15,7 @@ import models.User;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import utils.Utils;
 
 import java.util.Map;
 
@@ -40,7 +40,7 @@ public class UserControllerV1Tests {
         user2.setPassword(CodecUtils.hashArgon2("bar", user2.getSalt()));
         user2.setMfa(true);
         user2.setMfaSecret("foobar");
-        user2.setMfaFallback(MangooUtils.randomString(64));
+        user2.setMfaFallback(Utils.randomString());
         datastore.save(user2);
 
         datastore.save(new Category(Const.INBOX, user.getUid()));
@@ -252,8 +252,8 @@ public class UserControllerV1Tests {
     @Test
     void testInvalidLogin() {
         //given
-        String username = MangooUtils.randomString(16);
-        String password = MangooUtils.randomString(16);
+        String username = Utils.randomString();
+        String password = Utils.randomString();
         String body = JsonUtils.toJson(Map.of("username", username, "password", password));
 
         //when

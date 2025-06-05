@@ -2,7 +2,6 @@ package utils.preview;
 
 import constants.Const;
 import de.svenkubiak.http.Http;
-import de.svenkubiak.http.Result;
 import io.mangoo.core.Application;
 import io.mangoo.i18n.Messages;
 import io.mangoo.utils.JsonUtils;
@@ -11,8 +10,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.util.Strings;
 
-import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;

@@ -2,29 +2,32 @@ package filters;
 
 import constants.Const;
 import constants.Required;
+import io.mangoo.constants.Key;
+import io.mangoo.exceptions.MangooTokenException;
 import io.mangoo.interfaces.filters.PerRequestFilter;
 import io.mangoo.routing.Response;
 import io.mangoo.routing.bindings.Request;
+import io.mangoo.utils.RequestUtils;
+import io.mangoo.utils.paseto.Token;
 import jakarta.inject.Inject;
-import models.enums.Type;
-import org.apache.commons.lang3.StringUtils;
+import jakarta.inject.Named;
+import services.AuthenticationService;
 import services.DataService;
 
-import java.time.LocalDateTime;
-import java.util.Map;
 import java.util.Objects;
 
 public class TokenFilter implements PerRequestFilter {
     private final DataService dataService;
-    private final Map<Type, String> allowed;
+    private final AuthenticationService authenticationService;
+    private final String cookieName;
 
     @Inject
-    public TokenFilter(DataService dataService) {
+    public TokenFilter(DataService dataService,
+                       AuthenticationService authenticationService,
+                       @Named(Key.AUTHENTICATION_COOKIE_NAME) String cookieName) {
         this.dataService = Objects.requireNonNull(dataService, Required.DATA_SERVICE);
-        this.allowed = Map.of(
-                Type.RESET_PASSWORD, "/auth/reset-password",
-                Type.CONFIRM_EMAIL, "/auth/confirm"
-        );
+        this.authenticationService = Objects.requireNonNull(authenticationService, Required.DATA_SERVICE);
+        this.cookieName = Objects.requireNonNull(cookieName, Required.COOKIE_NAME);
     }
 
     @Override
@@ -32,18 +35,39 @@ public class TokenFilter implements PerRequestFilter {
         Objects.requireNonNull(request, Required.REQUEST);
         Objects.requireNonNull(request, Required.RESPONSE);
 
-        String uri = request.getURI();
-        String token = request.getParameter("token");
-        if (StringUtils.isNoneBlank(token, uri)) {
-            return dataService.findAction(token)
-                    .filter(action -> LocalDateTime.now().isBefore(action.getExpires()))
-                    .filter(action -> uri.startsWith(allowed.get(action.getType())))
-                    .map(action -> {
-                        request.addAttribute(Const.ACTION, action);
-                        return response;
-                    }).orElseGet(() -> Response.redirect("/error").end());
+        var cookie = request.getCookie(cookieName);
+        if (cookie != null) {
+            String cookieValue = cookie.getValue();
+            return authorize(cookieValue, request, response, true);
         }
 
-        return Response.redirect("/error").end();
+        return RequestUtils.getAuthorizationHeader(request)
+                .map(authorization -> authorize(authorization, request, response, false))
+                .orElseGet(() -> Response.unauthorized().end());
+    }
+
+    private Response authorize(String authorization, Request request, Response response, boolean cookie) {
+        try {
+            Token token;
+            if (cookie) {
+                token = authenticationService.parseAuthenticationCookie(authorization);
+            } else {
+                token = authenticationService.parseAccessToken(authorization);
+            }
+
+            if (token != null) {
+                return authenticationService.validateToken(token).map(userUid -> {
+                    if (dataService.userExists(userUid)) {
+                        request.addAttribute(Const.USER_UID, userUid);
+                        return response;
+                    }
+                    return Response.unauthorized().end();
+                }).orElseGet(() -> Response.unauthorized().end());
+            }
+        } catch (MangooTokenException e) {
+            return Response.unauthorized().end();
+        }
+
+        return Response.unauthorized().end();
     }
 }

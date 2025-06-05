@@ -3,8 +3,6 @@ package utils;
 import com.google.re2j.Pattern;
 import constants.Const;
 import constants.Required;
-import de.svenkubiak.http.Http;
-import de.svenkubiak.http.Result;
 import io.mangoo.core.Config;
 import io.mangoo.utils.DateUtils;
 import io.mangoo.utils.MangooUtils;
@@ -25,8 +23,8 @@ import java.util.*;
 public final class Utils {
     private static final Logger LOG = LogManager.getLogger(Utils.class);
 
-    private static final Pattern UUID_PATTERN = Pattern.compile(
-            "^[0-9a-f]{8}-[0-9a-f]{4}-6[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$",
+    private static final Pattern PATTERN = Pattern.compile(
+            "^[A-Za-z0-9-]+$",
             Pattern.CASE_INSENSITIVE
     );
     private static final Pattern MFA_PATTERN = Pattern.compile("\\d{6}");
@@ -34,8 +32,8 @@ public final class Utils {
     private Utils() {
     }
 
-    public static boolean isValidUuid(String uuid) {
-        return StringUtils.isNotBlank(uuid) && UUID_PATTERN.matcher(uuid).matches();
+    public static boolean isValidRandom(String value) {
+        return StringUtils.isNotBlank(value) && PATTERN.matcher(value).matches();
     }
 
     public static void sortCategories(List<Map<String, Object>> categories) {
@@ -142,22 +140,7 @@ public final class Utils {
         return cookie;
     }
 
-    public static Optional<String> getImageAsBase64(String url) {
-        Objects.requireNonNull(url, Required.URL);
-
-        String data = null;
-        var result = Http.get(url)
-                .withHeader("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36")
-                .binaryResponse()
-                .send();
-
-        if (result.isValid()) {
-            String contentType = Optional.ofNullable(result.header("Content-Type")).orElse("image/jpeg");
-            data = "data:" + contentType + ";base64," + Base64.getEncoder().encodeToString(result.binaryBody());
-        } else {
-            LOG.error("Failed to get and convert image to base64");
-        }
-
-        return Optional.ofNullable(data);
+    public static String randomString() {
+        return MangooUtils.randomString(32);
     }
 }
