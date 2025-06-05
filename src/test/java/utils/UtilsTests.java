@@ -25,7 +25,7 @@ public class UtilsTests {
     @Test
     public void testInvalidUuid() {
         //given
-        String uuid = "0f37d26a-d9ce-423b-b320-f95483f77e1d";
+        String uuid = "0f37d26a-d9ce-423b-b320-f95483f77e1dds+";
 
         //when
         boolean valid = Utils.isValidRandom(uuid);
