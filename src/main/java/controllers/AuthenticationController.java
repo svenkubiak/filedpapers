@@ -71,7 +71,7 @@ public class AuthenticationController {
         if (form.isValid()) {
             String username = form.get("username");
             String password = form.get("password");
-            boolean rememberme = form.getBoolean("rememberme").orElseGet(() -> false);
+            Boolean rememberme = form.getBoolean("rememberme").orElse(Boolean.FALSE);
 
             var user = dataService.findUser(username);
             if (user != null && authentication.validLogin(user.getUid(), password, user.getSalt(), user.getPassword())) {

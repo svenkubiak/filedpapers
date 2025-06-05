@@ -156,7 +156,7 @@ public class DataService {
                 eq(Const.UID, itemUid)),
                     Updates.set(Const.CATEGORY_UID, trash.getUid()));
 
-        return updateResult.getModifiedCount() == 1 ? Optional.of(true) : Optional.empty();
+        return updateResult.getModifiedCount() == 1 ? Optional.of(Boolean.TRUE) : Optional.empty();
     }
 
     @SuppressWarnings("unchecked")
@@ -182,7 +182,7 @@ public class DataService {
                     .forEach(item -> mediaService.delete(item.getMediaUid(), userUid));
         }
 
-        return deleteResult.wasAcknowledged() ? Optional.of(true) : Optional.empty();
+        return deleteResult.wasAcknowledged() ? Optional.of(Boolean.TRUE) : Optional.empty();
     }
 
     private Category findTrash(String userUid) {
@@ -309,7 +309,7 @@ public class DataService {
 
         String result = save(new Category(name, userUid));
 
-        return StringUtils.isNotBlank(result) ? Optional.of(true) : Optional.empty();
+        return StringUtils.isNotBlank(result) ? Optional.of(Boolean.TRUE) : Optional.empty();
     }
 
     public Optional<Boolean> deleteCategory(String userUid, String categoryUid) {
@@ -520,7 +520,7 @@ public class DataService {
                     .projection(include("mediaUid"))
                     .forEach(doc -> {
                         Document d = (Document) doc;
-                        String mediaUid = d.getString("mediaUid");
+                        var mediaUid = d.getString("mediaUid");
                         if (mediaUid != null && !mediaUid.isBlank()) {
                             usedMediaUids.add(mediaUid);
                         }
@@ -540,8 +540,8 @@ public class DataService {
                         .forEach(media -> {
                             Document metadata = ((Document) media).get("metadata", Document.class);
 
-                            String uid = metadata.getString(Const.UID);
-                            String userUid = metadata.getString(Const.USER_UID);
+                            var uid = metadata.getString(Const.UID);
+                            var userUid = metadata.getString(Const.USER_UID);
 
                             mediaService.delete(uid, userUid);
                             LOG.info("Deleted unused media with uid {}", uid);

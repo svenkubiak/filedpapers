@@ -35,7 +35,7 @@ public class ItemsControllerV1 {
         if (async) {
             Thread.ofVirtual().start(() -> dataService.addItem(userUid, url, category).orElseGet(() -> {
                 LOG.error(FAILED_TO_ADD_ITEM_WITH_URL, url);
-                return false;
+                return Boolean.FALSE;
             }));
             return Response.ok();
         } else {

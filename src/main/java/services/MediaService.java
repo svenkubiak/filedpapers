@@ -20,6 +20,7 @@ import org.apache.logging.log4j.Logger;
 import org.bson.Document;
 import utils.Utils;
 
+import java.io.IOException;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -50,7 +51,7 @@ public class MediaService {
         Objects.requireNonNull(data, Required.DATA);
         Objects.requireNonNull(userUid, Required.USER_UID);
 
-        String uid = Utils.randomString();
+        var uid = Utils.randomString();
 
         GridFSUploadOptions options = new GridFSUploadOptions()
                 .metadata(new Document(Const.UID, uid).append(Const.USER_UID, userUid));
@@ -83,9 +84,20 @@ public class MediaService {
             try (GridFSDownloadStream downloadStream = bucket.openDownloadStream(gridFSFile.getObjectId())) {
                 int fileLength = (int) downloadStream.getGridFSFile().getLength();
                 data = new byte[fileLength];
-                downloadStream.read(data);
+                int offset = 0;
+                int bytesRead;
+
+                while (offset < fileLength && (bytesRead = downloadStream.read(data, offset, fileLength - offset)) != -1) {
+                    offset += bytesRead;
+                }
+
+                if (offset < fileLength) {
+                    throw new IOException("Could not completely read file from GridFS. Expected " + fileLength + " bytes, but got " + offset);
+                }
 
                 cache.put(Const.IMAGE_CACHE_PREFIX + uid, data);
+            } catch (IOException e) {
+                LOG.error("Failed to retrieve GridFS file", e);
             }
         }
 
@@ -108,7 +120,7 @@ public class MediaService {
     public void delete(String uid) {
         Objects.requireNonNull(uid, Required.MEDIA_UID);
 
-        GridFSFile gridFSFile = bucket
+        var gridFSFile = bucket
                 .find(eq(Const.METADATA_UID, uid))
                 .first();
 
