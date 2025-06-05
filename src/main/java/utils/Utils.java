@@ -11,8 +11,6 @@ import io.undertow.server.handlers.CookieImpl;
 import io.undertow.server.handlers.CookieSameSiteMode;
 import models.User;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
 import java.net.URI;
 import java.time.Instant;
@@ -21,8 +19,6 @@ import java.time.ZoneOffset;
 import java.util.*;
 
 public final class Utils {
-    private static final Logger LOG = LogManager.getLogger(Utils.class);
-
     private static final Pattern PATTERN = Pattern.compile(
             "^[A-Za-z0-9-]+$",
             Pattern.CASE_INSENSITIVE
