@@ -26,25 +26,53 @@ public class Item extends Entity implements Serializable {
 
     private String url;
     private String image;
-    private String imageBase64;
     private String title;
     private String description;
     private String domain;
     private String mediaUid;
 
-    public Item(String userUid, String categoryUid, String url, String image, String title, String domain, String description) {
-        this.userUid = Objects.requireNonNull(userUid, Required.USER_UID);
-        this.categoryUid = Objects.requireNonNull(categoryUid, Required.CATEGORY_UID);
-        this.url = Objects.requireNonNull(url, Required.URL);
-        this.image = Objects.requireNonNull(image, Required.IMAGE);
-        this.title = Objects.requireNonNull(title, Required.TITLE);
+    public Item() {
         this.uid = Utils.randomString();
         this.timestamp = LocalDateTime.now();
-        this.domain = domain;
-        this.description = description;
     }
 
-    public Item() {
+    public static Item create() {
+        return new Item();
+    }
+
+    public Item withUserUid(String userUid) {
+        this.userUid = Objects.requireNonNull(userUid, Required.USER_UID);
+        return this;
+    }
+
+    public Item withCategoryUid(String categoryUid) {
+        this.categoryUid = Objects.requireNonNull(categoryUid, Required.CATEGORY_UID);
+        return this;
+    }
+
+    public Item withUrl(String url) {
+        this.url = Objects.requireNonNull(url, Required.URL);
+        return this;
+    }
+
+    public Item withImage(String image) {
+        this.image = Objects.requireNonNull(image, Required.IMAGE);
+        return this;
+    }
+
+    public Item withTitle(String title) {
+        this.title = Objects.requireNonNull(title, Required.TITLE);
+        return this;
+    }
+
+    public Item withDomain(String domain) {
+        this.domain = domain;
+        return this;
+    }
+
+    public Item withDescription(String description) {
+        this.description = description;
+        return this;
     }
 
     public String getUid() {
@@ -101,14 +129,6 @@ public class Item extends Entity implements Serializable {
 
     public void setCategoryUid(String categoryUid) {
         this.categoryUid = categoryUid;
-    }
-
-    public String getImageBase64() {
-        return imageBase64;
-    }
-
-    public void setImageBase64(String imageBase64) {
-        this.imageBase64 = imageBase64;
     }
 
     public String getDescription() {

@@ -1,5 +1,6 @@
 package app;
 
+import constants.Required;
 import controllers.ApplicationController;
 import controllers.AuthenticationController;
 import controllers.DashboardController;
@@ -10,10 +11,20 @@ import controllers.api.UserControllerV1;
 import io.mangoo.interfaces.MangooBootstrap;
 import io.mangoo.routing.Bind;
 import io.mangoo.routing.On;
+import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import services.DataService;
+
+import java.util.Objects;
 
 @Singleton
 public class Bootstrap implements MangooBootstrap {
+    private final DataService dataService;
+
+    @Inject
+    public Bootstrap(DataService dataService) {
+        this.dataService = Objects.requireNonNull(dataService, Required.DATA_SERVICE);
+    }
 
     @Override
     public void initializeRoutes() {
@@ -95,6 +106,7 @@ public class Bootstrap implements MangooBootstrap {
 
     @Override
     public void applicationStarted() {
+        dataService.cleanup();
     }
 
     @Override

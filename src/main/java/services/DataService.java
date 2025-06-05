@@ -29,6 +29,7 @@ import java.time.ZoneOffset;
 import java.util.*;
 
 import static com.mongodb.client.model.Filters.*;
+import static com.mongodb.client.model.Updates.unset;
 import static constants.Const.PLACEHOLDER_IMAGE;
 
 public class DataService {
@@ -128,8 +129,6 @@ public class DataService {
     private String getImage(Item item) {
         if (StringUtils.isNotBlank(item.getMediaUid())) {
             return applicationUrl + "/media/image/" + item.getMediaUid();
-        } else if (StringUtils.isNotBlank(item.getImageBase64())) {
-            return item.getImageBase64();
         }
 
         return item.getImage();
@@ -278,7 +277,15 @@ public class DataService {
             category.setCount(category.getCount() + 1);
             String categoryResult = save(category);
 
-            var item = new Item(userUid, category.getUid(), url, linkPreview.image(), linkPreview.title(), linkPreview.domain(), linkPreview.description());
+            var item = Item.create()
+                    .withUserUid(userUid)
+                    .withCategoryUid(category.getUid())
+                    .withUrl(url)
+                    .withImage(linkPreview.image())
+                    .withTitle(linkPreview.title())
+                    .withDomain( linkPreview.domain())
+                    .withDescription(linkPreview.description());
+
             if (!linkPreview.image().equals(PLACEHOLDER_IMAGE) && StringUtils.isNotBlank(linkPreview.image())) {
                 item.setMediaUid(mediaService.fetchAndStore(linkPreview.image(), userUid).orElse(null));
             }
@@ -496,5 +503,10 @@ public class DataService {
                     save(item);
         });
         LOG.info("Finished resync");
+    }
+
+    public void cleanup() {
+        datastore.query(Item.class)
+                .updateMany(exists("imageBase64"), unset("imageBase64"));
     }
 }

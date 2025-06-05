@@ -198,6 +198,11 @@
                 <h2 class="section-title">${i18n("profile.danger.title")}</h2>
                 <div class="form-field">
                     <div class="control">
+                        <a href="/dashboard/resync" class="button is-warning is-fullwidth">${i18n("profile.resync.button")}</a>
+                    </div>
+                </div>
+                <div class="form-field">
+                    <div class="control">
                         <button type="submit" class="button is-danger is-fullwidth" id="delete-account">
                             ${i18n("profile.danger.button")}
                         </button>

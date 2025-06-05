@@ -70,7 +70,15 @@ public class ItemsControllerV1Tests {
         TRASH_UID = trash.getUid();
         TEST_UID = test.getUid();
 
-        Item item = new Item(USER_UID, INBOX_UID, "https://svenkubiak.de", "foo", "bar", "foobar", "barfoo");
+        Item item = Item.create()
+                .withUserUid(USER_UID)
+                .withCategoryUid(INBOX_UID)
+                .withUrl("https://svenkubiak.de")
+                .withImage("foo")
+                .withTitle("bar")
+                .withDomain("foobar")
+                .withDescription("barfoo");
+
         datastore.save(item);
 
         ITEM_UID = item.getUid();

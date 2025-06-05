@@ -123,9 +123,10 @@ public class DashboardController {
         }
     }
 
-    public Response resync(Authentication authentication) {
+    public Response resync(Authentication authentication, Flash flash) {
         String userUid = authentication.getSubject();
         Thread.ofVirtual().start(() -> dataService.resync(userUid));
+        flash.put(Const.TOAST_SUCCESS, messages.get("toast.resync.success"));
         return Response.redirect("/dashboard");
     }
 
@@ -208,13 +209,13 @@ public class DashboardController {
 
                     for (Leaf child : leaf.getChildren()) {
                         if (!child.isFolder()) {
-                            var item = new Item();
-                            item.setTitle(child.getTitle());
-                            item.setUrl(child.getUrl());
-                            item.setCategoryUid(category.getUid());
-                            item.setUserUid(userUid);
-                            item.setUid(Utils.randomString());
-                            item.setImage(child.getDataCover());
+                            var item = Item.create()
+                                    .withTitle(child.getTitle())
+                                    .withUrl(child.getUrl())
+                                    .withCategoryUid(category.getUid())
+                                    .withUserUid(userUid)
+                                    .withImage(child.getDataCover());
+
                             item.setTimestamp(child.getAddDate().atZone(ZoneId.systemDefault()).toLocalDateTime());
 
                             dataService.save(item);
