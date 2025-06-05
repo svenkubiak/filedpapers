@@ -24,6 +24,9 @@ public class Const {
     public static final String UID = "uid";
     public static final String USER_UID = "userUid";
     public static final String USERNAME = "username";
+    public static final String FILEDPAPERS_FILES = "filedpapers.files";
+    public static final String METADATA_UID = "metadata.uid";
+    public static final String METADATA_USER_UID = "metadata.userUid";
 
     private Const() {}
 }

@@ -1,6 +1,6 @@
 package services;
 
-import com.mongodb.client.model.Projections;
+import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Sorts;
 import com.mongodb.client.model.Updates;
 import com.mongodb.client.result.DeleteResult;
@@ -22,6 +22,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.util.Strings;
 import org.bson.Document;
+import org.bson.conversions.Bson;
 import utils.Utils;
 import utils.preview.LinkPreview;
 import utils.preview.LinkPreviewFetcher;
@@ -31,6 +32,7 @@ import java.time.ZoneOffset;
 import java.util.*;
 
 import static com.mongodb.client.model.Filters.*;
+import static com.mongodb.client.model.Projections.include;
 import static com.mongodb.client.model.Updates.unset;
 import static constants.Const.PLACEHOLDER_IMAGE;
 
@@ -515,24 +517,36 @@ public class DataService {
         Thread.ofVirtual().start(() -> {
             List<String> usedMediaUids = new ArrayList<>();
             datastore.query(Item.class).find()
-                    .projection(Projections.include("mediaUid"))
-                    .into(usedMediaUids);
-
-            datastore.query("filedpapers.files")
-                    .find(nin("metadata.uid", usedMediaUids))
-                    .forEach(media -> {
-                        Document unused = (Document) media;
-                        Object metadata = unused.get("metadata");
-                        if (metadata != null) {
-                            Document metadataDocument = (Document) metadata;
-                            String uid = metadataDocument.getString("uid");
-                            String userUid = metadataDocument.getString("userUid");
-                            if (StringUtils.isNotBlank(uid) && StringUtils.isNotBlank(userUid)) {
-                                mediaService.delete(uid, userUid);
-                                LOG.info("Deleted unused media with uid {}", uid);
-                            }
+                    .projection(include("mediaUid"))
+                    .forEach(doc -> {
+                        Document d = (Document) doc;
+                        String mediaUid = d.getString("mediaUid");
+                        if (mediaUid != null && !mediaUid.isBlank()) {
+                            usedMediaUids.add(mediaUid);
                         }
                     });
+
+            if (!usedMediaUids.isEmpty()) {
+                Bson filter = Filters.and(
+                        Filters.nin(Const.METADATA_UID, usedMediaUids),
+                        Filters.exists(Const.METADATA_UID, true),
+                        Filters.exists(Const.METADATA_USER_UID, true),
+                        Filters.ne(Const.METADATA_UID, null),
+                        Filters.ne(Const.METADATA_USER_UID, null)
+                );
+
+                datastore.query("filedpapers.files")
+                        .find(filter)
+                        .forEach(media -> {
+                            Document metadata = ((Document) media).get("metadata", Document.class);
+
+                            String uid = metadata.getString(Const.UID);
+                            String userUid = metadata.getString(Const.USER_UID);
+
+                            mediaService.delete(uid, userUid);
+                            LOG.info("Deleted unused media with uid {}", uid);
+                        });
+            }
         });
     }
 }

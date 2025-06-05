@@ -30,9 +30,6 @@ public class MediaService {
     private static final Logger LOG = LogManager.getLogger(MediaService.class);
     private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36";
     private static final String BUCKET_NAME = "filedpapers";
-    private static final String FILEDPAPERS_FILES = "filedpapers.files";
-    private static final String METADATA_UID = "metadata.uid";
-    private static final String METADATA_USER_UID = "metadata.userUid";
     private final Cache cache;
     private final GridFSBucket bucket;
 
@@ -41,11 +38,11 @@ public class MediaService {
         this.bucket = GridFSBuckets.create(datastore.getMongoDatabase(), BUCKET_NAME);
         this.cache = Objects.requireNonNull(cache, Required.CACHE);
 
-        datastore.query(FILEDPAPERS_FILES).createIndex(Indexes.ascending(METADATA_UID), new IndexOptions().unique(true));
-        datastore.query(FILEDPAPERS_FILES).createIndex(Indexes.ascending(METADATA_USER_UID));
-        datastore.query(FILEDPAPERS_FILES).createIndex(Indexes.compoundIndex(
-                Indexes.ascending(METADATA_UID),
-                Indexes.ascending(METADATA_USER_UID)
+        datastore.query(Const.FILEDPAPERS_FILES).createIndex(Indexes.ascending(Const.METADATA_UID), new IndexOptions().unique(true));
+        datastore.query(Const.FILEDPAPERS_FILES).createIndex(Indexes.ascending(Const.METADATA_USER_UID));
+        datastore.query(Const.FILEDPAPERS_FILES).createIndex(Indexes.compoundIndex(
+                Indexes.ascending(Const.METADATA_UID),
+                Indexes.ascending(Const.METADATA_USER_UID)
         ), new IndexOptions().unique(true));
     }
 
@@ -79,7 +76,7 @@ public class MediaService {
 
         byte[] data = null;
         GridFSFile gridFSFile = bucket
-                .find(eq(METADATA_UID, uid))
+                .find(eq(Const.METADATA_UID, uid))
                 .first();
 
         if (gridFSFile != null) {
@@ -100,7 +97,7 @@ public class MediaService {
         Objects.requireNonNull(uid, Required.USER_UID);
 
         GridFSFile gridFSFile = bucket
-                .find(and(eq(METADATA_UID, uid), eq(METADATA_USER_UID, userUid)))
+                .find(and(eq(Const.METADATA_UID, uid), eq(Const.METADATA_USER_UID, userUid)))
                 .first();
 
         if (gridFSFile != null) {
@@ -112,7 +109,7 @@ public class MediaService {
         Objects.requireNonNull(uid, Required.MEDIA_UID);
 
         GridFSFile gridFSFile = bucket
-                .find(eq(METADATA_UID, uid))
+                .find(eq(Const.METADATA_UID, uid))
                 .first();
 
         if (gridFSFile != null) {
