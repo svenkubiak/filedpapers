@@ -108,6 +108,18 @@ public class MediaService {
         }
     }
 
+    public void delete(String uid) {
+        Objects.requireNonNull(uid, Required.MEDIA_UID);
+
+        GridFSFile gridFSFile = bucket
+                .find(eq(METADATA_UID, uid))
+                .first();
+
+        if (gridFSFile != null) {
+            bucket.delete(gridFSFile.getObjectId());
+        }
+    }
+
     public Optional<String> fetchAndStore(String url, String userUid) {
         Objects.requireNonNull(url, Required.URL);
         Objects.requireNonNull(userUid, Required.USER_UID);

@@ -1,5 +1,6 @@
 package services;
 
+import com.mongodb.client.model.Projections;
 import com.mongodb.client.model.Sorts;
 import com.mongodb.client.model.Updates;
 import com.mongodb.client.result.DeleteResult;
@@ -20,6 +21,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.util.Strings;
+import org.bson.Document;
 import utils.Utils;
 import utils.preview.LinkPreview;
 import utils.preview.LinkPreviewFetcher;
@@ -505,8 +507,32 @@ public class DataService {
         LOG.info("Finished resync");
     }
 
+    @SuppressWarnings("unchecked")
     public void cleanup() {
         datastore.query(Item.class)
                 .updateMany(exists("imageBase64"), unset("imageBase64"));
+
+        Thread.ofVirtual().start(() -> {
+            List<String> usedMediaUids = new ArrayList<>();
+            datastore.query(Item.class).find()
+                    .projection(Projections.include("mediaUid"))
+                    .into(usedMediaUids);
+
+            datastore.query("filedpapers.files")
+                    .find(nin("metadata.uid", usedMediaUids))
+                    .forEach(media -> {
+                        Document unused = (Document) media;
+                        Object metadata = unused.get("metadata");
+                        if (metadata != null) {
+                            Document metadataDocument = (Document) metadata;
+                            String uid = metadataDocument.getString("uid");
+                            String userUid = metadataDocument.getString("userUid");
+                            if (StringUtils.isNotBlank(uid) && StringUtils.isNotBlank(userUid)) {
+                                mediaService.delete(uid, userUid);
+                                LOG.info("Deleted unused media with uid {}", uid);
+                            }
+                        }
+                    });
+        });
     }
 }

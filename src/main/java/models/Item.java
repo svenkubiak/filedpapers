@@ -24,12 +24,15 @@ public class Item extends Entity implements Serializable {
     @Indexed
     private LocalDateTime timestamp;
 
+    @Indexed(unique = true)
+    private String mediaUid;
+
     private String url;
     private String image;
     private String title;
     private String description;
     private String domain;
-    private String mediaUid;
+
 
     public Item() {
         this.uid = Utils.randomString();
