@@ -27,6 +27,7 @@ public class Const {
     public static final String FILEDPAPERS_FILES = "filedpapers.files";
     public static final String METADATA_UID = "metadata.uid";
     public static final String METADATA_USER_UID = "metadata.userUid";
+    public static final String MEDIA_UID = "mediaUid";
 
     private Const() {}
 }

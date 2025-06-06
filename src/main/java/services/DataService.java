@@ -525,7 +525,7 @@ public class DataService {
 
         Thread.ofVirtual().start(() -> {
             //Remove stored media with null uid valus
-            datastore.query("filedpapers.files")
+            datastore.query(Const.FILEDPAPERS_FILES)
                     .find(Filters.eq(Const.METADATA_UID, null))
                     .forEach(media -> {
                         Document document = (Document) media;
@@ -539,7 +539,7 @@ public class DataService {
             //Remove all media that is not linked as a mediauid in an item
             List<String> usedMediaUids = new ArrayList<>();
             datastore.query(Item.class).find()
-                    .projection(include("mediaUid"))
+                    .projection(include(Const.MEDIA_UID))
                     .forEach(doc -> {
                         Item item = (Item) doc;
                         if (item != null && StringUtils.isNotBlank(item.getMediaUid())) {
@@ -556,7 +556,7 @@ public class DataService {
                         Filters.ne(Const.METADATA_USER_UID, null)
                 );
 
-                datastore.query("filedpapers.files")
+                datastore.query(Const.FILEDPAPERS_FILES)
                         .find(filter)
                         .forEach(media -> {
                             Document metadata = ((Document) media).get("metadata", Document.class);
