@@ -131,11 +131,13 @@ public class DataService {
     }
 
     private String getImage(Item item) {
-        if (StringUtils.isNotBlank(item.getMediaUid())) {
+        if (StringUtils.isNotBlank(item.getMediaUid()) && mediaService.exists(item.getMediaUid())) {
             return applicationUrl + "/media/image/" + item.getMediaUid();
+        } else if (StringUtils.isNotBlank(item.getImage())) {
+            return item.getImage();
         }
 
-        return item.getImage();
+        return PLACEHOLDER_IMAGE;
     }
 
     public Optional<Boolean> deleteItem(String itemUid, String userUid) {
@@ -288,12 +290,15 @@ public class DataService {
                     .withUrl(url)
                     .withImage(image)
                     .withTitle(linkPreview.title())
-                    .withDomain( linkPreview.domain())
+                    .withDomain(linkPreview.domain())
                     .withDescription(linkPreview.description());
 
             if (!PLACEHOLDER_IMAGE.equals(image) && StringUtils.isNotBlank(image)) {
-                item.setMediaUid(mediaService.fetchAndStore(image, userUid).orElse(null));
+                item.setMediaUid(mediaService.fetchAndStore(image, userUid).orElse(Utils.randomString()));
+            } else {
+                item.setMediaUid(Utils.randomString());
             }
+
             String itemResult = save(item);
 
             return Optional.of(StringUtils.isNoneBlank(categoryResult, itemResult));
@@ -521,10 +526,9 @@ public class DataService {
             datastore.query(Item.class).find()
                     .projection(include("mediaUid"))
                     .forEach(doc -> {
-                        Document d = (Document) doc;
-                        var mediaUid = d.getString("mediaUid");
-                        if (mediaUid != null && !mediaUid.isBlank()) {
-                            usedMediaUids.add(mediaUid);
+                        Item item = (Item) doc;
+                        if (item != null && StringUtils.isNotBlank(item.getMediaUid())) {
+                            usedMediaUids.add(item.getMediaUid());
                         }
                     });
 

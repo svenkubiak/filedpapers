@@ -33,7 +33,6 @@ public class Item extends Entity implements Serializable {
     private String description;
     private String domain;
 
-
     public Item() {
         this.uid = Utils.randomString();
         this.timestamp = LocalDateTime.now();

@@ -128,6 +128,16 @@ public class MediaService {
         }
     }
 
+    public boolean exists(String uid) {
+        Objects.requireNonNull(uid, Required.MEDIA_UID);
+
+        var gridFSFile = bucket
+                .find(eq(Const.METADATA_UID, uid))
+                .first();
+
+        return gridFSFile != null;
+    }
+
     public Optional<String> fetchAndStore(String url, String userUid) {
         Objects.requireNonNull(url, Required.URL);
         Objects.requireNonNull(userUid, Required.USER_UID);
