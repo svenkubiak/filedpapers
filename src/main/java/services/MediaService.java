@@ -4,7 +4,6 @@ import com.mongodb.client.gridfs.GridFSBucket;
 import com.mongodb.client.gridfs.GridFSBuckets;
 import com.mongodb.client.gridfs.GridFSDownloadStream;
 import com.mongodb.client.gridfs.GridFSUploadStream;
-import com.mongodb.client.gridfs.model.GridFSFile;
 import com.mongodb.client.gridfs.model.GridFSUploadOptions;
 import com.mongodb.client.model.IndexOptions;
 import com.mongodb.client.model.Indexes;
@@ -76,7 +75,7 @@ public class MediaService {
         }
 
         byte[] data = null;
-        GridFSFile gridFSFile = bucket
+        var gridFSFile = bucket
                 .find(eq(Const.METADATA_UID, uid))
                 .first();
 

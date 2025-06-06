@@ -71,7 +71,7 @@ public final class Utils {
     public static Map<String, String> getLanguages() {
         int size = MangooUtils.getLanguages().size();
         int initialCapacity = (int) (size / 0.75f) + 1;
-        Map<String, String> languages = new HashMap<>(initialCapacity);
+        Map<String, String> languages = HashMap.newHashMap(initialCapacity);
 
         for (String language : MangooUtils.getLanguages()) {
             var locale = Locale.of(language);
@@ -86,7 +86,7 @@ public final class Utils {
 
         List<Map<String, Object>> list = new ArrayList<>(items.size());
         for (Map<String, Object> item : items) {
-            Map<String, Object> map = new HashMap<>((int)((item.size() + 1) / 0.75f) + 1);
+            Map<String, Object> map = HashMap.newHashMap((int)((item.size() + 1) / 0.75f) + 1);
             map.putAll(item);
 
             var instant = Instant.ofEpochSecond(((long) item.get("sort")));

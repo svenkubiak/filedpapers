@@ -280,18 +280,19 @@ public class DataService {
         if (category != null) {
             category.setCount(category.getCount() + 1);
             String categoryResult = save(category);
+            String image = linkPreview.image();
 
             var item = Item.create()
                     .withUserUid(userUid)
                     .withCategoryUid(category.getUid())
                     .withUrl(url)
-                    .withImage(linkPreview.image())
+                    .withImage(image)
                     .withTitle(linkPreview.title())
                     .withDomain( linkPreview.domain())
                     .withDescription(linkPreview.description());
 
-            if (!linkPreview.image().equals(PLACEHOLDER_IMAGE) && StringUtils.isNotBlank(linkPreview.image())) {
-                item.setMediaUid(mediaService.fetchAndStore(linkPreview.image(), userUid).orElse(null));
+            if (!PLACEHOLDER_IMAGE.equals(image) && StringUtils.isNotBlank(image)) {
+                item.setMediaUid(mediaService.fetchAndStore(image, userUid).orElse(null));
             }
             String itemResult = save(item);
 
@@ -495,8 +496,9 @@ public class DataService {
                     LinkPreview linkPreview;
                     try {
                         linkPreview = LinkPreviewFetcher.fetch(item.getUrl(), user.getLanguage());
-                        item.setImage(linkPreview.image());
-                        if (!linkPreview.image().equals(PLACEHOLDER_IMAGE) && StringUtils.isNotBlank(linkPreview.image())) {
+                        String image = linkPreview.image();
+                        item.setImage(image);
+                        if (!PLACEHOLDER_IMAGE.equals(image) && StringUtils.isNotBlank(image)) {
                             mediaService.clean(item.getMediaUid(), item.getUserUid());
                             item.setMediaUid(mediaService.fetchAndStore(item.getImage(), item.getUserUid()).orElse(null));
                         }
