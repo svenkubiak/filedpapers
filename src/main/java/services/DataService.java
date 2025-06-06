@@ -538,7 +538,6 @@ public class DataService {
             );
         }
 
-        System.out.println("cleanup");
         Thread.ofVirtual().start(() -> {
             //Remove stored media with null uid valus
             datastore.query(Const.FILEDPAPERS_FILES)
