@@ -1,6 +1,5 @@
 package services;
 
-import com.mongodb.client.FindIterable;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Sorts;
 import com.mongodb.client.result.DeleteResult;
@@ -525,13 +524,14 @@ public class DataService {
                 .updateMany(exists("imageBase64"), unset("imageBase64"));
 
         //Updated items which have null value mediaUids
-        FindIterable<Document> items = datastore.query(Item.class)
-                .find(eq(Const.MEDIA_UID, null));
+        List<Item> items = new ArrayList<>();
+        datastore.query(Item.class)
+                .find(or(eq(Const.MEDIA_UID, null), eq(Const.MEDIA_UID, Strings.EMPTY)))
+                .into(items);
 
-        for (Document doc : items) {
-            Object id = doc.getObjectId("_id");
+        for (Item item : items) {
             datastore.query(Item.class).updateOne(
-                    eq("_id", id),
+                    eq("_id", item.getId()),
                     set(Const.MEDIA_UID, Utils.randomString())
             );
         }
