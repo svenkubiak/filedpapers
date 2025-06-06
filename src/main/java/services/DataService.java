@@ -1,8 +1,8 @@
 package services;
 
+import com.mongodb.client.FindIterable;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Sorts;
-import com.mongodb.client.model.Updates;
 import com.mongodb.client.result.DeleteResult;
 import constants.Const;
 import constants.Invalid;
@@ -34,6 +34,7 @@ import java.util.*;
 
 import static com.mongodb.client.model.Filters.*;
 import static com.mongodb.client.model.Projections.include;
+import static com.mongodb.client.model.Updates.set;
 import static com.mongodb.client.model.Updates.unset;
 import static constants.Const.PLACEHOLDER_IMAGE;
 
@@ -157,7 +158,7 @@ public class DataService {
         var updateResult = datastore.query(Item.class).updateOne(and(
                 eq(Const.USER_UID, userUid),
                 eq(Const.UID, itemUid)),
-                    Updates.set(Const.CATEGORY_UID, trash.getUid()));
+                    set(Const.CATEGORY_UID, trash.getUid()));
 
         return updateResult.getModifiedCount() == 1 ? Optional.of(Boolean.TRUE) : Optional.empty();
     }
@@ -246,7 +247,7 @@ public class DataService {
                     and(
                             eq(Const.USER_UID, userUid),
                             eq(Const.UID, itemUid)),
-                    Updates.set(Const.CATEGORY_UID, categoryUid));
+                    set(Const.CATEGORY_UID, categoryUid));
 
             return Optional.of(updateResult.wasAcknowledged());
         }
@@ -332,7 +333,7 @@ public class DataService {
                             and(
                                     eq(Const.USER_UID, userUid),
                                     eq(Const.CATEGORY_UID, categoryUid)),
-                            Updates.set(Const.CATEGORY_UID, trash.getUid()));
+                            set(Const.CATEGORY_UID, trash.getUid()));
 
             long modifiedCount = updateResult.getModifiedCount();
             trash.setCount((int) (trash.getCount() + modifiedCount));
@@ -522,6 +523,18 @@ public class DataService {
         //Remove outdated Item attributes
         datastore.query(Item.class)
                 .updateMany(exists("imageBase64"), unset("imageBase64"));
+
+        //Updated items which have null value mediaUids
+        FindIterable<Document> items = datastore.query(Item.class)
+                .find(eq(Const.MEDIA_UID, null));
+
+        for (Document doc : items) {
+            Object id = doc.getObjectId("_id");
+            datastore.query(Item.class).updateOne(
+                    eq("_id", id),
+                    set(Const.MEDIA_UID, Utils.randomString())
+            );
+        }
 
         Thread.ofVirtual().start(() -> {
             //Remove stored media with null uid valus
