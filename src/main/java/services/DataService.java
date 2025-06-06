@@ -23,6 +23,7 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.util.Strings;
 import org.bson.Document;
 import org.bson.conversions.Bson;
+import org.bson.types.ObjectId;
 import utils.Utils;
 import utils.preview.LinkPreview;
 import utils.preview.LinkPreviewFetcher;
@@ -518,10 +519,24 @@ public class DataService {
 
     @SuppressWarnings("unchecked")
     public void cleanup() {
+        //Remove outdated Item attributes
         datastore.query(Item.class)
                 .updateMany(exists("imageBase64"), unset("imageBase64"));
 
         Thread.ofVirtual().start(() -> {
+            //Remove stored media with null uid valus
+            datastore.query("filedpapers.files")
+                    .find(Filters.eq(Const.METADATA_UID, null))
+                    .forEach(media -> {
+                        Document document = (Document) media;
+
+                        ObjectId id = document.getObjectId("_id");
+
+                        mediaService.delete(id);
+                        LOG.info("Deleted media with null uid");
+                    });
+
+            //Remove all media that is not linked as a mediauid in an item
             List<String> usedMediaUids = new ArrayList<>();
             datastore.query(Item.class).find()
                     .projection(include("mediaUid"))

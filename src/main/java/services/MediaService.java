@@ -17,6 +17,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.bson.Document;
+import org.bson.types.ObjectId;
 import utils.Utils;
 
 import java.io.IOException;
@@ -116,16 +117,9 @@ public class MediaService {
         }
     }
 
-    public void delete(String uid) {
-        Objects.requireNonNull(uid, Required.MEDIA_UID);
-
-        var gridFSFile = bucket
-                .find(eq(Const.METADATA_UID, uid))
-                .first();
-
-        if (gridFSFile != null) {
-            bucket.delete(gridFSFile.getObjectId());
-        }
+    public void delete(ObjectId id) {
+        Objects.requireNonNull(id, Required.OBJECT_ID);
+        bucket.delete(id);
     }
 
     public boolean exists(String uid) {
