@@ -19,9 +19,8 @@ public class MediaController {
     public Response media(String uid) {
         return mediaService.retrieve(uid)
                 .map(data -> Response.ok()
-                        .header(Headers.X_CONTENT_TYPE_OPTIONS_STRING, "nosniff")
-                        .header(Headers.CACHE_CONTROL_STRING, "Cache-Control: public, max-age=31536000, immutable").
-                        bodyBinary(data))
+                        .header(Headers.CACHE_CONTROL_STRING, "Cache-Control: public, max-age=31536000, immutable")
+                        .bodyBinary(data))
                 .orElse(Response.notFound());
     }
 }
