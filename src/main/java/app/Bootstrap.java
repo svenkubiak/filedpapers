@@ -14,16 +14,19 @@ import io.mangoo.routing.On;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import services.DataService;
+import services.MediaService;
 
 import java.util.Objects;
 
 @Singleton
 public class Bootstrap implements MangooBootstrap {
     private final DataService dataService;
+    private final MediaService mediaService;
 
     @Inject
-    public Bootstrap(DataService dataService) {
+    public Bootstrap(DataService dataService, MediaService mediaService) {
         this.dataService = Objects.requireNonNull(dataService, Required.DATA_SERVICE);
+        this.mediaService = Objects.requireNonNull(mediaService, Required.MEDIA_SERVICE);
     }
 
     @Override
@@ -107,6 +110,7 @@ public class Bootstrap implements MangooBootstrap {
     @Override
     public void applicationStarted() {
         dataService.cleanup();
+        mediaService.indexify();
     }
 
     @Override
