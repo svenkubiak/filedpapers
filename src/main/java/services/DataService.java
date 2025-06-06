@@ -12,6 +12,7 @@ import io.mangoo.utils.DateUtils;
 import io.mangoo.utils.totp.TotpUtils;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
+import jakarta.inject.Singleton;
 import models.Action;
 import models.Category;
 import models.Item;
@@ -37,6 +38,7 @@ import static com.mongodb.client.model.Updates.set;
 import static com.mongodb.client.model.Updates.unset;
 import static constants.Const.PLACEHOLDER_IMAGE;
 
+@Singleton
 public class DataService {
     private static final Logger LOG = LogManager.getLogger(DataService.class);
     private final Datastore datastore;
@@ -536,6 +538,7 @@ public class DataService {
             );
         }
 
+        System.out.println("cleanup");
         Thread.ofVirtual().start(() -> {
             //Remove stored media with null uid valus
             datastore.query(Const.FILEDPAPERS_FILES)

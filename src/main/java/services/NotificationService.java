@@ -7,6 +7,7 @@ import io.mangoo.exceptions.MangooTemplateEngineException;
 import io.mangoo.i18n.Messages;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
+import jakarta.inject.Singleton;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -15,6 +16,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 
+@Singleton
 public class NotificationService {
     private static final Logger LOG = LogManager.getLogger(NotificationService.class);
     private final Messages messages;

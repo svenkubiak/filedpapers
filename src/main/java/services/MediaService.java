@@ -13,6 +13,7 @@ import de.svenkubiak.http.Http;
 import io.mangoo.cache.Cache;
 import io.mangoo.persistence.interfaces.Datastore;
 import jakarta.inject.Inject;
+import jakarta.inject.Singleton;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -27,18 +28,23 @@ import java.util.Optional;
 import static com.mongodb.client.model.Filters.and;
 import static com.mongodb.client.model.Filters.eq;
 
+@Singleton
 public class MediaService {
     private static final Logger LOG = LogManager.getLogger(MediaService.class);
     private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36";
     private static final String BUCKET_NAME = "filedpapers";
+    private final Datastore datastore;
     private final Cache cache;
     private final GridFSBucket bucket;
 
     @Inject
     public MediaService(Datastore datastore, Cache cache) {
+        this.datastore = Objects.requireNonNull(datastore, Required.DATASTORE);
         this.cache = Objects.requireNonNull(cache, Required.CACHE);
         this.bucket = GridFSBuckets.create(datastore.getMongoDatabase(), BUCKET_NAME);
+    }
 
+    public void indexify() {
         datastore.query(Const.FILEDPAPERS_FILES).createIndex(Indexes.ascending(Const.METADATA_UID), new IndexOptions().unique(true));
         datastore.query(Const.FILEDPAPERS_FILES).createIndex(Indexes.ascending(Const.METADATA_USER_UID));
         datastore.query(Const.FILEDPAPERS_FILES).createIndex(Indexes.compoundIndex(

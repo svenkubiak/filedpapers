@@ -10,6 +10,7 @@ import io.mangoo.utils.paseto.PasetoParser;
 import io.mangoo.utils.paseto.Token;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
+import jakarta.inject.Singleton;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.util.Strings;
 import utils.Utils;
@@ -19,6 +20,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+@Singleton
 public class AuthenticationService {
     private final DataService dataService;
     private final String challengeTokenSecret;
