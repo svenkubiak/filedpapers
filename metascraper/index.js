@@ -221,6 +221,7 @@ app.get('/preview', async (req, res) => {
     };
 
     // Try each User-Agent
+    let htmlValidationFailed = true;
     for (const userAgent of USER_AGENTS) {
       try {
         const axiosResponse = await axios.get(url, {
@@ -235,7 +236,22 @@ app.get('/preview', async (req, res) => {
           maxRedirects: 5
         });
         
+        // Check if the response is HTML
+        const contentType = axiosResponse.headers['content-type'] || '';
+        const isHtmlContentType = contentType.includes('text/html') || 
+                                 contentType.includes('application/xhtml+xml');
+        
         const html = axiosResponse.data;
+        const isHtmlContent = typeof html === 'string' && 
+                            (html.trim().toLowerCase().startsWith('<!doctype html') || 
+                             html.trim().toLowerCase().startsWith('<html'));
+        
+        if (!isHtmlContentType || !isHtmlContent) {
+          console.log(`Skipping non-HTML content from ${url} (Content-Type: ${contentType})`);
+          continue; // Skip to next User-Agent
+        }
+        
+        htmlValidationFailed = false;
         const $ = cheerio.load(html);
         
         // Try to get each field, only update if we don't have it yet or if it's better
@@ -270,10 +286,23 @@ app.get('/preview', async (req, res) => {
       }
     }
 
+    // If HTML validation failed for all User-Agents, return an error response
+    if (htmlValidationFailed) {
+      return res.status(400).json({
+        error: 'The provided URL did not return valid HTML content',
+        metadata: {
+          title: null,
+          description: null,
+          image: null,
+          domain: null
+        }
+      });
+    }
+
     // Always return the metadata, even if some fields are null
     res.json(bestMetadata);
   } catch (err) {
-    // In case of any unexpected errors, return all null values
+    // In case of any errors, return all null values with 200 status
     res.json({
       title: null,
       description: null,
