@@ -10,7 +10,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<jdk.version>21</jdk.version>
 		<maven.compiler.optimze>true</maven.compiler.optimze>
-		<testcontainers-version>1.21.1</testcontainers-version>
+		<testcontainers-version>1.21.2</testcontainers-version>
 	</properties>
 	<build>
 		<resources>
