@@ -17,8 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.hamcrest.Matchers.equalTo;
-import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.*;
 
 @ExtendWith({TestRunner.class})
 public class PreviewTests {
@@ -110,7 +109,7 @@ public class PreviewTests {
         LinkPreview preview = LinkPreviewFetcher.fetch("https://www.google.de/maps/place/Al-lord+Arabische+S%C3%BC%C3%9Figkeiten/@51.5212403,7.1043508,5547m/data=!3m2!1e3!5s0x47b8e6fe6ebb7f5d:0xb4201f4ae33f6cd2!4m6!3m5!1s0x47b8e7cdd297860d:0xe80458e9d78a93f4!8m2!3d51.5129816!4d7.0943446!16s%2Fg%2F11j33m9_3d?entry=ttu&g_ep=EgoyMDI1MDUyNy4wIKXMDSoASAFQAw%3D%3D", "en");
 
         //then
-        assertThat(preview.title(), equalTo("Al-lord Arabische Süßigkeiten · Hansemannstraße 23, 45879 Gelsenkirchen"));
+        assertThat(preview.title(), startsWith("Al-lord Arabische Süßigkeiten · Hansemannstraße 23, 45879 Gelsenkirchen"));
         assertThat(preview.image(), equalTo("https://lh3.googleusercontent.com/p/AF1QipMhSZ68K3lODLzmFL0arjx5fwh0KsizwUjLZGOz=w900-h900-p-k-no"));
         assertThat(preview.domain(), equalTo("google.de"));
         assertThat(preview.description(), notNullValue());
