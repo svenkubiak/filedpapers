@@ -143,23 +143,36 @@ public class DataService {
         return PLACEHOLDER_IMAGE;
     }
 
+    public void updateCategoryCount(String userUid, String categoryUid) {
+        Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
+        Utils.checkCondition(Utils.isValidRandom(categoryUid), Invalid.CATEGORY_UID);
+
+        long count = datastore.countAll(Item.class,
+                and(
+                        eq(Const.USER_UID, userUid),
+                        eq(Const.CATEGORY_UID, categoryUid)));
+
+        Category category = findCategory(categoryUid, userUid);
+        category.setCount((int) count);
+        save(category);
+    }
+
     public Optional<Boolean> deleteItem(String itemUid, String userUid) {
         Utils.checkCondition(Utils.isValidRandom(itemUid), Invalid.ITEM_UID);
         Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
 
         var item = findItem(itemUid, userUid);
         var category = findCategory(item.getCategoryUid(), userUid);
-        category.setCount(category.getCount() - 1);
         save(category);
 
         Category trash = findTrash(userUid);
-        trash.setCount(trash.getCount() + 1);
-        save(trash);
-
         var updateResult = datastore.query(Item.class).updateOne(and(
                 eq(Const.USER_UID, userUid),
                 eq(Const.UID, itemUid)),
                     set(Const.CATEGORY_UID, trash.getUid()));
+
+        updateCategoryCount(userUid, category.getUid());
+        updateCategoryCount(userUid, trash.getUid());
 
         return updateResult.getModifiedCount() == 1 ? Optional.of(Boolean.TRUE) : Optional.empty();
     }
@@ -238,17 +251,14 @@ public class DataService {
         var targetCategory = findCategory(categoryUid, userUid);
 
         if (!sourceCategory.getUid().equals(targetCategory.getUid())) {
-            sourceCategory.setCount(sourceCategory.getCount() - 1);
-            save(sourceCategory);
-
-            targetCategory.setCount(targetCategory.getCount() + 1);
-            save(targetCategory);
-
             var updateResult = datastore.query(Item.class).updateOne(
                     and(
                             eq(Const.USER_UID, userUid),
                             eq(Const.UID, itemUid)),
                     set(Const.CATEGORY_UID, categoryUid));
+
+            updateCategoryCount(userUid, sourceCategory.getUid());
+            updateCategoryCount(userUid, targetCategory.getUid());
 
             return Optional.of(updateResult.wasAcknowledged());
         }
@@ -283,7 +293,6 @@ public class DataService {
         }
 
         if (category != null) {
-            category.setCount(category.getCount() + 1);
             String categoryResult = save(category);
             String image = linkPreview.image();
 
@@ -303,6 +312,7 @@ public class DataService {
             }
 
             String itemResult = save(item);
+            updateCategoryCount(userUid, category.getUid());
 
             return Optional.of(StringUtils.isNoneBlank(categoryResult, itemResult));
         } else {
@@ -329,22 +339,21 @@ public class DataService {
         Category trash = findTrash(userUid);
 
         if (!categoryUid.equals(inbox.getUid()) && !categoryUid.equals(trash.getUid())) {
-            var updateResult = datastore.query(Item.class)
+            datastore.query(Item.class)
                     .updateMany(
                             and(
                                     eq(Const.USER_UID, userUid),
                                     eq(Const.CATEGORY_UID, categoryUid)),
                             set(Const.CATEGORY_UID, trash.getUid()));
 
-            long modifiedCount = updateResult.getModifiedCount();
-            trash.setCount((int) (trash.getCount() + modifiedCount));
-            save(trash);
-
             var deleteResult = datastore.query(Category.class)
                     .deleteOne(
                             and(
                                     eq(Const.USER_UID, userUid),
                                     eq(Const.UID, categoryUid)));
+
+            updateCategoryCount(userUid, inbox.getUid());
+            updateCategoryCount(userUid, trash.getUid());
 
             return Optional.of(deleteResult.getDeletedCount() == 1);
         }
