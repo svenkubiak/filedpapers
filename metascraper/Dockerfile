@@ -1,7 +1,7 @@
 FROM node:24-slim
 
 # Install CA certificates for SSL verification
-RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y ca-certificates curl && rm -rf /var/lib/apt/lists/*
 
 # Create app directory
 WORKDIR /app
