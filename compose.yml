@@ -34,8 +34,10 @@ services:
       - ./config:/app/config
       - ./logs:/logs
     depends_on:
-      - filedpapers-database
-      - filedpapers-metascraper
+      filedpapers-database:
+        condition: service_healthy
+      filedpapers-metascraper:
+        condition: service_healthy
     networks:
       - filedpapers-network
 
@@ -49,6 +51,12 @@ services:
       - MONGODB_INITDB_DATABASE=${MONGODB_INITDB_DATABASE}
     volumes:
       - filed_papers_mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     networks:
       - filedpapers-network
 
@@ -56,6 +64,12 @@ services:
     container_name: filedpapers-metascraper
     image: ghcr.io/svenkubiak/filedpapers/filedpapers-metascraper:${VERSION}
     restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 120s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
     networks:
       - filedpapers-network
 

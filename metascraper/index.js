@@ -206,6 +206,11 @@ const extractDescription = ($) => {
   return null;
 };
 
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok' });
+});
+
 // Main endpoint
 app.get('/preview', async (req, res) => {
   const url = req.query.url;
