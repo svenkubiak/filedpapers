@@ -7,121 +7,112 @@ GHCR_USERNAME="svenkubiak"
 REPO_NAME="filedpapers"
 GHCR_URL="ghcr.io"
 
-mvn release:clean
+MODE="$1"
+
+# Always run Maven build
+echo "🔧 Starting Maven build..."
 mvn clean verify
 
 if [ $? -ne 0 ]; then
-  echo "Maven build failed! Exiting..."
+  echo "❌ Maven build failed! Exiting..."
   exit 1
 else
-  echo "Maven build succeeded."
+  echo "✅ Maven build succeeded."
 fi
 
+# === DEV MODE ===
+if [[ "$MODE" == "dev" ]]; then
+  echo "[Dev Mode] Building and pushing development images..."
+
+  IMAGE_DEV_PATH="$GHCR_URL/$GHCR_USERNAME/$REPO_NAME/$IMAGE_NAME:dev"
+  IMAGE_METASCRAPER_DEV_PATH="$GHCR_URL/$GHCR_USERNAME/$REPO_NAME/$IMAGE_NAME_METASCRAPER:dev"
+
+  # Build and push main dev image
+  docker build --no-cache -t "$IMAGE_NAME:dev" .
+  docker tag "$IMAGE_NAME:dev" "$IMAGE_DEV_PATH"
+  docker push "$IMAGE_DEV_PATH"
+
+  # Build and push metascraper dev image
+  cd metascraper
+  docker build --no-cache -t "$IMAGE_NAME_METASCRAPER:dev" .
+  docker tag "$IMAGE_NAME_METASCRAPER:dev" "$IMAGE_METASCRAPER_DEV_PATH"
+  docker push "$IMAGE_METASCRAPER_DEV_PATH"
+  cd ..
+
+  echo "✅ Dev images pushed successfully."
+  exit 0
+fi
+
+# === REGULAR RELEASE MODE ===
+mvn release:clean
 mvn versions:set
 STATUS=$?
 mvn clean verify -DskipTests=true
+
 IMAGE_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
 IMAGE_FULL_PATH="$GHCR_URL/$GHCR_USERNAME/$REPO_NAME/$IMAGE_NAME:$IMAGE_VERSION"
 IMAGE_METASCRAPER_FULL_PATH="$GHCR_URL/$GHCR_USERNAME/$REPO_NAME/$IMAGE_NAME_METASCRAPER:$IMAGE_VERSION"
 IMAGE_LATEST_PATH="$GHCR_URL/$GHCR_USERNAME/$REPO_NAME/$IMAGE_NAME:latest"
 IMAGE_LATEST_METASCRAPER_PATH="$GHCR_URL/$GHCR_USERNAME/$REPO_NAME/$IMAGE_NAME_METASCRAPER:latest"
 
-# Function to check if the release is stable
 is_stable_release() {
-    # Check if IMAGE_VERSION contains alpha, beta, or RC (case-insensitive)
     if [[ "$IMAGE_VERSION" =~ [aA]lpha|[bB]eta|[rR][cC] ]]; then
-        return 1 # Not stable
+        return 1
     else
-        return 0 # Stable
+        return 0
     fi
 }
 
-# Check the status before proceeding
 if [ $STATUS -ne 0 ]; then
-    echo "Failed to set new version! Exiting..."
+    echo "❌ Failed to set new version! Exiting..."
     exit 1
 else
-    ### Filedpapers image ###
     echo "[Filedpapers] Building Version Docker image..."
     docker build --no-cache -t "$IMAGE_NAME:$IMAGE_VERSION" .
 
-    # Check if this is a stable release
     if is_stable_release; then
-        echo "[Filedpapers] Building Latest Docker image..."
         docker tag "$IMAGE_NAME:$IMAGE_VERSION" "$IMAGE_NAME:latest"
-    else
-        echo "[Filedpapers] Skipping Latest Docker image as this is a pre-release"
     fi
 
-    echo "[Filedpapers] Tagging version as $IMAGE_FULL_PATH..."
     docker tag "$IMAGE_NAME:$IMAGE_VERSION" "$IMAGE_FULL_PATH"
-
     if is_stable_release; then
-        echo "[Filedpapers] Tagging latest as $IMAGE_LATEST_PATH..."
         docker tag "$IMAGE_NAME:latest" "$IMAGE_LATEST_PATH"
-    else
-        echo "[Filedpapers] Skipping tagging latest as this is a pre-release"
     fi
 
-    echo "[Filedpapers] Pushing version to GitHub Container Registry..."
     docker push "$IMAGE_FULL_PATH"
-
     if is_stable_release; then
-        echo "[Filedpapers] Pushing latest to GitHub Container Registry..."
         docker push "$IMAGE_LATEST_PATH"
-    else
-        echo "[Filedpapers] Skipping push of latest as this is a pre-release"
     fi
 
     ### Filedpapers Metascraper ###
-
     cd metascraper
-
-    echo "[Filedpapers-Metascraper] Building Version Docker image..."
     docker build --no-cache -t "$IMAGE_NAME_METASCRAPER:$IMAGE_VERSION" .
 
-    # Check if this is a stable release
     if is_stable_release; then
-        echo "[Filedpapers-Metascraper] Building Latest Docker image..."
         docker tag "$IMAGE_NAME_METASCRAPER:$IMAGE_VERSION" "$IMAGE_NAME_METASCRAPER:latest"
-    else
-        echo "[Filedpapers-Metascraper] Skipping build of Latest Docker image as this is a pre-release"
     fi
 
-    echo "[Filedpapers-Metascraper] Tagging version as $IMAGE_FULL_PATH..."
     docker tag "$IMAGE_NAME_METASCRAPER:$IMAGE_VERSION" "$IMAGE_METASCRAPER_FULL_PATH"
-
     if is_stable_release; then
-        echo "[Filedpapers-Metascraper] Tagging latest as $IMAGE_LATEST_METASCRAPER_PATH..."
         docker tag "$IMAGE_NAME_METASCRAPER:latest" "$IMAGE_LATEST_METASCRAPER_PATH"
-    else
-        echo "[Filedpapers-Metascraper] Skipping tag of latest as this is a pre-release"
     fi
 
-    echo "[Filedpapers-Metascraper] Pushing version to GitHub Container Registry..."
     docker push "$IMAGE_METASCRAPER_FULL_PATH"
-
     if is_stable_release; then
-        echo "[Filedpapers-Metascraper] Pushing latest to GitHub Container Registry..."
         docker push "$IMAGE_LATEST_METASCRAPER_PATH"
-    else
-        echo "[Filedpapers-Metascraper] Skipping push of latest as this is a pre-release"
     fi
-
     cd ..
 
-    # Push tags and update versions if the push succeeds
     if [ $? -eq 0 ]; then
-        echo "Tagging repo and pushing..."
-        git tag $IMAGE_VERSION
+        git tag "$IMAGE_VERSION"
         mvn release:update-versions
         git commit -am "Updated version after release"
         git push --tags origin main
-        echo "Released!!!"
+        echo "🎉 Released $IMAGE_VERSION!"
     else
-        echo "Failed to push the image. Exiting..."
-    exit 1
-  fi
+        echo "❌ Failed to push the image. Exiting..."
+        exit 1
+    fi
 fi
 
-rm pom.xml.versionsBackup
+rm -f pom.xml.versionsBackup
