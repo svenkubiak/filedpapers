@@ -1,5 +1,7 @@
 package services;
 
+import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoCursor;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Sorts;
 import com.mongodb.client.result.DeleteResult;
@@ -32,6 +34,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
 
+import static com.mongodb.client.model.Aggregates.*;
 import static com.mongodb.client.model.Filters.*;
 import static com.mongodb.client.model.Projections.include;
 import static com.mongodb.client.model.Updates.set;
@@ -52,29 +55,34 @@ public class DataService {
         this.applicationUrl = Objects.requireNonNull(applicationUrl, Required.APPLICATION_URL);
     }
 
-    @SuppressWarnings("unchecked")
     public Optional<List<Map<String, Object>>> findCategories(String userUid) {
         Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
 
-        List<Category> categories = new ArrayList<>();
-        datastore
-                .query(Category.class)
-                .find(eq(Const.USER_UID, userUid)).into(categories);
+        MongoCollection<Document> categories = datastore
+                .getMongoDatabase()
+                .getCollection("categories", Document.class);
+
+        var pipeline = Arrays.asList(
+                match(eq(Const.USER_UID, userUid)),
+                lookup("items", "uid", "categoryUid", "items"),
+                project(new Document("name", 1)
+                        .append("uid", 1)
+                        .append("itemCount", new Document("$size", "$items"))
+                )
+        );
 
         List<Map<String, Object>> output = new ArrayList<>();
-        if (categories.size() >= 2) {
-            for (Category category : categories) {
+        try (MongoCursor<Document> cursor = categories.aggregate(pipeline).iterator()) {
+            while (cursor.hasNext()) {
+                Document document = cursor.next();
                 output.add(Map.of(
-                        Const.NAME, category.getName(),
-                        Const.UID, category.getUid(),
-                        Const.COUNT, String.valueOf(category.getCount())
+                        Const.NAME, document.getString(Const.NAME),
+                        Const.UID, document.getString(Const.UID),
+                        Const.COUNT, document.getInteger("itemCount", 0)
                 ));
             }
-
-            return Optional.of(output);
+            return output.isEmpty() ? Optional.empty() : Optional.of(output);
         }
-
-        return Optional.empty();
     }
 
     public long countItems(String userUid, String categoryUid) {
@@ -143,20 +151,6 @@ public class DataService {
         return PLACEHOLDER_IMAGE;
     }
 
-    public void updateCategoryCount(String userUid, String categoryUid) {
-        Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
-        Utils.checkCondition(Utils.isValidRandom(categoryUid), Invalid.CATEGORY_UID);
-
-        long count = datastore.countAll(Item.class,
-                and(
-                        eq(Const.USER_UID, userUid),
-                        eq(Const.CATEGORY_UID, categoryUid)));
-
-        Category category = findCategory(categoryUid, userUid);
-        category.setCount((int) count);
-        save(category);
-    }
-
     public Optional<Boolean> deleteItem(String itemUid, String userUid) {
         Utils.checkCondition(Utils.isValidRandom(itemUid), Invalid.ITEM_UID);
         Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
@@ -171,9 +165,6 @@ public class DataService {
                 eq(Const.UID, itemUid)),
                     set(Const.CATEGORY_UID, trash.getUid()));
 
-        updateCategoryCount(userUid, category.getUid());
-        updateCategoryCount(userUid, trash.getUid());
-
         return updateResult.getModifiedCount() == 1 ? Optional.of(Boolean.TRUE) : Optional.empty();
     }
 
@@ -182,9 +173,6 @@ public class DataService {
         Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
 
         Category trash = findTrash(userUid);
-        trash.setCount(0);
-        save(trash);
-
         List<Item> items = new ArrayList<>();
         datastore.query(Item.class).find(and(
                 eq(Const.USER_UID, userUid),
@@ -257,9 +245,6 @@ public class DataService {
                             eq(Const.UID, itemUid)),
                     set(Const.CATEGORY_UID, categoryUid));
 
-            updateCategoryCount(userUid, sourceCategory.getUid());
-            updateCategoryCount(userUid, targetCategory.getUid());
-
             return Optional.of(updateResult.wasAcknowledged());
         }
 
@@ -312,7 +297,6 @@ public class DataService {
             }
 
             String itemResult = save(item);
-            updateCategoryCount(userUid, category.getUid());
 
             return Optional.of(StringUtils.isNoneBlank(categoryResult, itemResult));
         } else {
@@ -351,9 +335,6 @@ public class DataService {
                             and(
                                     eq(Const.USER_UID, userUid),
                                     eq(Const.UID, categoryUid)));
-
-            updateCategoryCount(userUid, inbox.getUid());
-            updateCategoryCount(userUid, trash.getUid());
 
             return Optional.of(deleteResult.getDeletedCount() == 1);
         }
@@ -533,6 +514,10 @@ public class DataService {
         //Remove outdated Item attributes
         datastore.query(Item.class)
                 .updateMany(exists("imageBase64"), unset("imageBase64"));
+
+        //Remove outdated Category attributes
+        datastore.query(Item.class)
+                .updateMany(exists("count"), unset("count"));
 
         //Updated items which have null value mediaUids
         List<Item> items = new ArrayList<>();

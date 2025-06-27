@@ -20,13 +20,10 @@ public class Category extends Entity implements Serializable {
     @Indexed
     private String name;
 
-    private int count;
-
     public Category(String name, String userUid) {
         this.name = Objects.requireNonNull(name, Required.NAME);
         this.userUid = Objects.requireNonNull(userUid, Required.USER_UID);
         this.uid = Utils.randomString();
-        this.count = 0;
     }
 
     public Category() {
@@ -54,13 +51,5 @@ public class Category extends Entity implements Serializable {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public int getCount() {
-        return count;
-    }
-
-    public void setCount(int count) {
-        this.count = count;
     }
 }

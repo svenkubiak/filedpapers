@@ -219,7 +219,6 @@ public class DashboardController {
                             item.setTimestamp(child.getAddDate().atZone(ZoneId.systemDefault()).toLocalDateTime());
 
                             dataService.save(item);
-                            dataService.updateCategoryCount(userUid, category.getUid());
                         }
                     }
                 }
