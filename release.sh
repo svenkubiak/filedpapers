@@ -11,6 +11,7 @@ MODE="$1"
 
 # Always run Maven build
 echo "🔧 Starting Maven build..."
+rm metascraper/package-lock.json
 mvn clean verify
 
 if [ $? -ne 0 ]; then

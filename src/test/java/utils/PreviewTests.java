@@ -30,27 +30,22 @@ public class PreviewTests {
         Assertions.assertTrue(Files.exists(nodeAppPath.resolve("package.json")));
         nodeAppDir = nodeAppPath.toAbsolutePath().toFile();
 
-        Process npmInstall = initProcess("npm", "install");
-        if (npmInstall.waitFor() != 0) {
-            throw new RuntimeException("npm install failed");
-        }
-
-        processes.add(npmInstall);
-
-        Process npmAudit = initProcess("npm", "audit", "--audit-level=high");
-        int exitCode = npmAudit.waitFor();
-        if (exitCode != 0) {
-            throw new RuntimeException("npm audit found vulnerabilities");
-        }
-
-        processes.add(npmAudit);
-
-        Process npmStart = initProcess("npm", "start");
-
-        processes.add(npmStart);
+        waitFor(initProcess("npm", "install"), "npm install failed");
+        waitFor(initProcess("npm", "audit", "--audit-level=high"), "npm audit found vulnerabilities");
+        waitFor(initProcess("npm", "outdated", "--json"), "npm outdated check failed");
+        waitFor(initProcess("npm", "start"), "npm start failed");
 
         Thread.sleep(3000);
         System.setProperty("application.metascraper.url", "http://localhost:3000");
+    }
+
+    private static void waitFor(Process process, String error) throws InterruptedException {
+        if (process.waitFor() != 0) {
+            System.err.println(error);
+            System.exit(1);
+        }
+
+        processes.add(process);
     }
 
     private static void consumeStream(InputStream input, PrintStream target) {
@@ -66,8 +61,24 @@ public class PreviewTests {
     private static Process initProcess(String... command) throws IOException, InterruptedException {
         Process process = new ProcessBuilder(command).directory(nodeAppDir).start();
 
-        consumeStream(process.getInputStream(), System.out);
-        consumeStream(process.getErrorStream(), System.err);
+        if (command[1].equals("outdated")) {
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            StringBuilder outputBuilder = new StringBuilder();
+            String line;
+
+            while ((line = reader.readLine()) != null) {
+                outputBuilder.append(line);
+            }
+
+            String output = outputBuilder.toString().trim();
+            if (!output.isEmpty() && !output.equals("{}")) {
+                System.err.println("npm outdated found outdated dependencies:\n" + output);
+                System.exit(1);
+            }
+        } else {
+            consumeStream(process.getInputStream(), System.out);
+            consumeStream(process.getErrorStream(), System.err);
+        }
 
         return process;
     }
