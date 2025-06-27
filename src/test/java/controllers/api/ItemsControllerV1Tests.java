@@ -21,6 +21,7 @@ import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static com.mongodb.client.model.Filters.eq;
+import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.awaitility.Awaitility.await;
 
@@ -109,6 +110,22 @@ public class ItemsControllerV1Tests {
         assertThat(response).isNotNull();
         assertThat(response.getStatusCode()).isEqualTo(200);
         assertThat(response.getContent()).isNotEmpty();
+        assertThatJson(response.getContent()).isEqualTo("""
+            {
+              "items": [
+                {
+                  "url": "${json-unit.any-string}",
+                  "uid": "${json-unit.any-string}",
+                  "added": "${json-unit.any-string}",
+                  "domain": "${json-unit.any-string}",
+                  "title": "${json-unit.any-string}",
+                  "image": "${json-unit.any-string}",
+                  "description": "${json-unit.any-string}",
+                  "sort": ${json-unit.any-number}
+                }
+              ]
+            }
+        """);
     }
 
     @Test
@@ -202,7 +219,6 @@ public class ItemsControllerV1Tests {
         assertThat(item).isNotNull();
         assertThat(item.getCategoryUid()).isEqualTo(TRASH_UID);
     }
-
 
     @Test
     void testAddUnauthorized() {

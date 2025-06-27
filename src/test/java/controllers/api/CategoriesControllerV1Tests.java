@@ -19,6 +19,7 @@ import utils.Utils;
 
 import java.util.Map;
 
+import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 @ExtendWith({TestExtension.class})
@@ -67,6 +68,22 @@ public class CategoriesControllerV1Tests {
         assertThat(response.getStatusCode()).isEqualTo(200);
         assertThat(response.getContent()).isNotEmpty();
         assertThat(response.getContent()).contains("Inbox", "Trash");
+        assertThatJson(response.getContent()).isEqualTo("""
+                {
+                  "categories": [
+                    {
+                      "count": "${json-unit.any-string}",
+                      "name": "${json-unit.any-string}",
+                      "uid": "${json-unit.any-string}"
+                    },
+                    {
+                      "count": "${json-unit.any-string}",
+                      "name": "${json-unit.any-string}",
+                      "uid": "${json-unit.any-string}"
+                    }
+                  ]
+                }
+            """);
     }
 
     @Test

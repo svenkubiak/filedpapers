@@ -69,6 +69,12 @@ public class UserControllerV1Tests {
         assertThatJson(response.getContent()).node("refreshToken").isString().isNotNull();
         assertThatJson(response.getContent()).node("accessToken").isString().contains("v4.local");
         assertThatJson(response.getContent()).node("refreshToken").isString().contains("v4.local");
+        assertThatJson(response.getContent()).isEqualTo("""
+            {
+              "accessToken": "${json-unit.any-string}",
+              "refreshToken": "${json-unit.any-string}"
+            }
+        """);
     }
 
     @Test
@@ -90,6 +96,11 @@ public class UserControllerV1Tests {
         assertThat(response.getContent()).isNotNull();
         assertThat(response.getContent()).contains("challengeToken");
         assertThatJson(response.getContent()).node("challengeToken").isString().contains("v4.local");
+        assertThatJson(response.getContent()).isEqualTo("""
+            {
+              "challengeToken": "${json-unit.any-string}"
+            }
+        """);
     }
 
     @Test
