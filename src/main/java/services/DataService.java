@@ -155,15 +155,12 @@ public class DataService {
         Utils.checkCondition(Utils.isValidRandom(itemUid), Invalid.ITEM_UID);
         Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
 
-        var item = findItem(itemUid, userUid);
-        var category = findCategory(item.getCategoryUid(), userUid);
-        save(category);
-
         Category trash = findTrash(userUid);
-        var updateResult = datastore.query(Item.class).updateOne(and(
-                eq(Const.USER_UID, userUid),
-                eq(Const.UID, itemUid)),
-                    set(Const.CATEGORY_UID, trash.getUid()));
+        var updateResult = datastore.query(Item.class).updateOne(
+                and(
+                    eq(Const.USER_UID, userUid),
+                    eq(Const.UID, itemUid)),
+                        set(Const.CATEGORY_UID, trash.getUid()));
 
         return updateResult.getModifiedCount() == 1 ? Optional.of(Boolean.TRUE) : Optional.empty();
     }
@@ -173,23 +170,32 @@ public class DataService {
         Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
 
         Category trash = findTrash(userUid);
-        List<Item> items = new ArrayList<>();
-        datastore.query(Item.class).find(and(
-                eq(Const.USER_UID, userUid),
-                eq(Const.CATEGORY_UID, trash.getUid()))).into(items);
+        List<String> mediaUidsToDelete = new ArrayList<>();
+        datastore.query(Item.class)
+                .find(and(
+                        eq(Const.USER_UID, userUid),
+                        eq(Const.CATEGORY_UID, trash.getUid()),
+                        ne(Const.MEDIA_UID, null),
+                        ne(Const.MEDIA_UID, Strings.EMPTY)))
+                .projection(include(Const.MEDIA_UID))
+                .forEach(doc -> {
+                    if (doc instanceof Item item) {
+                        mediaUidsToDelete.add(item.getMediaUid());
+                    }
+                });
 
-        var deleteResult = datastore.query(Item.class).deleteMany(and(
-                eq(Const.USER_UID, userUid),
-                eq(Const.CATEGORY_UID, trash.getUid())));
+        DeleteResult deleteResult = datastore.query(Item.class)
+                .deleteMany(and(
+                        eq(Const.USER_UID, userUid),
+                        eq(Const.CATEGORY_UID, trash.getUid())));
 
         if (deleteResult.wasAcknowledged()) {
-            items.stream()
-                    .filter(item -> StringUtils.isNotBlank(item.getMediaUid()))
-                    .forEach(item -> mediaService.delete(item.getMediaUid(), userUid));
+            mediaUidsToDelete.forEach(mediaUid -> mediaService.delete(mediaUid, userUid));
         }
 
         return deleteResult.wasAcknowledged() ? Optional.of(Boolean.TRUE) : Optional.empty();
     }
+
 
     private Category findTrash(String userUid) {
         Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
