@@ -9,9 +9,8 @@ GHCR_URL="ghcr.io"
 
 MODE="$1"
 
-# Always run Maven build
+# === Always run Maven build ===
 echo "🔧 Starting Maven build..."
-rm metascraper/package-lock.json
 mvn clean verify
 
 if [ $? -ne 0 ]; then
@@ -23,17 +22,17 @@ fi
 
 # === DEV MODE ===
 if [[ "$MODE" == "dev" ]]; then
-  echo "[Dev Mode] Building and pushing development images..."
+  echo "[Dev Mode] Skipping Maven release/version updates..."
 
   IMAGE_DEV_PATH="$GHCR_URL/$GHCR_USERNAME/$REPO_NAME/$IMAGE_NAME:dev"
   IMAGE_METASCRAPER_DEV_PATH="$GHCR_URL/$GHCR_USERNAME/$REPO_NAME/$IMAGE_NAME_METASCRAPER:dev"
 
-  # Build and push main dev image
+  echo "[Filedpapers] Building :dev image..."
   docker build --no-cache -t "$IMAGE_NAME:dev" .
   docker tag "$IMAGE_NAME:dev" "$IMAGE_DEV_PATH"
   docker push "$IMAGE_DEV_PATH"
 
-  # Build and push metascraper dev image
+  echo "[Filedpapers-Metascraper] Building :dev image..."
   cd metascraper
   docker build --no-cache -t "$IMAGE_NAME_METASCRAPER:dev" .
   docker tag "$IMAGE_NAME_METASCRAPER:dev" "$IMAGE_METASCRAPER_DEV_PATH"
@@ -45,6 +44,7 @@ if [[ "$MODE" == "dev" ]]; then
 fi
 
 # === REGULAR RELEASE MODE ===
+
 mvn release:clean
 mvn versions:set
 STATUS=$?
