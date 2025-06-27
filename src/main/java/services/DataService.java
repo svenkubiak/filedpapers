@@ -78,7 +78,7 @@ public class DataService {
                 output.add(Map.of(
                         Const.NAME, document.getString(Const.NAME),
                         Const.UID, document.getString(Const.UID),
-                        Const.COUNT, document.getInteger("itemCount", 0)
+                        Const.COUNT, String.valueOf(document.getInteger("itemCount", 0))
                 ));
             }
             return output.isEmpty() ? Optional.empty() : Optional.of(output);
