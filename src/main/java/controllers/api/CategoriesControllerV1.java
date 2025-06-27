@@ -41,16 +41,21 @@ public class CategoriesControllerV1 {
             var count = Long.parseLong(data.get(Const.COUNT));
             long items = 0;
 
-            try {
-                items = dataService.countItems(userUid, data.get("category"));
-            } catch (IllegalArgumentException e) {
-                return Response.badRequest().bodyJsonError("Invalid user");
-            }
+            String categoryUid = data.get("category");
+            if (dataService.findCategory(categoryUid, userUid) != null) {
+                try {
+                    items = dataService.countItems(userUid, categoryUid);
+                } catch (IllegalArgumentException e) {
+                    return Response.badRequest().bodyJsonError("Invalid user");
+                }
 
-            if (items >= 0 && items != count) {
-                return Response.ok();
-            } else if (items < 0) {
-                return Response.internalServerError().bodyJson(Const.API_ERROR);
+                if (items >= 0 && items != count) {
+                    return Response.ok();
+                } else if (items < 0) {
+                    return Response.internalServerError().bodyJson(Const.API_ERROR);
+                }
+            } else {
+                return Response.badRequest().bodyJsonError("Invalid category");
             }
         }
 

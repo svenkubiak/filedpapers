@@ -354,7 +354,7 @@ if ($confirmAddBookmark) {
                     },
                     body: JSON.stringify({
                         url: url,
-                        category: category.toLowerCase()
+                        category: category
                     })
                 });
 

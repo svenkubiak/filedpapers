@@ -56,6 +56,7 @@ public class DashboardController {
     public Response dashboard(Authentication authentication, Optional<String> categoryUid) {
         String userUid = authentication.getSubject();
         var category = categoryUid
+                .filter(Utils::isValidRandom)
                 .map(uid -> dataService.findCategory(uid, userUid))
                 .orElseGet(() -> dataService.findInbox(userUid));
 
