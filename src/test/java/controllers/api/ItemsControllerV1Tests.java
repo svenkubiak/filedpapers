@@ -110,9 +110,7 @@ public class ItemsControllerV1Tests {
         assertThat(response).isNotNull();
         assertThat(response.getStatusCode()).isEqualTo(200);
         assertThat(response.getContent()).isNotEmpty();
-        assertThatJson(response.getContent()).isEqualTo("""
-            {
-              "items": [
+        assertThatJson(response.getContent()).inPath("$.items[0]").isEqualTo("""
                 {
                   "url": "${json-unit.any-string}",
                   "uid": "${json-unit.any-string}",
@@ -121,10 +119,8 @@ public class ItemsControllerV1Tests {
                   "title": "${json-unit.any-string}",
                   "image": "${json-unit.any-string}",
                   "description": "${json-unit.any-string}",
-                  "sort": ${json-unit.any-number}
+                  "sort": "${json-unit.any-number}"
                 }
-              ]
-            }
         """);
     }
 

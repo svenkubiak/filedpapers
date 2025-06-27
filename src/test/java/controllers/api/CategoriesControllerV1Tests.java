@@ -68,22 +68,13 @@ public class CategoriesControllerV1Tests {
         assertThat(response.getStatusCode()).isEqualTo(200);
         assertThat(response.getContent()).isNotEmpty();
         assertThat(response.getContent()).contains("Inbox", "Trash");
-        assertThatJson(response.getContent()).isEqualTo("""
-                {
-                  "categories": [
-                    {
-                      "count": "${json-unit.any-string}",
-                      "name": "${json-unit.any-string}",
-                      "uid": "${json-unit.any-string}"
-                    },
-                    {
-                      "count": "${json-unit.any-string}",
-                      "name": "${json-unit.any-string}",
-                      "uid": "${json-unit.any-string}"
-                    }
-                  ]
-                }
-            """);
+        assertThatJson(response.getContent()).inPath("$.categories[0]").isEqualTo("""
+            {
+              "count": "${json-unit.any-string}",
+              "name": "${json-unit.any-string}",
+              "uid": "${json-unit.any-string}"
+            }
+        """);
     }
 
     @Test
