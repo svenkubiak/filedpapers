@@ -85,6 +85,7 @@ public class Bootstrap implements MangooBootstrap {
 
         Bind.controller(CategoriesControllerV1.class).withRoutes(
                 On.get().to("/api/v1/categories").respondeWith("list"),
+                On.put().to("/api/v1/categories").respondeWith("edit"),
                 On.post().to("/api/v1/categories/poll").respondeWith("poll"),
                 On.post().to("/api/v1/categories").respondeWith("add"),
                 On.delete().to("/api/v1/categories/{uid}").respondeWith("delete")

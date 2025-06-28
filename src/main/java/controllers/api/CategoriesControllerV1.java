@@ -78,6 +78,22 @@ public class CategoriesControllerV1 {
         return Response.badRequest().bodyJsonError("Missing data");
     }
 
+    public Response edit(Request request, Map<String, String> data) {
+        String userUid = request.getAttribute(Const.USER_UID);
+
+        if (!data.isEmpty() && StringUtils.isNotBlank(data.get("name")) && StringUtils.isNotBlank(data.get("uid"))) {
+            try {
+                return dataService.updateCategory(userUid, data.get("uid"), data.get("name"))
+                        .map(success -> Response.ok())
+                        .orElse(Response.internalServerError().bodyJsonError(Const.API_ERROR));
+            } catch (IllegalArgumentException e) {
+                return Response.badRequest().bodyJsonError("Invalid user or category");
+            }
+        }
+
+        return Response.badRequest().bodyJsonError("Missing data");
+    }
+
     public Response delete(Request request, String uid) {
         String userUid = request.getAttribute(Const.USER_UID);
 

@@ -26,6 +26,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 public class CategoriesControllerV1Tests {
     private static String ACCESS_TOKEN;
     private static String USER_UID;
+    private static String CATEGORY_UID;
 
     @BeforeAll
     public static void init() {
@@ -39,6 +40,10 @@ public class CategoriesControllerV1Tests {
         datastore.save(user);
         datastore.save(new Category(Const.INBOX, user.getUid()));
         datastore.save(new Category(Const.TRASH, user.getUid()));
+
+        Category foo = new Category("foo", user.getUid());
+        CATEGORY_UID = foo.getUid();
+        datastore.save(foo);
 
         String username = "foo@bar.com";
         String password = "bar";
@@ -135,7 +140,37 @@ public class CategoriesControllerV1Tests {
     }
 
     @Test
-    void testAdd() {
+    void testEditUnauthorized() {
+        //when
+        TestResponse response = TestRequest.put("/api/v1/categories")
+                .withContentType("application/json")
+                .execute();
+
+        //then
+        assertThat(response).isNotNull();
+        assertThat(response.getStatusCode()).isEqualTo(401);
+        assertThat(response.getContent()).isEmpty();
+    }
+
+    @Test
+    void testEditAuthorized() {
+        //when
+        String name = Utils.randomString();
+        Map<String, String> body = Map.of("uid", CATEGORY_UID, "name", name);
+        TestResponse response = TestRequest.put("/api/v1/categories")
+                .withHeader("Authorization", ACCESS_TOKEN)
+                .withContentType("application/json")
+                .withStringBody(JsonUtils.toJson(body))
+                .execute();
+
+        //then
+        assertThat(response).isNotNull();
+        assertThat(response.getStatusCode()).isEqualTo(200);
+        assertThat(Application.getInstance(DataService.class).findCategory(CATEGORY_UID, USER_UID)).isNotNull();
+    }
+
+    @Test
+    void testAddAuthorized() {
         //when
         String name = Utils.randomString();
         Map<String, String> body = Map.of("name", name);

@@ -2,8 +2,7 @@ package services;
 
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
-import com.mongodb.client.model.Filters;
-import com.mongodb.client.model.Sorts;
+import com.mongodb.client.model.*;
 import com.mongodb.client.result.DeleteResult;
 import constants.Const;
 import constants.Invalid;
@@ -584,5 +583,23 @@ public class DataService {
                         });
             }
         });
+    }
+
+    public Optional<Boolean> updateCategory(String userUid, String categoryUid, String name) {
+        Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
+        Utils.checkCondition(Utils.isValidRandom(categoryUid), Invalid.CATEGORY_UID);
+        Objects.requireNonNull(name, Required.CATEGORY_NAME);
+
+        Object updatedCategory = datastore.query(Category.class).findOneAndUpdate(
+                and(eq(Const.USER_UID, userUid), eq(Const.UID, categoryUid)),
+                set("name", name),
+                new FindOneAndUpdateOptions()
+                        .returnDocument(ReturnDocument.AFTER)
+                        .upsert(false)
+        );
+
+        System.out.println(updatedCategory);
+
+        return updatedCategory == null ? Optional.of(false) : Optional.of(true);
     }
 }
