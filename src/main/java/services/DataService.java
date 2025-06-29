@@ -600,15 +600,16 @@ public class DataService {
         Utils.checkCondition(Utils.isValidRandom(categoryUid), Invalid.CATEGORY_UID);
         Objects.requireNonNull(name, Required.CATEGORY_NAME);
 
-        Object updatedCategory = datastore.query(Category.class).findOneAndUpdate(
-                and(eq(Const.USER_UID, userUid), eq(Const.UID, categoryUid)),
-                set("name", name),
-                new FindOneAndUpdateOptions()
-                        .returnDocument(ReturnDocument.AFTER)
-                        .upsert(false)
-        );
-
-        System.out.println(updatedCategory);
+        Object updatedCategory = null;
+        if (findCategoryByName(name, userUid) == null) {
+            updatedCategory = datastore.query(Category.class).findOneAndUpdate(
+                    and(eq(Const.USER_UID, userUid), eq(Const.UID, categoryUid)),
+                    set("name", name),
+                    new FindOneAndUpdateOptions()
+                            .returnDocument(ReturnDocument.AFTER)
+                            .upsert(false)
+            );
+        }
 
         return updatedCategory == null ? Optional.of(false) : Optional.of(true);
     }
