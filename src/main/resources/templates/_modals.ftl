@@ -22,6 +22,29 @@
         </footer>
     </div>
 </div>
+<div class="modal" id="rename-category-modal">
+    <div class="modal-background"></div>
+    <div class="modal-card">
+        <header class="modal-card-head">
+            <p class="modal-card-title">${i18n("layout.modal.rename.category.title")}</p>
+            <button class="delete" aria-label="close"></button>
+        </header>
+        <section class="modal-card-body">
+            <div class="field">
+                <label class="label">${i18n("layout.modal.rename.category.name")}</label>
+                <div class="control">
+                    <input class="input" type="text" name="category" id="existing-category">
+                </div>
+            </div>
+        </section>
+        <footer class="modal-card-foot">
+            <div class="is-flex is-justify-content-space-between" style="width: 100%">
+                <button class="button">${i18n("layout.modal.rename.category.cancel")}</button>
+                <button class="button is-primary" id="rename-category-submit" data-confirm>${i18n("layout.modal.rename.category.add")}</button>
+            </div>
+        </footer>
+    </div>
+</div>
 <div class="modal" id="delete-account-modal">
     <div class="modal-background"></div>
     <div class="modal-card">

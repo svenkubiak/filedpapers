@@ -2,7 +2,10 @@ package services;
 
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
-import com.mongodb.client.model.*;
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.FindOneAndUpdateOptions;
+import com.mongodb.client.model.ReturnDocument;
+import com.mongodb.client.model.Sorts;
 import com.mongodb.client.result.DeleteResult;
 import constants.Const;
 import constants.Invalid;
@@ -32,6 +35,7 @@ import utils.preview.LinkPreviewFetcher;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
+import java.util.regex.Pattern;
 
 import static com.mongodb.client.model.Aggregates.*;
 import static com.mongodb.client.model.Filters.*;
@@ -195,7 +199,6 @@ public class DataService {
         return deleteResult.wasAcknowledged() ? Optional.of(Boolean.TRUE) : Optional.empty();
     }
 
-
     private Category findTrash(String userUid) {
         Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
 
@@ -315,7 +318,10 @@ public class DataService {
         Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
         Objects.requireNonNull(name, Required.CATEGORY_NAME);
 
-        String result = save(new Category(name, userUid));
+        String result = null;
+        if (findCategoryByName(name, userUid) == null) {
+            result = save(new Category(name, userUid));
+        }
 
         return StringUtils.isNotBlank(result) ? Optional.of(Boolean.TRUE) : Optional.empty();
     }
@@ -369,7 +375,11 @@ public class DataService {
         Objects.requireNonNull(categoryName, Required.CATEGORY_NAME);
         Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
 
-        return datastore.find(Category.class, and(eq(Const.NAME, categoryName), eq(Const.USER_UID, userUid)));
+        Pattern pattern = Pattern.compile("^" + categoryName + "$", Pattern.CASE_INSENSITIVE);
+        return datastore.find(Category.class,
+                and(
+                        regex(Const.NAME, pattern),
+                        eq(Const.USER_UID, userUid)));
     }
 
     public boolean deleteAccount(String password, String userUid) {

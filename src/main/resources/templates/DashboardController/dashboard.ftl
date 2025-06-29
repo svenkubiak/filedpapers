@@ -9,6 +9,7 @@
                     <li><span class="icon empty-trash" data-tooltip-bottom="${i18n("dashboard.empty.trash")}"><i class="fas fa-trash-alt"></i></span></li>
                 <#elseif active == 'inbox'>
                 <#else>
+                    <li><span class="icon category-rename" data-uid="${categoryUid}" data-name="${breadcrumb}" data-tooltip-bottom="${i18n("dashboard.rename.category")}"><i class="fas fa-pen-to-square"></i></span></li>
                     <li><span class="icon category-trash" data-uid="${categoryUid}" data-tooltip-bottom="${i18n("dashboard.delete.category")}"><i class="fas fa-folder-minus"></i></span></li>
                 </#if>
             </ul>

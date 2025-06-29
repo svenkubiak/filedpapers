@@ -20,16 +20,19 @@ const forAll = (sel, fn) => {
 };
 
 let $cardToDelete = null;
+let $categoryToRename = null;
 const toastSuccess = 'toast-success';
 const toastError = 'toast-error';
-const error = $id('i18n-js').dataset.error;
-const bookmarkMovedSuccess = document.getElementById('i18n-js').dataset.bookmarkMovedSuccess;
-const categoryDeletedSuccess = document.getElementById('i18n-js').dataset.categoryDeletedSuccess;
-const trashEmptiedSuccess = document.getElementById('i18n-js').dataset.trashEmptiedSuccess;
-const bookmarkDeletedSuccess = document.getElementById('i18n-js').dataset.bookmarkDeletedSuccess;
-const categoryCreatedSuccess = document.getElementById('i18n-js').dataset.categoryCreatedSuccess;
-const bookmarkCreatedSuccess = document.getElementById('i18n-js').dataset.bookmarkCreatedSuccess;
-const logoutDevicesSuccess = document.getElementById('i18n-js').dataset.logoutDevicesSuccess;
+const i18n = $id('i18n-js').dataset;
+const generalError = i18n.error;
+const bookmarkMovedSuccess = i18n.bookmarkMovedSuccess;
+const categoryDeletedSuccess = i18n.categoryDeletedSuccess;
+const categoryRenamedSuccess = i18n.categoryRenamedSuccess;
+const trashEmptiedSuccess = i18n.trashEmptiedSuccess;
+const bookmarkDeletedSuccess = i18n.bookmarkDeletedSuccess;
+const categoryCreatedSuccess = i18n.categoryCreatedSuccess;
+const bookmarkCreatedSuccess = i18n.bookmarkCreatedSuccess;
+const logoutDevicesSuccess = i18n.logoutDevicesSuccess;
 
 function openModal(element) {
     element.classList.add('is-active');
@@ -113,9 +116,9 @@ function handleDrop(e) {
         })
         .catch(function (error) {
             console.log(error);
-            sessionStorage.setItem(toastError, error);
+            sessionStorage.setItem(toastError, generalError);
         })
-        .finally(function (error) {
+        .finally(function () {
             window.location.href = "/dashboard";
         });
 }
@@ -124,8 +127,7 @@ function handleCardTrashClick(e) {
     e.preventDefault();
     e.stopPropagation();
 
-    $cardToDelete = e.currentTarget.closest('.card');
-    deleteItem(e);
+    deleteItem(e.currentTarget.closest('.card'));
 }
 
 function handleDeleteAccountClick(e) {
@@ -148,6 +150,15 @@ function handleCategoryTrashClick(e) {
     openModal($id('delete-category-confirm-modal'));
 }
 
+function handleCategoryRenameClick(e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    $categoryToRename = e.currentTarget;
+    $id('existing-category').value = $categoryToRename.dataset.name;
+    openModal($id('rename-category-modal'));
+}
+
 function handleConfirmCategoryDelete() {
     if ($categoryToDelete) {
         const uid = $categoryToDelete.dataset.uid;
@@ -155,13 +166,13 @@ function handleConfirmCategoryDelete() {
         axios.delete("/api/v1/categories/" + uid)
             .then(function (response) {
                 closeAllModals();
-                sessionStorage.setItem(toastSuccess, trashEmptiedSuccess);
+                sessionStorage.setItem(toastSuccess, categoryDeletedSuccess);
             })
             .catch(function (error) {
                 console.log(error);
-                sessionStorage.setItem(toastError, error);
+                sessionStorage.setItem(toastError, generalError);
             })
-            .finally(function (error) {
+            .finally(function () {
                 closeAllModals();
                 window.location.href = "/dashboard";
             });
@@ -172,13 +183,13 @@ function handleLogoutDevices() {
     axios.post("/dashboard/profile/logout-devices")
         .then(function (response) {
             closeAllModals();
-            sessionStorage.setItem(toastSuccess, trashEmptiedSuccess);
+            sessionStorage.setItem(toastSuccess, logoutDevicesSuccess);
         })
         .catch(function (error) {
             console.log(error);
-            sessionStorage.setItem(toastError, error);
+            sessionStorage.setItem(toastError, generalError);
         })
-        .finally(function (error) {
+        .finally(function () {
             window.location.href = "/dashboard/profile";
         });
 }
@@ -200,10 +211,39 @@ function handleAddCategory(e) {
             })
             .catch(function (error) {
                 console.log(error);
-                sessionStorage.setItem(toastError, error);
+                sessionStorage.setItem(toastError, generalError);
             })
-            .finally(function (error) {
+            .finally(function () {
                 window.location.href = "/dashboard";
+            });
+    } else {
+        categoryInput?.classList.add('is-danger');
+    }
+}
+
+function handleRenameCategory(e) {
+    e.preventDefault();
+
+    const categoryInput = $id('existing-category');
+    const uid = $categoryToRename.dataset.uid;
+    const category = categoryInput?.value;
+
+    if (category) {
+        axios.put("/api/v1/categories", {
+            uid: uid,
+            name: category
+        })
+            .then(function (response) {
+                sessionStorage.setItem(toastSuccess, categoryRenamedSuccess);
+                categoryInput.value = '';
+                closeAllModals();
+            })
+            .catch(function (error) {
+                console.log(error);
+                sessionStorage.setItem(toastError, generalError);
+            })
+            .finally(function () {
+                window.location.href = "/dashboard/" + uid;
             });
     } else {
         categoryInput?.classList.add('is-danger');
@@ -218,38 +258,34 @@ function confirmEmptyTrash() {
         })
         .catch(function (error) {
             console.log(error);
-            sessionStorage.setItem(toastError, error);
+            sessionStorage.setItem(toastError, generalError);
         })
-        .finally(function (error) {
+        .finally(function () {
             window.location.href = "/dashboard";
         });
 }
 
-function deleteItem(element) {
-    element.preventDefault();
-    element.stopPropagation();
-
-    $cardToDelete = element.currentTarget.closest('.card');
-    $cardToDelete.style.transition = 'all 0.3s ease';
-    $cardToDelete.style.opacity = '0';
+function deleteItem(card) {
+    card.style.transition = 'all 0.3s ease';
+    card.style.opacity = '0';
 
     setTimeout(() => {
-        $cardToDelete.closest('.column').remove();
+        card.closest('.column').remove();
     }, 300);
 
-    const uid = $cardToDelete.dataset.uid;
-    const category = $cardToDelete.dataset.category;
+    const uid = card.dataset.uid;
+    const category = card.dataset.category;
 
     axios.put("/api/v1/items/" + uid)
-        .then(function (response) {
+        .then(() => {
             closeAllModals();
             sessionStorage.setItem(toastSuccess, bookmarkDeletedSuccess);
         })
-        .catch(function (error) {
+        .catch((error) => {
             console.log(error);
             sessionStorage.setItem(toastError, error);
         })
-        .finally(function (error) {
+        .finally(() => {
             window.location.href = "/dashboard/" + category;
         });
 }
@@ -266,6 +302,8 @@ function clearUrlError() {
 
 function showToast(message, type = 'success', duration = 3000) {
     const toastContainer = document.querySelector('.toast-container');
+    if (!toastContainer) return;
+
     const toast = document.createElement('div');
     toast.className = `toast ${type === 'error' ? 'is-danger' : ''}`;
     toast.innerHTML = `
@@ -298,7 +336,7 @@ function handleToastsOnLoad() {
     const success = sessionStorage.getItem(toastSuccess);
     if (success) {
         showToast(success);
-        sessionStorage.setItem(toastSuccess, "");
+        sessionStorage.removeItem(toastSuccess);
     }
 
     const error = sessionStorage.getItem(toastError);
@@ -333,9 +371,9 @@ function addBookmark(e) {
             })
             .catch(function (error) {
                 console.log(error);
-                sessionStorage.setItem(toastError, error);
+                sessionStorage.setItem(toastError, generalError);
             })
-            .finally(function (error) {
+            .finally(function () {
                 confirmAddBookmark.classList.remove('is-loading');
                 confirmAddBookmark.disabled = false;
             });
@@ -343,6 +381,8 @@ function addBookmark(e) {
 }
 
 function search(element) {
+    if (!element?.target?.value) return;
+
     const searchTerm = element.target.value.toLowerCase();
     const cards = $$('.card');
 
@@ -375,8 +415,9 @@ function handleKeyNavigation(event) {
 
 on(document, 'keydown', handleKeyNavigation);
 on(window, 'load', handleToastsOnLoad);
-on('#add-button', 'click', handleAddClick);
+on('#add-category-button', 'click', handleAddClick);
 on('#add-category-submit', 'click', handleAddCategory);
+on('#rename-category-submit', 'click', handleRenameCategory);
 on('#confirm-empty-trash', 'click', confirmEmptyTrash);
 on('#bookmark-url', 'input', clearUrlError);
 on('#add-bookmark', 'click', addBookmarkModal);
@@ -387,6 +428,7 @@ on('#logout-devices', 'click', handleLogoutDevicesClick);
 on('#delete-account', 'click', handleDeleteAccountClick);
 on('#confirm-category-delete', 'click', handleConfirmCategoryDelete);
 onAll('.category-trash', 'click', handleCategoryTrashClick);
+onAll('.category-rename', 'click', handleCategoryRenameClick);
 onAll('.card-trash', 'click', handleCardTrashClick);
 onAll('.modal-background, .modal-card-head .delete, .modal-card-foot .button:not(.is-danger)', 'click', closeAllModals);
 onAll('.empty-trash', 'click', emptyTrash);
@@ -402,13 +444,13 @@ forAll('.menu-list a[data-category]', (target) => {
 
 async function poll() {
     try {
-        let count = $$('.card');
+        const count = $$('.card').length;
         const match = window.location.pathname.match(/\/dashboard\/(.+)/);
         const uid = match ? match[1] : null;
 
         axios.post('/api/v1/categories/poll',
             {
-                count: count.length.toString(),
+                count: count.toString(),
                 category: uid
             },
             {

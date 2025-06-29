@@ -97,6 +97,7 @@
      data-error='${i18n("toast.error")}'
      data-bookmark-moved-success='${i18n("js.bookmark.moved")}'
      data-category-deleted-success='${i18n("js.category.deleted")}'
+     data-category-renamed-success='${i18n("js.category.renamed")}'
      data-trash-emptied-success='${i18n("js.trash.emptied")}'
      data-bookmark-deleted-success='${i18n("js.bookmark.deleted")}'
      data-category-created-success='${i18n("js.category.created")}'

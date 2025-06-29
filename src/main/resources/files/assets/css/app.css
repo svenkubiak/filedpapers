@@ -80,6 +80,10 @@
     opacity: 0.5;
 }
 
+.category-rename {
+    opacity: 0.5;
+}
+
 .empty-trash {
     opacity: 0.5;
 }
@@ -115,8 +119,18 @@
     opacity: 1;
 }
 
+.card:hover .category-rename {
+    opacity: 1;
+}
+
 .category-trash:hover {
     color: #ff3860;
+    opacity: 1;
+    cursor: pointer !important;
+}
+
+.category-rename:hover {
+    color: #024efa;
     opacity: 1;
     cursor: pointer !important;
 }
