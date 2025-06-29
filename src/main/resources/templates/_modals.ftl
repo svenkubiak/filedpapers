@@ -50,24 +50,6 @@
         </form>
     </div>
 </div>
-<div class="modal" id="delete-confirm-modal">
-    <div class="modal-background"></div>
-    <div class="modal-card">
-        <header class="modal-card-head">
-            <p class="modal-card-title">${i18n("layout.modal.delete.bookmark.title")}</p>
-            <button class="delete" aria-label="close"></button>
-        </header>
-        <section class="modal-card-body">
-            <p>${i18n("layout.modal.delete.bookmark.body")}</p>
-        </section>
-        <footer class="modal-card-foot">
-            <div class="is-flex is-justify-content-space-between" style="width: 100%">
-                <button class="button">${i18n("layout.modal.delete.bookmark.cancel")}</button>
-                <button class="button is-danger" id="confirm-delete">${i18n("layout.modal.delete.bookmark.delete")}</button>
-            </div>
-        </footer>
-    </div>
-</div>
 <div class="modal" id="delete-category-confirm-modal">
     <div class="modal-background"></div>
     <div class="modal-card">

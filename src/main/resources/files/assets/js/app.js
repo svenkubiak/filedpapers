@@ -1,7 +1,28 @@
+const $id = (select) => document.getElementById(select);
+const $ = (select) => document.querySelector(select);
+const $$ = (select) => document.querySelectorAll(select);
+
+// Add event listener to one element (if it exists)
+const on = (target, event, handler) => {
+    const el = typeof target === 'string' ? document.querySelector(target) : target;
+    if (el) el.addEventListener(event, handler);
+};
+
+// Add event listener to all matching elements (if any)
+const onAll = (sel, event, handler) => {
+    const els = $$(sel);
+    if (els.length) els.forEach(el => el.addEventListener(event, handler));
+};
+
+const forAll = (sel, fn) => {
+    const els = $$(sel);
+    if (els.length) els.forEach(fn);
+};
+
 let $cardToDelete = null;
 const toastSuccess = 'toast-success';
 const toastError = 'toast-error';
-const error = document.getElementById('i18n-js').dataset.error;
+const error = $id('i18n-js').dataset.error;
 const bookmarkMovedSuccess = document.getElementById('i18n-js').dataset.bookmarkMovedSuccess;
 const categoryDeletedSuccess = document.getElementById('i18n-js').dataset.categoryDeletedSuccess;
 const trashEmptiedSuccess = document.getElementById('i18n-js').dataset.trashEmptiedSuccess;
@@ -9,283 +30,240 @@ const bookmarkDeletedSuccess = document.getElementById('i18n-js').dataset.bookma
 const categoryCreatedSuccess = document.getElementById('i18n-js').dataset.categoryCreatedSuccess;
 const bookmarkCreatedSuccess = document.getElementById('i18n-js').dataset.bookmarkCreatedSuccess;
 const logoutDevicesSuccess = document.getElementById('i18n-js').dataset.logoutDevicesSuccess;
-const searchInput = document.getElementById('searchInput');
-const $addButton = document.getElementById('add-category-button');
-const $addBookmark = document.getElementById('add-bookmark-modal');
-const $modal = document.getElementById('add-category-modal');
-const $deleteModal = document.getElementById('delete-confirm-modal');
-const $deleteAccountModal = document.getElementById('delete-account-modal');
-const $logoutDevicesModal = document.getElementById('logout-devices-confirm-modal');
-const $deleteCategoryModal = document.getElementById('delete-category-confirm-modal');
-const $emptyTrashModal = document.getElementById('empty-trash-confirm-modal');
-const $closeButtons = document.querySelectorAll('.modal-background, .modal-card-head .delete, .modal-card-foot .button:not(.is-danger)');
-const draggableItems = document.querySelectorAll('.dragging[draggable="true"]');
-const categoryTargets = document.querySelectorAll('.menu-list a[data-category]');
-const $addBookmarkSubmit = document.getElementById('add-category-submit');
-const $confirmAddBookmark = document.getElementById('confirm-add-bookmark');
-const deleteAccount = document.getElementById('delete-account');
-const logoutDevices = document.getElementById('logout-devices');
-const $bookmarkUrl = document.getElementById('bookmark-url');
-const fabButton = document.getElementById('fab-add-bookmark');
-const applicationJson = "application/json";
 
-function openModal($el) {
-    $el.classList.add('is-active');
+function openModal(element) {
+    element.classList.add('is-active');
 
-    if ($el.id === 'add-category-modal') {
+    if (element.id === 'add-category-modal') {
         setTimeout(() => {
-            document.getElementById('category').focus();
+            $id('category').focus();
         }, 100);
     }
 }
 
-function closeModal($el) {
-    $el.classList.remove('is-active');
+function closeModal(element) {
+    element.classList.remove('is-active');
 }
 
 function closeAllModals() {
-    document.querySelectorAll('.modal').forEach(($modal) => {
-        closeModal($modal);
-    });
+    forAll('.modal', closeModal);
 }
 
 function showLoading(element) {
-    console.log("element: " + element);
-    const button = document.getElementById(element);
+    const button = $id(element);
     if (button) {
         button.classList.add('is-loading');
         button.disabled = true;
     }
 }
 
-$addButton.addEventListener('click', () => {
-    openModal($modal);
-});
+function handleAddClick() {
+    openModal($id('add-category-modal'));
+}
 
-draggableItems.forEach(item => {
-    item.addEventListener('dragstart', (e) => {
-        const dragIcon = document.createElement('div');
-        dragIcon.className = 'drag-icon';
-        dragIcon.innerHTML = '<i class="fas fa-bookmark fa-2x"></i>';
-        dragIcon.style.position = 'absolute';
-        dragIcon.style.top = '-1000px';
-        dragIcon.style.color = '#3273dc';
-        document.body.appendChild(dragIcon);
+function handleDragStart(e) {
+    const item = e.currentTarget;
+    const dragIcon = document.createElement('div');
+    dragIcon.className = 'drag-icon';
+    dragIcon.innerHTML = '<i class="fas fa-bookmark fa-2x"></i>';
+    dragIcon.style.position = 'absolute';
+    dragIcon.style.top = '-1000px';
+    dragIcon.style.color = '#3273dc';
 
-        e.dataTransfer.setDragImage(dragIcon, 25, 25);
+    document.body.appendChild(dragIcon);
+    e.dataTransfer.setDragImage(dragIcon, 25, 25);
 
-        item.closest('.card').classList.add('dragging');
-        e.dataTransfer.setData('text/plain', item.dataset.uid);
+    item.closest('.card')?.classList.add('dragging');
+    e.dataTransfer.setData('text/plain', item.dataset.uid);
 
-        setTimeout(() => {
-            document.body.removeChild(dragIcon);
-        }, 0);
-    });
+    setTimeout(() => {
+        document.body.removeChild(dragIcon);
+    }, 0);
+}
 
-    item.addEventListener('dragend', () => {
-        item.closest('.card').classList.remove('dragging');
-    });
-});
+function handleDragEnd(e) {
+    const item = e.currentTarget;
+    item.closest('.card')?.classList.remove('dragging');
+}
 
-categoryTargets.forEach(target => {
-    target.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        target.classList.add('drag-over');
-    });
 
-    target.addEventListener('dragleave', () => {
-        target.classList.remove('drag-over');
-    });
+function handleDragOver(e) {
+    e.preventDefault();
+    e.currentTarget.classList.add('drag-over');
+}
 
-    target.addEventListener('drop', async (e) => {
-        e.preventDefault();
-        target.classList.remove('drag-over');
+function handleDragLeave(e) {
+    e.currentTarget.classList.remove('drag-over');
+}
 
-        const uid = e.dataTransfer.getData('text/plain');
-        const categoryUid = target.dataset.uid;
+function handleDrop(e) {
+    e.preventDefault();
+    const target = e.currentTarget;
+    target.classList.remove('drag-over');
 
-        const response = await fetch("/api/v1/items", {
-            method: "PUT",
-            body: JSON.stringify({
-                uid: uid,
-                category: categoryUid
-            }),
-            headers: {
-                "Content-type" : applicationJson
-            }
-        });
+    const uid = e.dataTransfer.getData('text/plain');
+    const categoryUid = target.dataset.uid;
 
-        if (response.ok) {
+    axios.put("/api/v1/items",{
+        uid: uid,
+        category: categoryUid
+    } )
+        .then(function (response) {
             sessionStorage.setItem(toastSuccess, bookmarkMovedSuccess);
-        } else {
+        })
+        .catch(function (error) {
+            console.log(error);
             sessionStorage.setItem(toastError, error);
-        }
-        window.location.href = "/dashboard";
-    });
-});
-
-document.querySelectorAll('.card-trash').forEach(trashIcon => {
-    trashIcon.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        $cardToDelete = e.currentTarget.closest('.card');
-        openModal($deleteModal);
-    });
-});
-
-if (deleteAccount) {
-    deleteAccount.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        openModal($deleteAccountModal);
-    });
+        })
+        .finally(function (error) {
+            window.location.href = "/dashboard";
+        });
 }
 
-if (logoutDevices) {
-    logoutDevices.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        openModal($logoutDevicesModal);
-    });
+function handleCardTrashClick(e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    $cardToDelete = e.currentTarget.closest('.card');
+    deleteItem(e);
 }
 
-document.querySelectorAll('.category-trash').forEach(trashIcon => {
-    trashIcon.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        $categoryToDelete = e.currentTarget;
-        openModal($deleteCategoryModal);
-    });
-});
+function handleDeleteAccountClick(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    openModal($id('delete-account-modal'));
+}
 
-document.querySelectorAll('.empty-trash').forEach(trashIcon => {
-    trashIcon.addEventListener('click', (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        openModal($emptyTrashModal);
-    });
-});
+function handleLogoutDevicesClick(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    openModal($id('logout-devices-confirm-modal'));
+}
 
-document.getElementById('confirm-category-delete').addEventListener('click', async () => {
+function handleCategoryTrashClick(e) {
+    e.preventDefault();
+    e.stopPropagation();
+
+    $categoryToDelete = e.currentTarget;
+    openModal($id('delete-category-confirm-modal'));
+}
+
+function handleConfirmCategoryDelete() {
     if ($categoryToDelete) {
         const uid = $categoryToDelete.dataset.uid;
-        const response = await fetch("/api/v1/categories/" + uid, {
-            method: "DELETE",
-            headers: {
-                "Content-type" : applicationJson
-            }
-        });
 
-        if (response.ok) {
-            sessionStorage.setItem(toastSuccess, categoryDeletedSuccess);
-            closeAllModals();
-        } else {
-            sessionStorage.setItem(toastError, error);
-        }
-
-        window.location.href = "/dashboard";
-    }
-    closeModal($deleteCategoryModal);
-});
-
-document.getElementById('confirm-logout-devices').addEventListener('click', async () => {
-    const response = await fetch("/dashboard/profile/logout-devices", {
-        method: "POST",
-    });
-
-    if (response.ok) {
-        sessionStorage.setItem(toastSuccess, logoutDevicesSuccess);
-        closeAllModals();
-    } else {
-        sessionStorage.setItem(toastError, error);
-    }
-
-    window.location.href = "/dashboard/profile";
-});
-
-document.getElementById('confirm-empty-trash').addEventListener('click', async () => {
-    const response = await fetch("/api/v1/items/trash", {
-        method: "DELETE",
-        headers: {
-            "Content-type" : applicationJson
-        }
-    });
-
-    if (response.ok) {
-        closeAllModals();
-        sessionStorage.setItem(toastSuccess, trashEmptiedSuccess);
-    } else {
-        sessionStorage.setItem(toastError, error);
-    }
-
-    window.location.href = "/dashboard";
-});
-
-document.getElementById('confirm-delete').addEventListener('click', async () => {
-    if ($cardToDelete) {
-        $cardToDelete.style.transition = 'all 0.3s ease';
-        $cardToDelete.style.opacity = '0';
-        setTimeout(() => {
-            $cardToDelete.closest('.column').remove();
-        }, 300);
-
-        const uid = $cardToDelete.dataset.uid;
-        const category = $cardToDelete.dataset.category;
-        const response = await fetch("/api/v1/items/" + uid, {
-            method: "PUT",
-            headers: {
-                "Content-type" : applicationJson
-            }
-        });
-
-        if (response.ok) {
-            closeAllModals();
-            sessionStorage.setItem(toastSuccess, bookmarkDeletedSuccess);
-        } else {
-            sessionStorage.setItem(toastError, error);
-        }
-
-        window.location.href = "/dashboard/" + category;
-    }
-});
-
-if ($addBookmarkSubmit) {
-    $addBookmarkSubmit.addEventListener('click', async (e) => {
-        e.preventDefault();
-
-        const category = document.getElementById('category').value;
-        if (category) {
-            const response = await fetch("/api/v1/categories", {
-                method: "POST",
-                body: JSON.stringify({
-                    name: category
-                }),
-                headers: {
-                    "Content-type" : applicationJson
-                }
-            });
-
-            if (response.ok) {
-                sessionStorage.setItem(toastSuccess, categoryCreatedSuccess);
-                document.getElementById('category').value = '';
+        axios.delete("/api/v1/categories/" + uid)
+            .then(function (response) {
+                closeAllModals();
+                sessionStorage.setItem(toastSuccess, trashEmptiedSuccess);
+            })
+            .catch(function (error) {
+                console.log(error);
+                sessionStorage.setItem(toastError, error);
+            })
+            .finally(function (error) {
                 closeAllModals();
                 window.location.href = "/dashboard";
-            } else {
+            });
+    }
+}
+
+function handleLogoutDevices() {
+    axios.post("/dashboard/profile/logout-devices")
+        .then(function (response) {
+            closeAllModals();
+            sessionStorage.setItem(toastSuccess, trashEmptiedSuccess);
+        })
+        .catch(function (error) {
+            console.log(error);
+            sessionStorage.setItem(toastError, error);
+        })
+        .finally(function (error) {
+            window.location.href = "/dashboard/profile";
+        });
+}
+
+function handleAddCategory(e) {
+    e.preventDefault();
+
+    const categoryInput = $id('category');
+    const category = categoryInput?.value;
+
+    if (category) {
+        axios.post("/api/v1/categories", {
+            name: category
+        })
+            .then(function (response) {
+                sessionStorage.setItem(toastSuccess, categoryCreatedSuccess);
+                categoryInput.value = '';
+                closeAllModals();
+            })
+            .catch(function (error) {
+                console.log(error);
                 sessionStorage.setItem(toastError, error);
-            }
-        } else {
-            document.getElementById('category').classList.add('is-danger');
-        }
-    });
+            })
+            .finally(function (error) {
+                window.location.href = "/dashboard";
+            });
+    } else {
+        categoryInput?.classList.add('is-danger');
+    }
 }
 
-if ($bookmarkUrl) {
-    $bookmarkUrl.addEventListener('input', () => {
-        $bookmarkUrl.classList.remove('is-danger');
-    });
+function confirmEmptyTrash() {
+    axios.delete("/api/v1/items/trash")
+        .then(function (response) {
+            closeAllModals();
+            sessionStorage.setItem(toastSuccess, trashEmptiedSuccess);
+        })
+        .catch(function (error) {
+            console.log(error);
+            sessionStorage.setItem(toastError, error);
+        })
+        .finally(function (error) {
+            window.location.href = "/dashboard";
+        });
 }
 
-// Toast functionality
+function deleteItem(element) {
+    element.preventDefault();
+    element.stopPropagation();
+
+    $cardToDelete = element.currentTarget.closest('.card');
+    $cardToDelete.style.transition = 'all 0.3s ease';
+    $cardToDelete.style.opacity = '0';
+
+    setTimeout(() => {
+        $cardToDelete.closest('.column').remove();
+    }, 300);
+
+    const uid = $cardToDelete.dataset.uid;
+    const category = $cardToDelete.dataset.category;
+
+    axios.put("/api/v1/items/" + uid)
+        .then(function (response) {
+            closeAllModals();
+            sessionStorage.setItem(toastSuccess, bookmarkDeletedSuccess);
+        })
+        .catch(function (error) {
+            console.log(error);
+            sessionStorage.setItem(toastError, error);
+        })
+        .finally(function (error) {
+            window.location.href = "/dashboard/" + category;
+        });
+}
+
+function emptyTrash(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    openModal($id('empty-trash-confirm-modal'));
+}
+
+function clearUrlError() {
+    $id('bookmark-url')?.classList.remove('is-danger');
+}
+
 function showToast(message, type = 'success', duration = 3000) {
     const toastContainer = document.querySelector('.toast-container');
     const toast = document.createElement('div');
@@ -298,7 +276,6 @@ function showToast(message, type = 'success', duration = 3000) {
     `;
 
     toastContainer.appendChild(toast);
-
     toast.offsetHeight;
 
     requestAnimationFrame(() => {
@@ -313,7 +290,11 @@ function showToast(message, type = 'success', duration = 3000) {
     }, duration);
 }
 
-window.addEventListener('load', () => {
+function addBookmarkModal() {
+    openModal($id('add-bookmark-modal'));
+}
+
+function handleToastsOnLoad() {
     const success = sessionStorage.getItem(toastSuccess);
     if (success) {
         showToast(success);
@@ -325,118 +306,130 @@ window.addEventListener('load', () => {
         showToast(error, "error");
         sessionStorage.setItem(toastError, "");
     }
-});
-
-
-if (fabButton) {
-    fabButton.addEventListener('click', () => {
-        openModal($addBookmark);
-    });
 }
 
-if ($confirmAddBookmark) {
-    $confirmAddBookmark.addEventListener('click', async (e) => {
-        e.preventDefault();
-        e.stopPropagation();
+function addBookmark(e) {
+    e.preventDefault();
+    e.stopPropagation();
 
-        const url = document.getElementById('bookmark-url').value;
-        const category = document.getElementById('bookmark-category').value;
+    const url = $id('bookmark-url').value;
+    const category = $id('bookmark-category').value;
+    const confirmAddBookmark = $id('confirm-add-bookmark');
 
-        if (url && category) {
-            $confirmAddBookmark.classList.add('is-loading');
-            $confirmAddBookmark.disabled = true;
+    if (url && category) {
+        confirmAddBookmark.classList.add('is-loading');
+        confirmAddBookmark.disabled = true;
 
-            try {
-                const response = await fetch('/api/v1/items', {
-                    method: 'POST',
-                    headers: {
-                        "Content-type": "application/json" // fix here
-                    },
-                    body: JSON.stringify({
-                        url: url,
-                        category: category
-                    })
-                });
+        axios.post('/api/v1/items',
+            {
+                url: url,
+                category: category
+            })
+            .then(function (response) {
+                sessionStorage.setItem(toastSuccess, bookmarkCreatedSuccess);
 
-                if (response.ok) {
-                    sessionStorage.setItem(toastSuccess, bookmarkCreatedSuccess);
-
-                    closeAllModals();
-                    window.location.href = "/dashboard/" + category;
-                } else {
-                    sessionStorage.setItem(toastError, error);
-                }
-            } catch (err) {
+                closeAllModals();
+                window.location.href = "/dashboard/" + category;
+            })
+            .catch(function (error) {
+                console.log(error);
                 sessionStorage.setItem(toastError, error);
-            } finally {
-                $confirmAddBookmark.classList.remove('is-loading');
-                $confirmAddBookmark.disabled = false;
-            }
+            })
+            .finally(function (error) {
+                confirmAddBookmark.classList.remove('is-loading');
+                confirmAddBookmark.disabled = false;
+            });
+    }
+}
+
+function search(element) {
+    const searchTerm = element.target.value.toLowerCase();
+    const cards = $$('.card');
+
+    cards.forEach(card => {
+        const title = card.querySelector('.card-title')?.textContent.toLowerCase() || '';
+        const column = card.closest('.column');
+
+        if (column) {
+            column.style.display = title.includes(searchTerm) ? '' : 'none';
         }
     });
 }
 
-if (searchInput) {
-    searchInput.addEventListener('input', function(e) {
-        const searchTerm = e.target.value.toLowerCase();
-        const cards = document.querySelectorAll('.card');
-
-        cards.forEach(card => {
-            const title = card.querySelector('.card-title').textContent.toLowerCase();
-            if (title.includes(searchTerm)) {
-                card.closest('.column').style.display = '';
-            } else {
-                card.closest('.column').style.display = 'none';
-            }
-        });
-    });
-}
-
-document.addEventListener("keydown", function(event) {
+function handleKeyNavigation(event) {
     if (event.key === "Enter") {
-        const openModal = document.querySelector(".modal.is-active");
+        const openModal = $('.modal.is-active');
         if (!openModal) return;
 
-        const confirmButton = openModal.querySelector("[data-confirm]");
+        const confirmButton = openModal.querySelector('[data-confirm]');
         if (confirmButton) {
             event.preventDefault();
             confirmButton.click();
         }
     }
 
-    if (event.code === 'Escape') {
+    if (event.code === "Escape") {
         closeAllModals();
     }
+}
+
+on(document, 'keydown', handleKeyNavigation);
+on(window, 'load', handleToastsOnLoad);
+on('#add-button', 'click', handleAddClick);
+on('#add-category-submit', 'click', handleAddCategory);
+on('#confirm-empty-trash', 'click', confirmEmptyTrash);
+on('#bookmark-url', 'input', clearUrlError);
+on('#add-bookmark', 'click', addBookmarkModal);
+on('#search-input', 'input', search);
+on('#confirm-add-bookmark', 'click', addBookmark);
+on('#confirm-logout-devices', 'click', handleLogoutDevices);
+on('#logout-devices', 'click', handleLogoutDevicesClick);
+on('#delete-account', 'click', handleDeleteAccountClick);
+on('#confirm-category-delete', 'click', handleConfirmCategoryDelete);
+onAll('.category-trash', 'click', handleCategoryTrashClick);
+onAll('.card-trash', 'click', handleCardTrashClick);
+onAll('.modal-background, .modal-card-head .delete, .modal-card-foot .button:not(.is-danger)', 'click', closeAllModals);
+onAll('.empty-trash', 'click', emptyTrash);
+forAll('.dragging[draggable="true"]', (item) => {
+    item.addEventListener('dragstart', handleDragStart);
+    item.addEventListener('dragend', handleDragEnd);
+});
+forAll('.menu-list a[data-category]', (target) => {
+    target.addEventListener('dragover', handleDragOver);
+    target.addEventListener('dragleave', handleDragLeave);
+    target.addEventListener('drop', handleDrop);
 });
 
 async function poll() {
     try {
-        let count = document.querySelectorAll('.card');
-
-        const path = window.location.pathname;
-        const match = path.match(/\/dashboard\/(.+)/);
+        let count = $$('.card');
+        const match = window.location.pathname.match(/\/dashboard\/(.+)/);
         const uid = match ? match[1] : null;
 
-        const response = await fetch("/api/v1/categories/poll", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
+        axios.post('/api/v1/categories/poll',
+            {
+                count: count.length.toString(),
+                category: uid
             },
-            body: JSON.stringify({ "count": count.length.toString(), "category" : uid })
-        });
-
-        if (response.ok) {
-            location.reload();
-        }
+            {
+                validateStatus: function (status) {
+                    return status === 200 || status === 304;
+                }
+            }
+        )
+            .then(function (response) {
+                if (response.status === 200) {
+                    location.reload();
+                }
+            })
+            .catch(function (error) {
+                console.log(error);
+            });
 
         setTimeout(poll, 3000);
-    } catch (error) {}
+    } catch (error) {
+        console.log(error);
+    }
 }
-
-$closeButtons.forEach(($close) => {
-    $close.addEventListener('click', () => {
-        closeAllModals();
-    });
-});
 
 poll();

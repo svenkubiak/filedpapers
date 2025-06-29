@@ -18,7 +18,7 @@
     <div class="level-right" style="flex: 1;">
         <div class="field" style="width: 100%;">
             <div class="control has-icons-left">
-                <input class="input is-fullwidth" type="text" id="searchInput" placeholder="${i18n("dashboard.search")}">
+                <input class="input is-fullwidth" type="text" id="search-input" placeholder="${i18n("dashboard.search")}">
                 <span class="icon is-small is-left">
                 <i class="fas fa-search"></i>
             </span>

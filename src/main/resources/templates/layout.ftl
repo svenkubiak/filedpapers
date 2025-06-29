@@ -45,7 +45,7 @@
                         <#elseif slug == "trash">
                             ${i18n("layout.trash.name")}
                         <#else>
-                            ${category.name}
+                            ${category.name?truncate(14, '...')}
                         </#if>
                         <span class="tag is-rounded is-pulled-right">${category.count}</span>
                     </a>
@@ -83,7 +83,7 @@
     </div>
 </aside>
 <div class="main-content">
-    <button class="button is-primary is-rounded fab-button" id="fab-add-bookmark">
+    <button class="button is-primary is-rounded fab-button" id="add-bookmark">
         <span class="icon">
             <i class="fas fa-plus"></i>
         </span>
@@ -103,6 +103,7 @@
      data-bookmark-created-success='${i18n("js.bookmark.created")}'
      data-logout-devices-success='${i18n("js.logout.devices.success")}'>
 </div>
+<script src="/assets/js/axios.min.js"></script>
 <script src="/assets/js/app.min.js"></script>
 <#if flash.toastsuccess??>
 <script>showToast("${flash.toastsuccess}");</script>

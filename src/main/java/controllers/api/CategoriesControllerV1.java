@@ -9,6 +9,7 @@ import io.mangoo.routing.bindings.Request;
 import jakarta.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
 import services.DataService;
+import utils.Utils;
 
 import java.util.Map;
 import java.util.Objects;
@@ -42,6 +43,9 @@ public class CategoriesControllerV1 {
             long items = 0;
 
             String categoryUid = data.get("category");
+            if (StringUtils.isBlank(categoryUid) || !Utils.isValidRandom(categoryUid)) {
+                categoryUid = dataService.findInbox(userUid).getUid();
+            }
             if (dataService.findCategory(categoryUid, userUid) != null) {
                 try {
                     items = dataService.countItems(userUid, categoryUid);
