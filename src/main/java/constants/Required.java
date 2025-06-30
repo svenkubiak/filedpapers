@@ -41,6 +41,5 @@ public final class Required {
     public static final String OBJECT_ID = "objectId can not be null";
     public static final String ROLE = "role can not be null";
 
-
     private Required() {}
 }

@@ -1,5 +1,6 @@
 package models;
 
+import constants.Collections;
 import constants.Const;
 import constants.Required;
 import io.mangoo.annotations.Collection;
@@ -10,7 +11,7 @@ import utils.Utils;
 import java.io.Serializable;
 import java.util.Objects;
 
-@Collection(name = "users")
+@Collection(name = Collections.USERS)
 public class User extends Entity implements Serializable  {
     @Indexed(unique = true)
     private String uid;

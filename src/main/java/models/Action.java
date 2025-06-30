@@ -1,5 +1,6 @@
 package models;
 
+import constants.Collections;
 import io.mangoo.annotations.Collection;
 import io.mangoo.annotations.Indexed;
 import io.mangoo.persistence.Entity;
@@ -9,7 +10,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
-@Collection(name = "actions")
+@Collection(name = Collections.ACTIONS)
 public class Action extends Entity implements Serializable {
 
     @Indexed(unique = true)

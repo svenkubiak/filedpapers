@@ -1,17 +1,17 @@
 package models;
 
+import constants.Collections;
 import constants.Required;
 import io.mangoo.annotations.Collection;
 import io.mangoo.annotations.Indexed;
 import io.mangoo.persistence.Entity;
 import models.enums.Role;
-import models.enums.Type;
 import utils.Utils;
 
 import java.io.Serializable;
 import java.util.Objects;
 
-@Collection(name = "categories")
+@Collection(name = Collections.CATEGORIES)
 public class Category extends Entity implements Serializable {
     @Indexed(unique = true)
     private String uid;

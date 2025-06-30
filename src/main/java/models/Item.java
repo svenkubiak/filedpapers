@@ -1,5 +1,6 @@
 package models;
 
+import constants.Collections;
 import constants.Required;
 import io.mangoo.annotations.Collection;
 import io.mangoo.annotations.Indexed;
@@ -10,7 +11,7 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.Objects;
 
-@Collection(name = "items")
+@Collection(name = Collections.ITEMS)
 public class Item extends Entity implements Serializable {
     @Indexed
     private String uid;

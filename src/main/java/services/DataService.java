@@ -5,7 +5,7 @@ import com.mongodb.client.MongoCursor;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Sorts;
 import com.mongodb.client.result.DeleteResult;
-import constants.Collection;
+import constants.Collections;
 import constants.Const;
 import constants.Invalid;
 import constants.Required;
@@ -527,39 +527,39 @@ public class DataService {
     @SuppressWarnings("unchecked")
     public void cleanup() {
         //Remove outdated Item attributes
-        datastore.query(Collection.ITEMS).updateMany(
+        datastore.query(Collections.ITEMS).updateMany(
                 exists("imageBase64"),
                 unset("imageBase64"));
 
         //Remove outdated Category attributes
-        datastore.query(Collection.ITEMS).updateMany(
+        datastore.query(Collections.ITEMS).updateMany(
                 exists("count"),
                 unset("count"));
 
         //Add new role type to INBOX
-        datastore.query(Collection.CATEGORIES).updateOne(
+        datastore.query(Collections.CATEGORIES).updateOne(
                 and(eq("name", "Inbox"), exists("role", false)),
                 set("role", "INBOX"));
 
         //Add new role type to TRASH
-        datastore.query(Collection.CATEGORIES).updateOne(
+        datastore.query(Collections.CATEGORIES).updateOne(
                 and(eq("name", "Trash"), exists("role", false)),
                 set("role", "TRASH"));
 
         //Add new role type to CUSTOM categories
-        datastore.query(Collection.CATEGORIES).updateMany(
+        datastore.query(Collections.CATEGORIES).updateMany(
                 and(ne("name", "Inbox"), ne("name", "Trash"), exists("role", false)),
                 set("role", "CUSTOM")
         );
 
         //Updated items which have null value mediaUids
         List<Item> items = new ArrayList<>();
-        datastore.query(Item.class)
+        datastore.query(Collections.ITEMS)
                 .find(or(eq(Const.MEDIA_UID, null), eq(Const.MEDIA_UID, Strings.EMPTY)))
                 .into(items);
 
         for (Item item : items) {
-            datastore.query(Collection.ITEMS).updateOne(
+            datastore.query(Collections.ITEMS).updateOne(
                     eq("_id", item.getId()),
                     set(Const.MEDIA_UID, Utils.randomString())
             );
