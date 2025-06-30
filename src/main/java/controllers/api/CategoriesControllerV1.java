@@ -9,6 +9,7 @@ import io.mangoo.routing.bindings.Request;
 import jakarta.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
 import services.DataService;
+import utils.ResultHandler;
 import utils.Utils;
 
 import java.util.Map;
@@ -16,6 +17,7 @@ import java.util.Objects;
 
 @FilterWith(TokenFilter.class)
 public class CategoriesControllerV1 {
+    public static final String MISSING_DATA = "Missing data";
     private final DataService dataService;
 
     @Inject
@@ -29,9 +31,9 @@ public class CategoriesControllerV1 {
         try {
             return dataService.findCategories(userUid)
                     .map(categories -> Response.ok().bodyJson(Map.of("categories", categories)))
-                    .orElse(Response.internalServerError().bodyJson(Const.API_ERROR));
+                    .orElse(Response.internalServerError().bodyJson(Const.GENERAL_ERROR));
         } catch (IllegalArgumentException e) {
-            return Response.badRequest().bodyJsonError("Invalid user");
+            return Response.badRequest().bodyJsonError(e.getMessage());
         }
     }
 
@@ -40,7 +42,7 @@ public class CategoriesControllerV1 {
 
         if (!data.isEmpty() && StringUtils.isNotBlank(data.get(Const.COUNT))) {
             var count = Long.parseLong(data.get(Const.COUNT));
-            long items = 0;
+            long items;
 
             String categoryUid = data.get("category");
             if (StringUtils.isBlank(categoryUid) || !Utils.isValidRandom(categoryUid)) {
@@ -50,13 +52,13 @@ public class CategoriesControllerV1 {
                 try {
                     items = dataService.countItems(userUid, categoryUid);
                 } catch (IllegalArgumentException e) {
-                    return Response.badRequest().bodyJsonError("Invalid user");
+                    return Response.badRequest().bodyJsonError(e.getMessage());
                 }
 
                 if (items >= 0 && items != count) {
                     return Response.ok();
                 } else if (items < 0) {
-                    return Response.internalServerError().bodyJson(Const.API_ERROR);
+                    return Response.internalServerError().bodyJson(Const.GENERAL_ERROR);
                 }
             } else {
                 return Response.badRequest().bodyJsonError("Invalid category");
@@ -69,44 +71,25 @@ public class CategoriesControllerV1 {
     public Response add(Request request, Map<String, String> data) {
         String userUid = request.getAttribute(Const.USER_UID);
 
-        if (!data.isEmpty() && StringUtils.isNotBlank(data.get("name"))) {
-            try {
-                return dataService.addCategory(userUid, data.get("name"))
-                        .map(success -> Response.ok())
-                        .orElse(Response.internalServerError().bodyJsonError(Const.API_ERROR));
-            } catch (IllegalArgumentException e) {
-                return Response.badRequest().bodyJsonError("Invalid user or category");
-            }
+        if (!data.isEmpty()) {
+            return ResultHandler.handle(() -> dataService.addCategory(userUid, data.get("name")));
         }
 
-        return Response.badRequest().bodyJsonError("Missing data");
+        return Response.badRequest().bodyJsonError(MISSING_DATA);
     }
 
     public Response edit(Request request, Map<String, String> data) {
         String userUid = request.getAttribute(Const.USER_UID);
 
-        if (!data.isEmpty() && StringUtils.isNotBlank(data.get("name")) && StringUtils.isNotBlank(data.get("uid"))) {
-            try {
-                return dataService.updateCategory(userUid, data.get("uid"), data.get("name"))
-                        .map(success -> Response.ok())
-                        .orElse(Response.internalServerError().bodyJsonError(Const.API_ERROR));
-            } catch (IllegalArgumentException e) {
-                return Response.badRequest().bodyJsonError("Invalid user or category");
-            }
+        if (!data.isEmpty()) {
+            return ResultHandler.handle(() -> dataService.updateCategory(userUid, data.get("uid"), data.get("name")));
         }
 
-        return Response.badRequest().bodyJsonError("Missing data");
+        return Response.badRequest().bodyJsonError(MISSING_DATA);
     }
 
     public Response delete(Request request, String uid) {
         String userUid = request.getAttribute(Const.USER_UID);
-
-        try {
-           return dataService.deleteCategory(userUid, uid)
-                    .map(success -> success ? Response.ok() : Response.internalServerError().bodyJsonError(Const.API_ERROR))
-                    .orElse(Response.badRequest().bodyJsonError("Invalid user or categories"));
-        } catch (IllegalArgumentException e) {
-            return Response.badRequest().bodyJsonError("Invalid user or categories");
-        }
+        return ResultHandler.handle(() -> dataService.deleteCategory(userUid, uid));
     }
 }

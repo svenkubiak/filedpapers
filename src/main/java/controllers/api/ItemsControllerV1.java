@@ -12,6 +12,7 @@ import jakarta.inject.Inject;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import services.DataService;
+import utils.ResultHandler;
 
 import java.util.Map;
 import java.util.Objects;
@@ -33,24 +34,12 @@ public class ItemsControllerV1 {
         String category = data.get("category");
 
         if (async) {
-            Thread.ofVirtual().start(() -> dataService.addItem(userUid, url, category).orElseGet(() -> {
-                LOG.error(FAILED_TO_ADD_ITEM_WITH_URL, url);
-                return Boolean.FALSE;
-            }));
+            Thread.ofVirtual().start(() -> {
+                ResultHandler.handle(() -> dataService.addItem(userUid, url, category));
+            });
             return Response.ok();
         } else {
-            try {
-                return dataService.addItem(userUid, url, category)
-                        .filter(success -> success)
-                        .map(success -> Response.ok())
-                        .orElseGet(() -> {
-                            LOG.error(FAILED_TO_ADD_ITEM_WITH_URL, url);
-                            return Response.internalServerError().bodyJson(Const.API_ERROR);
-                        });
-            } catch (IllegalArgumentException e) {
-                LOG.error(FAILED_TO_ADD_ITEM_WITH_URL, url);
-                return Response.badRequest().bodyJsonError("Invalid user, category or url");
-            }
+            return ResultHandler.handle(() -> dataService.addItem(userUid, url, category));
         }
     }
 
@@ -80,18 +69,12 @@ public class ItemsControllerV1 {
 
     public Response delete(Request request, String uid) {
         String userUid = request.getAttribute(Const.USER_UID);
-
-        return dataService.deleteItem(uid, userUid)
-                .map(success -> Response.ok())
-                .orElse(Response.badRequest().bodyJsonError("Invalid user or item"));
+        return ResultHandler.handle(() -> dataService.deleteItem(uid, userUid));
     }
 
     public Response trash(Request request) {
         String userUid = request.getAttribute(Const.USER_UID);
-
-        return dataService.emptyTrash(userUid)
-                .map(success -> Response.ok())
-                .orElse(Response.badRequest().bodyJsonError("Invalid user"));
+        return ResultHandler.handle(() -> dataService.emptyTrash(userUid));
     }
 
     public Response move(Request request, Map<String, String> data) {
@@ -99,8 +82,6 @@ public class ItemsControllerV1 {
         String categoryUid = data.get("category");
         String uid = data.get("uid");
 
-        return dataService.moveItem(uid, userUid, categoryUid)
-                .map(success -> success ? Response.ok() : Response.internalServerError().bodyJson(Const.API_ERROR))
-                .orElse(Response.badRequest().bodyJsonError("Invalid user or category"));
+        return ResultHandler.handle(() -> dataService.moveItem(uid, userUid, categoryUid));
     }
 }

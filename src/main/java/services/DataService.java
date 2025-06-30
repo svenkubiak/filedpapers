@@ -28,6 +28,7 @@ import org.apache.logging.log4j.util.Strings;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
+import utils.Result;
 import utils.Utils;
 import utils.preview.LinkPreview;
 import utils.preview.LinkPreviewFetcher;
@@ -47,6 +48,7 @@ import static constants.Const.PLACEHOLDER_IMAGE;
 @Singleton
 public class DataService {
     private static final Logger LOG = LogManager.getLogger(DataService.class);
+    public static final String FAILED_TO_FETCH_LINK_PREVIEW = "Failed to fetch link preview";
     private final Datastore datastore;
     private final MediaService mediaService;
     private final String applicationUrl;
@@ -154,7 +156,7 @@ public class DataService {
         return PLACEHOLDER_IMAGE;
     }
 
-    public Optional<Boolean> deleteItem(String itemUid, String userUid) {
+    public Result.Of deleteItem(String itemUid, String userUid) {
         Utils.checkCondition(Utils.isValidRandom(itemUid), Invalid.ITEM_UID);
         Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
 
@@ -165,11 +167,11 @@ public class DataService {
                     eq(Const.UID, itemUid)),
                         set(Const.CATEGORY_UID, trash.getUid()));
 
-        return updateResult.getModifiedCount() == 1 ? Optional.of(Boolean.TRUE) : Optional.empty();
+        return updateResult.getModifiedCount() == 1 ? Result.Success.empty() : Result.Failure.server("Failed to delete item");
     }
 
     @SuppressWarnings("unchecked")
-    public Optional<Boolean> emptyTrash(String userUid) {
+    public Result.Of emptyTrash(String userUid) {
         Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
 
         Category trash = findTrash(userUid);
@@ -196,7 +198,7 @@ public class DataService {
             mediaUidsToDelete.forEach(mediaUid -> mediaService.delete(mediaUid, userUid));
         }
 
-        return deleteResult.wasAcknowledged() ? Optional.of(Boolean.TRUE) : Optional.empty();
+        return deleteResult.wasAcknowledged() ? Result.Success.empty() : Result.Failure.server("Failed to empty trash");
     }
 
     private Category findTrash(String userUid) {
@@ -237,7 +239,7 @@ public class DataService {
                         eq(Const.USER_UID, userUid)));
     }
 
-    public Optional<Boolean> moveItem(String itemUid, String userUid, String categoryUid) {
+    public Result.Of moveItem(String itemUid, String userUid, String categoryUid) {
         Utils.checkCondition(Utils.isValidRandom(itemUid), Invalid.ITEM_UID);
         Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
         Utils.checkCondition(Utils.isValidRandom(categoryUid), Invalid.CATEGORY_UID);
@@ -253,27 +255,27 @@ public class DataService {
                             eq(Const.UID, itemUid)),
                     set(Const.CATEGORY_UID, categoryUid));
 
-            return Optional.of(updateResult.wasAcknowledged());
+            return updateResult.wasAcknowledged() ? Result.Success.empty() : Result.Failure.server("Failed to move item");
+        } else {
+            return Result.Failure.server("Can not move an item into the same category");
         }
-
-        return Optional.empty();
     }
 
-    public Optional<Boolean> addItem(String userUid, String url, String categoryUid) {
+    public Result.Of addItem(String userUid, String url, String categoryUid) {
         Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
         Utils.checkCondition(Utils.isValidURL(url), Invalid.URL);
         var user = findUserByUid(userUid);
 
         if (user == null) {
-            return Optional.empty();
+            return Result.Failure.user("user does not exist");
         }
 
         LinkPreview linkPreview;
         try {
             linkPreview = LinkPreviewFetcher.fetch(url, user.getLanguage());
         } catch (Exception e) {
-            LOG.error("Failed to fetch link preview", e);
-            return Optional.empty();
+            LOG.error(FAILED_TO_FETCH_LINK_PREVIEW, e);
+            return Result.Failure.server(FAILED_TO_FETCH_LINK_PREVIEW);
         }
 
         Category category = null;
@@ -306,15 +308,13 @@ public class DataService {
 
             String itemResult = save(item);
 
-            return Optional.of(StringUtils.isNoneBlank(categoryResult, itemResult));
+            return StringUtils.isNoneBlank(categoryResult, itemResult) ? Result.Success.empty() : Result.Failure.server("Failed to save bookmark");
         } else {
-            LOG.error("Failed to store item. Could not find any category.");
+            return Result.Failure.user("category does not exist");
         }
-
-        return Optional.empty();
     }
 
-    public Optional<Boolean> addCategory(String userUid, String name) {
+    public Result.Of addCategory(String userUid, String name) {
         Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
         Objects.requireNonNull(name, Required.CATEGORY_NAME);
 
@@ -323,10 +323,10 @@ public class DataService {
             result = save(new Category(name, userUid));
         }
 
-        return StringUtils.isNotBlank(result) ? Optional.of(Boolean.TRUE) : Optional.empty();
+        return StringUtils.isNotBlank(result) ? Result.Success.empty() : Result.Failure.server("Failed to add category");
     }
 
-    public Optional<Boolean> deleteCategory(String userUid, String categoryUid) {
+    public Result.Of deleteCategory(String userUid, String categoryUid) {
         Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
         Utils.checkCondition(Utils.isValidRandom(categoryUid), Invalid.CATEGORY_UID);
 
@@ -347,10 +347,10 @@ public class DataService {
                                     eq(Const.USER_UID, userUid),
                                     eq(Const.UID, categoryUid)));
 
-            return Optional.of(deleteResult.getDeletedCount() == 1);
+            return deleteResult.getDeletedCount() == 1 ? Result.Success.empty() : Result.Failure.server("Failed to delete category");
+        } else {
+            return Result.Failure.user("Can not delete Inbox or Trash");
         }
-
-        return Optional.empty();
     }
 
     public User findUser(String username) {
@@ -517,7 +517,7 @@ public class DataService {
                         }
                     } catch (Exception e) {
                         item.setImage(PLACEHOLDER_IMAGE);
-                        LOG.error("Failed to fetch link preview", e);
+                        LOG.error(FAILED_TO_FETCH_LINK_PREVIEW, e);
                     }
                     save(item);
         });
@@ -595,22 +595,23 @@ public class DataService {
         });
     }
 
-    public Optional<Boolean> updateCategory(String userUid, String categoryUid, String name) {
+    public Result.Of updateCategory(String userUid, String categoryUid, String name) {
         Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
         Utils.checkCondition(Utils.isValidRandom(categoryUid), Invalid.CATEGORY_UID);
         Objects.requireNonNull(name, Required.CATEGORY_NAME);
 
-        Object updatedCategory = null;
         if (findCategoryByName(name, userUid) == null) {
-            updatedCategory = datastore.query(Category.class).findOneAndUpdate(
+            Object updatedCategory = datastore.query(Category.class).findOneAndUpdate(
                     and(eq(Const.USER_UID, userUid), eq(Const.UID, categoryUid)),
                     set("name", name),
                     new FindOneAndUpdateOptions()
                             .returnDocument(ReturnDocument.AFTER)
                             .upsert(false)
             );
-        }
 
-        return updatedCategory == null ? Optional.of(false) : Optional.of(true);
+            return updatedCategory != null ? Result.Success.empty() : Result.Failure.server("Failed to rename category");
+        } else {
+            return Result.Failure.user("Category with same name already exists");
+        }
     }
 }
