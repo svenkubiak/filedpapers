@@ -316,11 +316,13 @@ public class DataService {
 
     public Result.Of addCategory(String userUid, String name) {
         Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
-        Objects.requireNonNull(name, Required.CATEGORY_NAME);
+        Utils.checkCondition(Utils.isValidName(name), Invalid.CATEGORY_NAME);
 
         String result = null;
         if (findCategoryByName(name, userUid) == null) {
             result = save(new Category(name, userUid, Role.CUSTOM));
+        } else {
+            return Result.Failure.user("Category with same name already exists");
         }
 
         return StringUtils.isNotBlank(result) ? Result.Success.empty() : Result.Failure.server("Failed to add category");
@@ -619,7 +621,7 @@ public class DataService {
         Utils.checkCondition(Utils.isValidRandom(name), Invalid.CATEGORY_NAME);
 
         Category category = findCategory(categoryUid, userUid);
-        if (category != null && !category.getRole().equals(Role.INBOX) && !category.getRole().equals(Role.TRASH) && !name.equals(category.getName())) {
+        if (category != null && !category.getRole().equals(Role.INBOX) && !category.getRole().equals(Role.TRASH)) {
             category.setName(name);
             return save(category) != null ? Result.Success.empty() : Result.Failure.server("Failed to rename category");
         } else {
