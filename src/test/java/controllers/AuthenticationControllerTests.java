@@ -12,6 +12,7 @@ import io.mangoo.utils.CodecUtils;
 import io.undertow.util.StatusCodes;
 import models.Category;
 import models.User;
+import models.enums.Role;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -30,8 +31,8 @@ public class AuthenticationControllerTests {
         User user = new User("foo@bar.com");
         user.setPassword(CodecUtils.hashArgon2("bar", user.getSalt()));
         datastore.save(user);
-        datastore.save(new Category(Const.INBOX, user.getUid()));
-        datastore.save(new Category(Const.TRASH, user.getUid()));
+        datastore.save(new Category(Const.INBOX, user.getUid(), Role.INBOX));
+        datastore.save(new Category(Const.TRASH, user.getUid(), Role.TRASH));
     }
 
     @Test

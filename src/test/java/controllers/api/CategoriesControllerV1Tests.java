@@ -11,6 +11,7 @@ import io.mangoo.utils.JsonUtils;
 import models.Category;
 import models.Item;
 import models.User;
+import models.enums.Role;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -38,10 +39,10 @@ public class CategoriesControllerV1Tests {
         User user = new User("foo@bar.com");
         user.setPassword(CodecUtils.hashArgon2("bar", user.getSalt()));
         datastore.save(user);
-        datastore.save(new Category(Const.INBOX, user.getUid()));
-        datastore.save(new Category(Const.TRASH, user.getUid()));
+        datastore.save(new Category(Const.INBOX, user.getUid(), Role.INBOX));
+        datastore.save(new Category(Const.TRASH, user.getUid(), Role.TRASH));
 
-        Category foo = new Category("foo", user.getUid());
+        Category foo = new Category("foo", user.getUid(), Role.CUSTOM);
         CATEGORY_UID = foo.getUid();
         datastore.save(foo);
 
@@ -98,7 +99,7 @@ public class CategoriesControllerV1Tests {
     @Test
     void testDeleteUnauthorized() {
         //when
-        TestResponse response = TestRequest.delete("/api/v1/categories/" + CodecUtils.uuid())
+        TestResponse response = TestRequest.delete("/api/v1/categories/" + CodecUtils.uuidV4())
                 .withContentType("application/json")
                 .execute();
 
@@ -112,7 +113,7 @@ public class CategoriesControllerV1Tests {
     void testDelete() {
         //when
         String name = Utils.randomString();
-        Category category = new Category(name, USER_UID);
+        Category category = new Category(name, USER_UID, Role.CUSTOM);
         Application.getInstance(DataService.class).save(category);
         TestResponse response = TestRequest.delete("/api/v1/categories/" + category.getUid())
                 .withHeader("Authorization", ACCESS_TOKEN)
@@ -164,9 +165,10 @@ public class CategoriesControllerV1Tests {
                 .execute();
 
         //then
+        System.out.println(response.getContent());
         assertThat(response).isNotNull();
         assertThat(response.getStatusCode()).isEqualTo(200);
-        assertThat(Application.getInstance(DataService.class).findCategory(CATEGORY_UID, USER_UID)).isNotNull();
+        assertThat(Application.getInstance(DataService.class).findCategory(CATEGORY_UID, USER_UID).getName()).isEqualTo(name);
     }
 
     @Test

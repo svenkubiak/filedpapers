@@ -4,6 +4,8 @@ import constants.Required;
 import io.mangoo.annotations.Collection;
 import io.mangoo.annotations.Indexed;
 import io.mangoo.persistence.Entity;
+import models.enums.Role;
+import models.enums.Type;
 import utils.Utils;
 
 import java.io.Serializable;
@@ -20,9 +22,12 @@ public class Category extends Entity implements Serializable {
     @Indexed
     private String name;
 
-    public Category(String name, String userUid) {
+    private Role role;
+
+    public Category(String name, String userUid,  Role role) {
         this.name = Objects.requireNonNull(name, Required.NAME);
         this.userUid = Objects.requireNonNull(userUid, Required.USER_UID);
+        this.role = Objects.requireNonNull(role, Required.ROLE);
         this.uid = Utils.randomString();
     }
 
@@ -51,5 +56,13 @@ public class Category extends Entity implements Serializable {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
     }
 }

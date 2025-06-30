@@ -19,8 +19,12 @@ import java.time.ZoneOffset;
 import java.util.*;
 
 public final class Utils {
-    private static final Pattern PATTERN = Pattern.compile(
+    private static final Pattern RANDOM_PATTERN = Pattern.compile(
             "^[A-Za-z0-9-]+$",
+            Pattern.CASE_INSENSITIVE
+    );
+    private static final Pattern NAME_PATTERN = Pattern.compile(
+            "(?i)[a-z0-9\\-]{1,32}",
             Pattern.CASE_INSENSITIVE
     );
     private static final Pattern MFA_PATTERN = Pattern.compile("\\d{6}");
@@ -29,7 +33,7 @@ public final class Utils {
     }
 
     public static boolean isValidRandom(String value) {
-        return StringUtils.isNotBlank(value) && PATTERN.matcher(value).matches();
+        return StringUtils.isNotBlank(value) && RANDOM_PATTERN.matcher(value).matches();
     }
 
     public static void sortCategories(List<Map<String, Object>> categories) {
@@ -60,6 +64,10 @@ public final class Utils {
 
     public static boolean isValidOtp(String mfa) {
         return StringUtils.isNotBlank(mfa) && MFA_PATTERN.matcher(mfa).matches();
+    }
+
+    public static boolean isValidName(String name) {
+        return StringUtils.isNotBlank(name) && NAME_PATTERN.matcher(name).matches();
     }
 
     public static String language(User user) {
@@ -140,6 +148,6 @@ public final class Utils {
     }
 
     public static String randomString() {
-        return MangooUtils.randomString(32);
+        return MangooUtils.randomString(16);
     }
 }

@@ -48,6 +48,7 @@ public class CategoriesControllerV1 {
             if (StringUtils.isBlank(categoryUid) || !Utils.isValidRandom(categoryUid)) {
                 categoryUid = dataService.findInbox(userUid).getUid();
             }
+
             if (dataService.findCategory(categoryUid, userUid) != null) {
                 try {
                     items = dataService.countItems(userUid, categoryUid);

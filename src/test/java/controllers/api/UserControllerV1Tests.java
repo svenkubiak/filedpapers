@@ -12,6 +12,7 @@ import io.mangoo.utils.totp.TotpUtils;
 import models.Category;
 import models.Item;
 import models.User;
+import models.enums.Role;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -43,8 +44,8 @@ public class UserControllerV1Tests {
         user2.setMfaFallback(Utils.randomString());
         datastore.save(user2);
 
-        datastore.save(new Category(Const.INBOX, user.getUid()));
-        datastore.save(new Category(Const.TRASH, user.getUid()));
+        datastore.save(new Category(Const.INBOX, user.getUid(), Role.INBOX));
+        datastore.save(new Category(Const.TRASH, user.getUid(), Role.TRASH));
     }
 
     @Test

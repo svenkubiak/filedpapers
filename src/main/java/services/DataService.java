@@ -3,8 +3,6 @@ package services;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.model.Filters;
-import com.mongodb.client.model.FindOneAndUpdateOptions;
-import com.mongodb.client.model.ReturnDocument;
 import com.mongodb.client.model.Sorts;
 import com.mongodb.client.result.DeleteResult;
 import constants.Const;
@@ -21,6 +19,7 @@ import models.Action;
 import models.Category;
 import models.Item;
 import models.User;
+import models.enums.Role;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -207,7 +206,7 @@ public class DataService {
         return datastore.find(Category.class,
                 and(
                     eq(Const.USER_UID, userUid),
-                    eq(Const.NAME, Const.TRASH)));
+                    eq(Const.ROLE, Role.TRASH)));
     }
 
     public Category findInbox(String userUid) {
@@ -216,7 +215,7 @@ public class DataService {
         return datastore.find(Category.class,
                 and(
                         eq(Const.USER_UID, userUid),
-                        eq(Const.NAME, Const.INBOX)));
+                        eq(Const.ROLE, Role.INBOX)));
     }
 
     public Category findCategory(String categoryUid, String userUid) {
@@ -320,7 +319,7 @@ public class DataService {
 
         String result = null;
         if (findCategoryByName(name, userUid) == null) {
-            result = save(new Category(name, userUid));
+            result = save(new Category(name, userUid, Role.CUSTOM));
         }
 
         return StringUtils.isNotBlank(result) ? Result.Success.empty() : Result.Failure.server("Failed to add category");
@@ -527,12 +526,30 @@ public class DataService {
     @SuppressWarnings("unchecked")
     public void cleanup() {
         //Remove outdated Item attributes
-        datastore.query(Item.class)
-                .updateMany(exists("imageBase64"), unset("imageBase64"));
+        datastore.query("items").updateMany(
+                exists("imageBase64"),
+                unset("imageBase64"));
 
         //Remove outdated Category attributes
-        datastore.query(Item.class)
-                .updateMany(exists("count"), unset("count"));
+        datastore.query("items").updateMany(
+                exists("count"),
+                unset("count"));
+
+        //Add new role type to INBOX
+        datastore.query("categories").updateOne(
+                and(eq("name", "Inbox"), exists("role", false)),
+                set("role", "INBOX"));
+
+        //Add new role type to TRASH
+        datastore.query("categories").updateOne(
+                and(eq("name", "Trash"), exists("role", false)),
+                set("role", "TRASH"));
+
+        //Add new role type to CUSTOM categories
+        datastore.query("categories").updateMany(
+                and(ne("name", "Inbox"), ne("name", "Trash"), exists("role", false)),
+                set("role", "CUSTOM")
+        );
 
         //Updated items which have null value mediaUids
         List<Item> items = new ArrayList<>();
@@ -541,7 +558,7 @@ public class DataService {
                 .into(items);
 
         for (Item item : items) {
-            datastore.query(Item.class).updateOne(
+            datastore.query("items").updateOne(
                     eq("_id", item.getId()),
                     set(Const.MEDIA_UID, Utils.randomString())
             );
@@ -598,20 +615,14 @@ public class DataService {
     public Result.Of updateCategory(String userUid, String categoryUid, String name) {
         Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
         Utils.checkCondition(Utils.isValidRandom(categoryUid), Invalid.CATEGORY_UID);
-        Objects.requireNonNull(name, Required.CATEGORY_NAME);
+        Utils.checkCondition(Utils.isValidRandom(name), Invalid.CATEGORY_NAME);
 
-        if (findCategoryByName(name, userUid) == null) {
-            Object updatedCategory = datastore.query(Category.class).findOneAndUpdate(
-                    and(eq(Const.USER_UID, userUid), eq(Const.UID, categoryUid)),
-                    set("name", name),
-                    new FindOneAndUpdateOptions()
-                            .returnDocument(ReturnDocument.AFTER)
-                            .upsert(false)
-            );
-
-            return updatedCategory != null ? Result.Success.empty() : Result.Failure.server("Failed to rename category");
+        Category category = findCategory(categoryUid, userUid);
+        if (category != null && !category.getRole().equals(Role.INBOX) && !category.getRole().equals(Role.TRASH) && !name.equals(category.getName())) {
+            category.setName(name);
+            return save(category) != null ? Result.Success.empty() : Result.Failure.server("Failed to rename category");
         } else {
-            return Result.Failure.user("Category with same name already exists");
+            return Result.Failure.user("Category either not exists it is Inbox or Trash or a category with same name already exists");
         }
     }
 }

@@ -10,7 +10,6 @@ public final class Const {
     public static final String COUNT = "count";
     public static final String DEFAULT_LANGUAGE = "en";
     public static final String EMAIL_PREFIX = "[Filed Papers]";
-    public static final String INBOX = "Inbox";
     public static final String MFA_FALLBACK = "mfa-fallback";
     public static final String NAME = "name";
     public static final String NONCE = "nonce";
@@ -20,7 +19,6 @@ public final class Const {
     public static final String REFRESH_TOKEN = "refreshToken";
     public static final String TOAST_ERROR = "toasterror";
     public static final String TOAST_SUCCESS = "toastsuccess";
-    public static final String TRASH = "Trash";
     public static final String UID = "uid";
     public static final String USER_UID = "userUid";
     public static final String USERNAME = "username";
@@ -28,6 +26,9 @@ public final class Const {
     public static final String METADATA_UID = "metadata.uid";
     public static final String METADATA_USER_UID = "metadata.userUid";
     public static final String MEDIA_UID = "mediaUid";
+    public static final String ROLE = "role";
+    public static final String INBOX = "Inbox";
+    public static final String TRASH = "Trash";
 
     private Const() {}
 }

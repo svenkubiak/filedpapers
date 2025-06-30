@@ -15,6 +15,7 @@ import jakarta.inject.Named;
 import models.Action;
 import models.Category;
 import models.User;
+import models.enums.Role;
 import models.enums.Type;
 import services.DataService;
 import services.NotificationService;
@@ -203,8 +204,8 @@ public class AuthenticationController {
                 user = new User(username);
                 user.setPassword(CodecUtils.hashArgon2(password, user.getSalt()));
                 dataService.save(user);
-                dataService.save(new Category(Const.INBOX, user.getUid()));
-                dataService.save(new Category(Const.TRASH, user.getUid()));
+                dataService.save(new Category(Const.INBOX, user.getUid(), Role.INBOX));
+                dataService.save(new Category(Const.TRASH, user.getUid(), Role.TRASH));
 
                 var token = Utils.randomString();
                 dataService.save(new Action(user.getUid(), token, Type.CONFIRM_EMAIL));

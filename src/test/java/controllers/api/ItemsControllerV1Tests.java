@@ -11,6 +11,7 @@ import io.mangoo.utils.JsonUtils;
 import models.Category;
 import models.Item;
 import models.User;
+import models.enums.Role;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -46,9 +47,9 @@ public class ItemsControllerV1Tests {
         user.setPassword(CodecUtils.hashArgon2("bar", user.getSalt()));
         datastore.save(user);
 
-        Category inbox = new Category(Const.INBOX, user.getUid());
-        Category test = new Category("test", user.getUid());
-        Category trash = new Category(Const.TRASH, user.getUid());
+        Category inbox = new Category(Const.INBOX, user.getUid(), Role.INBOX);
+        Category test = new Category("test", user.getUid(), Role.CUSTOM);
+        Category trash = new Category(Const.TRASH, user.getUid(), Role.TRASH);
 
         datastore.save(inbox);
         datastore.save(test);
