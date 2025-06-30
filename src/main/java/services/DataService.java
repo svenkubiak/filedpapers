@@ -5,6 +5,7 @@ import com.mongodb.client.MongoCursor;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Sorts;
 import com.mongodb.client.result.DeleteResult;
+import constants.Collection;
 import constants.Const;
 import constants.Invalid;
 import constants.Required;
@@ -526,27 +527,27 @@ public class DataService {
     @SuppressWarnings("unchecked")
     public void cleanup() {
         //Remove outdated Item attributes
-        datastore.query("items").updateMany(
+        datastore.query(Collection.ITEMS).updateMany(
                 exists("imageBase64"),
                 unset("imageBase64"));
 
         //Remove outdated Category attributes
-        datastore.query("items").updateMany(
+        datastore.query(Collection.ITEMS).updateMany(
                 exists("count"),
                 unset("count"));
 
         //Add new role type to INBOX
-        datastore.query("categories").updateOne(
+        datastore.query(Collection.CATEGORIES).updateOne(
                 and(eq("name", "Inbox"), exists("role", false)),
                 set("role", "INBOX"));
 
         //Add new role type to TRASH
-        datastore.query("categories").updateOne(
+        datastore.query(Collection.CATEGORIES).updateOne(
                 and(eq("name", "Trash"), exists("role", false)),
                 set("role", "TRASH"));
 
         //Add new role type to CUSTOM categories
-        datastore.query("categories").updateMany(
+        datastore.query(Collection.CATEGORIES).updateMany(
                 and(ne("name", "Inbox"), ne("name", "Trash"), exists("role", false)),
                 set("role", "CUSTOM")
         );
@@ -558,7 +559,7 @@ public class DataService {
                 .into(items);
 
         for (Item item : items) {
-            datastore.query("items").updateOne(
+            datastore.query(Collection.ITEMS).updateOne(
                     eq("_id", item.getId()),
                     set(Const.MEDIA_UID, Utils.randomString())
             );
