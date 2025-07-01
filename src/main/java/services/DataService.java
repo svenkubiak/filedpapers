@@ -161,7 +161,7 @@ public class DataService {
         Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
 
         Category trash = findTrash(userUid);
-        var updateResult = datastore.query(Item.class).updateOne(
+        var updateResult = datastore.query(Collections.ITEMS).updateOne(
                 and(
                     eq(Const.USER_UID, userUid),
                     eq(Const.UID, itemUid)),
@@ -249,7 +249,7 @@ public class DataService {
         var targetCategory = findCategory(categoryUid, userUid);
 
         if (!sourceCategory.getUid().equals(targetCategory.getUid())) {
-            var updateResult = datastore.query(Item.class).updateOne(
+            var updateResult = datastore.query(Collections.ITEMS).updateOne(
                     and(
                             eq(Const.USER_UID, userUid),
                             eq(Const.UID, itemUid)),
