@@ -9,8 +9,6 @@ import io.mangoo.routing.bindings.Request;
 import io.mangoo.utils.CodecUtils;
 import io.mangoo.utils.JsonUtils;
 import jakarta.inject.Inject;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import services.DataService;
 import utils.ResultHandler;
 
@@ -19,8 +17,6 @@ import java.util.Objects;
 
 @FilterWith(TokenFilter.class)
 public class ItemsControllerV1 {
-    private static final Logger LOG = LogManager.getLogger(ItemsControllerV1.class);
-    public static final String FAILED_TO_ADD_ITEM_WITH_URL = "Failed to add item with URL: {}";
     private final DataService dataService;
 
     @Inject
@@ -34,9 +30,7 @@ public class ItemsControllerV1 {
         String category = data.get("category");
 
         if (async) {
-            Thread.ofVirtual().start(() -> {
-                ResultHandler.handle(() -> dataService.addItem(userUid, url, category));
-            });
+            Thread.ofVirtual().start(() -> ResultHandler.handle(() -> dataService.addItem(userUid, url, category)));
             return Response.ok();
         } else {
             return ResultHandler.handle(() -> dataService.addItem(userUid, url, category));

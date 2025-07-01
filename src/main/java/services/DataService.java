@@ -27,7 +27,6 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.util.Strings;
 import org.bson.Document;
 import org.bson.conversions.Bson;
-import org.bson.types.ObjectId;
 import utils.Result;
 import utils.Utils;
 import utils.preview.LinkPreview;
@@ -79,7 +78,7 @@ public class DataService {
         List<Map<String, Object>> output = new ArrayList<>();
         try (MongoCursor<Document> cursor = categories.aggregate(pipeline).iterator()) {
             while (cursor.hasNext()) {
-                Document document = cursor.next();
+                var document = cursor.next();
                 output.add(Map.of(
                         Const.NAME, document.getString(Const.NAME),
                         Const.UID, document.getString(Const.UID),
@@ -189,7 +188,7 @@ public class DataService {
                     }
                 });
 
-        DeleteResult deleteResult = datastore.query(Item.class)
+        var deleteResult = datastore.query(Item.class)
                 .deleteMany(and(
                         eq(Const.USER_UID, userUid),
                         eq(Const.CATEGORY_UID, trash.getUid())));
@@ -377,7 +376,7 @@ public class DataService {
         Objects.requireNonNull(categoryName, Required.CATEGORY_NAME);
         Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
 
-        Pattern pattern = Pattern.compile("^" + categoryName + "$", Pattern.CASE_INSENSITIVE);
+        var pattern = Pattern.compile("^" + categoryName + "$", Pattern.CASE_INSENSITIVE);
         return datastore.find(Category.class,
                 and(
                         regex(Const.NAME, pattern),
@@ -572,9 +571,8 @@ public class DataService {
             datastore.query(Const.FILEDPAPERS_FILES)
                     .find(Filters.eq(Const.METADATA_UID, null))
                     .forEach(media -> {
-                        Document document = (Document) media;
-
-                        ObjectId id = document.getObjectId("_id");
+                        var document = (Document) media;
+                        var id = document.getObjectId("_id");
 
                         mediaService.delete(id);
                         LOG.info("Deleted media with null uid");
@@ -585,7 +583,7 @@ public class DataService {
             datastore.query(Item.class).find()
                     .projection(include(Const.MEDIA_UID))
                     .forEach(doc -> {
-                        Item item = (Item) doc;
+                        var item = (Item) doc;
                         if (item != null && StringUtils.isNotBlank(item.getMediaUid())) {
                             usedMediaUids.add(item.getMediaUid());
                         }
@@ -620,8 +618,8 @@ public class DataService {
         Utils.checkCondition(Utils.isValidRandom(categoryUid), Invalid.CATEGORY_UID);
         Utils.checkCondition(Utils.isValidRandom(name), Invalid.CATEGORY_NAME);
 
-        Category category = findCategory(categoryUid, userUid);
-        if (category != null && !category.getRole().equals(Role.INBOX) && !category.getRole().equals(Role.TRASH)) {
+        var category = findCategory(categoryUid, userUid);
+        if (category != null && category.getRole() != Role.INBOX && category.getRole() != Role.TRASH) {
             category.setName(name);
             return save(category) != null ? Result.Success.empty() : Result.Failure.server("Failed to rename category");
         } else {
