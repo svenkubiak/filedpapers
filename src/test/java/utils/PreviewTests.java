@@ -1,10 +1,7 @@
 package utils;
 
 import io.mangoo.test.TestRunner;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import utils.preview.LinkPreview;
 import utils.preview.LinkPreviewFetcher;
@@ -16,6 +13,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
@@ -30,19 +28,26 @@ public class PreviewTests {
         Assertions.assertTrue(Files.exists(nodeAppPath.resolve("package.json")));
         nodeAppDir = nodeAppPath.toAbsolutePath().toFile();
 
-        waitFor(initProcess("npm", "install"), "npm install failed");
-        waitFor(initProcess("npm", "audit", "--audit-level=high"), "npm audit found vulnerabilities");
-        waitFor(initProcess("npm", "outdated", "--json"), "npm outdated check failed");
-        waitFor(initProcess("npm", "start"), "npm start failed");
+        waitFor(initProcess("npm", "install"), "npm install failed", false);
+        waitFor(initProcess("npm", "audit", "--audit-level=high"), "npm audit found vulnerabilities", false);
+        waitFor(initProcess("npm", "outdated", "--json"), "npm outdated check failed", false);
+        waitFor(initProcess("npm", "start"), "npm start failed", true);
 
         Thread.sleep(3000);
         System.setProperty("application.metascraper.url", "http://localhost:3000");
     }
 
-    private static void waitFor(Process process, String error) throws InterruptedException {
-        if (process.waitFor() != 0) {
-            System.err.println(error);
-            System.exit(1);
+    private static void waitFor(Process process, String error, boolean wait) throws InterruptedException {
+        if (wait) {
+            if (process.waitFor(10, SECONDS)) {
+                System.err.println(error);
+                System.exit(1);
+            }
+        } else {
+            if (process.waitFor() != 0) {
+                System.err.println(error);
+                System.exit(1);
+            }
         }
 
         processes.add(process);
@@ -53,7 +58,7 @@ public class PreviewTests {
             try (BufferedReader reader = new BufferedReader(new InputStreamReader(input))) {
                 reader.lines().forEach(target::println);
             } catch (IOException e) {
-                throw new RuntimeException("failed to consume stream", e);
+                throw new RuntimeException("Failed to consume stream", e);
             }
         }).start();
     }
