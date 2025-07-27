@@ -7,9 +7,9 @@
     "start": "node index.js"
   },
   "dependencies": {
-    "cheerio": "1.1.0",
-    "sharp": "^0.34.2",
-    "axios": "^1.10.0",
+    "cheerio": "1.1.2",
+    "sharp": "^0.34.3",
+    "axios": "^1.11.0",
     "express": "^5.1.0"
   }
 }
