@@ -33,6 +33,7 @@ public class MediaService {
     private static final Logger LOG = LogManager.getLogger(MediaService.class);
     private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36";
     private static final String BUCKET_NAME = "filedpapers";
+    private static final int MAX_SIZE = 16 * 1024 * 1024; //16MB max size for GridFS
     private final Datastore datastore;
     private final Cache cache;
     private final GridFSBucket bucket;
@@ -56,6 +57,7 @@ public class MediaService {
     public String store(byte[] data, String userUid) {
         Objects.requireNonNull(data, Required.DATA);
         Objects.requireNonNull(userUid, Required.USER_UID);
+        Utils.checkCondition(data.length <= MAX_SIZE, Required.MAX_SIZE);
 
         var uid = Utils.randomString();
 

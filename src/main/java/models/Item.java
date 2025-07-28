@@ -28,11 +28,15 @@ public class Item extends Entity implements Serializable {
     @Indexed(unique = true)
     private String mediaUid;
 
+    @Indexed(unique = true)
+    private String archiveUid;
+
     private String url;
     private String image;
     private String title;
     private String description;
     private String domain;
+    boolean archived;
 
     public Item() {
         this.uid = Utils.randomString();
@@ -156,5 +160,21 @@ public class Item extends Entity implements Serializable {
 
     public void setMediaUid(String mediaUid) {
         this.mediaUid = mediaUid;
+    }
+
+    public String getArchiveUid() {
+        return archiveUid;
+    }
+
+    public void setArchiveUid(String archiveUid) {
+        this.archiveUid = archiveUid;
+    }
+
+    public boolean isArchived() {
+        return archived;
+    }
+
+    public void setArchived(boolean archived) {
+        this.archived = archived;
     }
 }

@@ -92,18 +92,25 @@
     color: #666;
     cursor: pointer;
     transition: all 0.2s ease;
-    z-index: 2;
     opacity: 0.5;
     position: relative;
     z-index: 3;
     pointer-events: all;
 }
 
+.card-archive {
+    color: #666;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    opacity: 0.5;
+    position: relative;
+    z-index: 3;
+    pointer-events: all;
+}
 
 .card-move {
     color: #666;
     transition: all 0.2s ease;
-    z-index: 2;
     opacity: 0.5;
     position: relative;
     z-index: 3;
@@ -116,6 +123,10 @@
 }
 
 .card:hover .category-trash {
+    opacity: 1;
+}
+
+.card:hover .category-rename {
     opacity: 1;
 }
 
@@ -149,7 +160,15 @@
     opacity: 1;
 }
 
+.card:hover .card-archive {
+    opacity: 1;
+}
+
 .card-move:hover {
+    color: #024efa;
+}
+
+.card-archive:hover {
     color: #024efa;
 }
 
@@ -277,6 +296,16 @@
     white-space: nowrap;
     order: 1;
     pointer-events: none;
+}
+
+.card-archive {
+    pointer-events: all;
+    cursor: pointer;
+}
+
+.open-archive {
+    pointer-events: all;
+    cursor: pointer;
 }
 
 .card-trash {

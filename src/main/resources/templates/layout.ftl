@@ -102,7 +102,8 @@
      data-bookmark-deleted-success='${i18n("js.bookmark.deleted")}'
      data-category-created-success='${i18n("js.category.created")}'
      data-bookmark-created-success='${i18n("js.bookmark.created")}'
-     data-logout-devices-success='${i18n("js.logout.devices.success")}'>
+     data-logout-devices-success='${i18n("js.logout.devices.success")}'
+     data-archived-success='${i18n("js.archived.success")}'>
 </div>
 <script src="/assets/js/axios.min.js"></script>
 <script src="/assets/js/app.min.js"></script>

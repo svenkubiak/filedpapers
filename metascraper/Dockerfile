@@ -1,7 +1,17 @@
 FROM node:24-slim
 
-# Install CA certificates for SSL verification
-RUN apt-get update && apt-get install -y ca-certificates curl && rm -rf /var/lib/apt/lists/*
+# Install Chromium and dependencies
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    curl \
+    chromium \
+    chromium-sandbox \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set Chromium environment variables
+ENV CHROME_BIN=/usr/bin/chromium
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
 # Create app directory
 WORKDIR /app

@@ -29,6 +29,7 @@ public final class Const {
     public static final String ROLE = "role";
     public static final String INBOX = "Inbox";
     public static final String TRASH = "Trash";
+    public static final String ARCHIVE_UID = "archiveUid";
 
     private Const() {}
 }

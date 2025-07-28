@@ -3,6 +3,12 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 const sharp = require('sharp');
 const { URL } = require('url');
+const { exec } = require('child_process');
+const fs = require('fs').promises;
+const path = require('path');
+const { promisify } = require('util');
+
+const execAsync = promisify(exec);
 
 const app = express();
 const PORT = 3000;
@@ -316,6 +322,72 @@ app.get('/preview', async (req, res) => {
     });
   }
 });
+
+// Archive endpoint
+app.get('/archive', async (req, res) => {
+  const url = req.query.url;
+  if (!url) return res.status(400).json({ error: 'Missing ?url=' });
+
+  // Set HTTP request timeout
+  req.setTimeout(90000); // 90 seconds
+  res.setTimeout(90000); // 90 seconds
+
+  try {
+    // Validate URL
+    new URL(url);
+    
+    // Generate a unique temporary filename
+    const timestamp = Date.now();
+    const outputFile = path.join(require('os').tmpdir(), `archive_${timestamp}.html`);
+    
+
+    
+    // Use SingleFile CLI with optimized options for speed and cookie banner blocking
+    const singleFileCommand = `npx single-file "${url}" "${outputFile}" --browser-headless true --browser-executable-path /usr/bin/chromium --browser-wait-until load --browser-load-max-time 30000 --browser-capture-max-time 30000 --load-deferred-images false --remove-hidden-elements false --remove-unused-styles false --compress-html false --compress-css false --group-duplicate-images false --resolve-links false --insert-single-file-comment false --blocked-URL-pattern ".*cookie.*" --blocked-URL-pattern ".*consent.*" --blocked-URL-pattern ".*gdpr.*" --blocked-URL-pattern ".*privacy.*" --blocked-URL-pattern ".*banner.*" --blocked-URL-pattern ".*popup.*" --blocked-URL-pattern ".*modal.*" --blocked-URL-pattern ".*overlay.*"`;
+    
+    const { stdout, stderr } = await execAsync(singleFileCommand, {
+      timeout: 60000, // 1 minute timeout
+      maxBuffer: 50 * 1024 * 1024 // 50MB buffer
+    });
+    
+    if (stderr && !stderr.includes('Warning')) {
+      console.error('SingleFile stderr:', stderr);
+    }
+    
+    // Read the generated file
+    const archiveContent = await fs.readFile(outputFile, 'utf8');
+    
+    // Convert to base64
+    const base64Content = Buffer.from(archiveContent, 'utf8').toString('base64');
+    
+    // Clean up the temporary file
+    try {
+      await fs.unlink(outputFile);
+    } catch (cleanupError) {
+      console.error('Failed to cleanup temporary file:', cleanupError);
+    }
+    
+    // Return the base64 encoded archive
+    res.json({
+      success: true,
+      archive: base64Content,
+      timestamp: new Date().toISOString()
+    });
+    
+  } catch (error) {
+    console.error('Archive error:', error);
+    
+
+    
+    res.status(500).json({
+      success: false,
+      error: 'Failed to archive the website',
+      details: error.message
+    });
+  }
+});
+
+
 
 // Helper function to check if we have all required metadata
 const hasAllRequiredMetadata = (metadata) => {

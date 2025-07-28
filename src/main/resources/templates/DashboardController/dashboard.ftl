@@ -48,6 +48,11 @@
                             <span class="icon card-move" data-tooltip="${i18n("dashboard.card.drag.tooltip")}">
                                 <i class="fas fa-folder-open dragging" draggable="true" data-uid="${item.uid}"></i>
                             </span>
+                            <#if !item.archived>
+                            <span class="icon card-archive" data-tooltip="Archive item" data-uid="${item.uid}">
+                                <i class="fa-solid fa-box-archive"></i>
+                            </span>
+                            </#if>
                             <#if active != 'trash'>
                             <span class="icon card-trash" data-tooltip="${i18n("dashboard.card.delete.tooltip")}">
                                 <i class="fas fa-trash-alt"></i>
@@ -55,9 +60,13 @@
                             </#if>
                         </div>
                     </div>
-                    <div class="card-meta" >
+                    <div class="card-meta">
                         <span class="card-domain"><a href="${item.url}" target="_blank" title="${item.url}"><#if item.domain?? && item.domain?has_content>${item.domain?truncate(30, '...')}<#else>${item.url?truncate(30, '...')}</#if></a></span>
-                        <span class="card-added">${i18n("dashboard.card.added")} ${prettytime(item.sort)}</span>
+                        <span class="card-added">${i18n("dashboard.card.added")} ${prettytime(item.sort)}
+                        <#if item.archived>
+                            <span class="tag is-info is-pulled-right open-archive" data-uid="${item.uid}">Archived</span>
+                        </#if>
+                        </span>
                     </div>
                 </div>
             </div>

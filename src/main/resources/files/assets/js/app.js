@@ -19,12 +19,12 @@ const forAll = (sel, fn) => {
     if (els.length) els.forEach(fn);
 };
 
-let $cardToDelete = null;
 let $categoryToRename = null;
 const toastSuccess = 'toast-success';
 const toastError = 'toast-error';
 const i18n = $id('i18n-js').dataset;
 const generalError = i18n.error;
+const archivedSuccess = i18n.archivedSuccess;
 const bookmarkMovedSuccess = i18n.bookmarkMovedSuccess;
 const categoryDeletedSuccess = i18n.categoryDeletedSuccess;
 const categoryRenamedSuccess = i18n.categoryRenamedSuccess;
@@ -177,6 +177,19 @@ function handleConfirmCategoryDelete() {
                 window.location.href = "/dashboard";
             });
     }
+}
+
+function handleCardArchiveClick(e) {
+    const uid = e.currentTarget.dataset.uid;
+
+    axios.post("/api/v1/archive/" + uid)
+        .then(function (response) {
+            showToast(archivedSuccess);
+        })
+        .catch(function (error) {
+            console.log(error);
+            showToast(generalError);
+        })
 }
 
 function handleLogoutDevices() {
@@ -413,6 +426,16 @@ function handleKeyNavigation(event) {
     }
 }
 
+function openPopup(e) {
+    const uid = e.currentTarget.dataset.uid;
+
+    const popup = window.open(
+        '/media/archive/' + uid,
+        'PopupWindow',
+        'width=1024,height=768,left=100,top=100,resizable=yes'
+    );
+}
+
 on(document, 'keydown', handleKeyNavigation);
 on(window, 'load', handleToastsOnLoad);
 on('#add-category-button', 'click', handleAddClick);
@@ -427,9 +450,11 @@ on('#confirm-logout-devices', 'click', handleLogoutDevices);
 on('#logout-devices', 'click', handleLogoutDevicesClick);
 on('#delete-account', 'click', handleDeleteAccountClick);
 on('#confirm-category-delete', 'click', handleConfirmCategoryDelete);
+onAll('.open-archive', 'click', openPopup);
 onAll('.category-trash', 'click', handleCategoryTrashClick);
 onAll('.category-rename', 'click', handleCategoryRenameClick);
 onAll('.card-trash', 'click', handleCardTrashClick);
+onAll('.card-archive', 'click', handleCardArchiveClick);
 onAll('.modal-background, .modal-card-head .delete, .modal-card-foot .button:not(.is-danger)', 'click', closeAllModals);
 onAll('.empty-trash', 'click', emptyTrash);
 forAll('.dragging[draggable="true"]', (item) => {

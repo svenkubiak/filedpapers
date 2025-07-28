@@ -53,7 +53,7 @@ public final class LinkPreviewFetcher {
         return new LinkPreview(title, description, url, domain, image);
     }
 
-    private static String getUrl() {
+    public static String getUrl() {
         String url = System.getProperty("application.metascraper.url");
 
         if (StringUtils.isNotBlank(url)) { return url; }
@@ -64,5 +64,4 @@ public final class LinkPreviewFetcher {
 
         return "http://localhost:3000";
     }
-
-} 
+}

@@ -9,9 +9,11 @@ import constants.Collections;
 import constants.Const;
 import constants.Invalid;
 import constants.Required;
+import de.svenkubiak.http.Http;
 import io.mangoo.persistence.interfaces.Datastore;
 import io.mangoo.utils.CodecUtils;
 import io.mangoo.utils.DateUtils;
+import io.mangoo.utils.JsonUtils;
 import io.mangoo.utils.totp.TotpUtils;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
@@ -32,6 +34,8 @@ import utils.Utils;
 import utils.preview.LinkPreview;
 import utils.preview.LinkPreviewFetcher;
 
+import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
@@ -139,6 +143,7 @@ public class DataService {
                     "description", StringUtils.isNotBlank(item.getDescription()) ? item.getDescription() : Strings.EMPTY,
                     "domain", StringUtils.isNotBlank(item.getDomain()) ? item.getDomain() : Strings.EMPTY,
                     "sort", item.getTimestamp().toEpochSecond(ZoneOffset.UTC),
+                    "archived", item.isArchived(),
                     "added", DateUtils.getPrettyTime(item.getTimestamp()))); // FIX ME: Remove in later API version
         }
 
@@ -181,7 +186,7 @@ public class DataService {
                         eq(Const.CATEGORY_UID, trash.getUid()),
                         ne(Const.MEDIA_UID, null),
                         ne(Const.MEDIA_UID, Strings.EMPTY)))
-                .projection(include(Const.MEDIA_UID))
+                .projection(include(Const.MEDIA_UID, Const.ARCHIVE_UID))
                 .forEach(doc -> {
                     if (doc instanceof Item item) {
                         mediaUidsToDelete.add(item.getMediaUid());
@@ -537,6 +542,11 @@ public class DataService {
                 exists("count"),
                 unset("count"));
 
+        //Add new archived value
+        datastore.query(Collections.ITEMS).updateMany(
+                not(exists("archived")),
+                set("archived", false));
+
         //Add new role type to INBOX
         datastore.query(Collections.CATEGORIES).updateOne(
                 and(eq("name", "Inbox"), exists("role", false)),
@@ -581,11 +591,12 @@ public class DataService {
             //Remove all media that is not linked as a mediauid in an item
             List<String> usedMediaUids = new ArrayList<>();
             datastore.query(Item.class).find()
-                    .projection(include(Const.MEDIA_UID))
+                    .projection(include(Const.MEDIA_UID, Const.ARCHIVE_UID))
                     .forEach(doc -> {
                         var item = (Item) doc;
-                        if (item != null && StringUtils.isNotBlank(item.getMediaUid())) {
+                        if (item != null && ( StringUtils.isNotBlank(item.getMediaUid()) || StringUtils.isNotBlank(item.getArchiveUid()) )) {
                             usedMediaUids.add(item.getMediaUid());
+                            usedMediaUids.add(item.getArchiveUid());
                         }
                     });
 
@@ -625,5 +636,42 @@ public class DataService {
         } else {
             return Result.Failure.user("Category either not exists it is Inbox or Trash or a category with same name already exists");
         }
+    }
+
+    public Result.Of archive(String uid, String userUid) {
+        Objects.requireNonNull(uid, Required.UID);
+
+        Item item = findItem(uid, userUid);
+        if (item != null) {
+            LOG.info("Archiving media with url {}", item.getUrl());
+
+            var result = Http.get(LinkPreviewFetcher.getUrl() + "/archive?url=" + item.getUrl())
+                    .withTimeout(Duration.ofSeconds(120))
+                    .send();
+
+            if (result.isValid()) {
+                Map<String, String> json = JsonUtils.toFlatMap(result.body());
+                if (!json.isEmpty() && json.get("success").equals("true")) {
+                    String archiveUid = mediaService.store(json.get("archive").getBytes(StandardCharsets.UTF_8), item.getUserUid());
+                    item.setArchived(true);
+                    item.setArchiveUid(archiveUid);
+                    save(item);
+
+                    return Result.Success.empty();
+                }
+            } else {
+                return Result.Failure.server("Received invalid response from archiving endpoint");
+            }
+        } else {
+            return Result.Failure.user("Could not find item");
+        }
+
+        return Result.Failure.server("Failed to archive item");
+    }
+
+    public Optional<byte[]> findArchive(Item item) {
+        Objects.requireNonNull(item, "item cannot be null");
+
+        return mediaService.retrieve(item.getArchiveUid());
     }
 }

@@ -120,7 +120,8 @@ public class ItemsControllerV1Tests {
                   "title": "${json-unit.any-string}",
                   "image": "${json-unit.any-string}",
                   "description": "${json-unit.any-string}",
-                  "sort": "${json-unit.any-number}"
+                  "sort": "${json-unit.any-number}",
+                  "archived": "${json-unit.any-boolean}"
                 }
         """);
     }

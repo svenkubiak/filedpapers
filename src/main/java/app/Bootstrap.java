@@ -39,7 +39,8 @@ public class Bootstrap implements MangooBootstrap {
         );
 
         Bind.controller(MediaController.class).withRoutes(
-                On.get().to("/media/image/{uid}").respondeWith("media")
+                On.get().to("/media/image/{uid}").respondeWith("image"),
+                On.get().to("/media/archive/{uid}").respondeWith("archive")
         );
 
         Bind.controller(DashboardController.class).withAuthentication().withRoutes(
@@ -77,6 +78,7 @@ public class Bootstrap implements MangooBootstrap {
 
         Bind.controller(ItemsControllerV1.class).withRoutes(
                 On.post().to("/api/v1/items").respondeWith("add"),
+                On.post().to("/api/v1/archive/{uid}").respondeWith("archive"),
                 On.put().to("/api/v1/items").respondeWith("move"),
                 On.get().to("/api/v1/items/{categoryUid}").respondeWith("list"),
                 On.put().to("/api/v1/items/{uid}").respondeWith("delete"),

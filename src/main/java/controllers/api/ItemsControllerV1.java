@@ -37,6 +37,13 @@ public class ItemsControllerV1 {
         }
     }
 
+    public Response archive(Request request, String uid) {
+        String userUid = request.getAttribute(Const.USER_UID);
+        Thread.ofVirtual().start(() -> ResultHandler.handle(() -> dataService.archive(uid, userUid)));
+
+        return Response.ok();
+    }
+
     public Response list(Request request, String categoryUid) {
         String userUid = request.getAttribute(Const.USER_UID);
         String ifNoneMatch = request.getHeader("If-None-Match");
