@@ -34,26 +34,26 @@ const categoryCreatedSuccess = i18n.categoryCreatedSuccess;
 const bookmarkCreatedSuccess = i18n.bookmarkCreatedSuccess;
 const logoutDevicesSuccess = i18n.logoutDevicesSuccess;
 
-function openModal(element) {
-    element.classList.add('is-active');
+function openModal(e) {
+    e.classList.add('is-active');
 
-    if (element.id === 'add-category-modal') {
+    if (e.id === 'add-category-modal') {
         setTimeout(() => {
             $id('category').focus();
         }, 100);
     }
 }
 
-function closeModal(element) {
-    element.classList.remove('is-active');
+function closeModal(e) {
+    e.classList.remove('is-active');
 }
 
 function closeAllModals() {
     forAll('.modal', closeModal);
 }
 
-function showLoading(element) {
-    const button = $id(element);
+function showLoading(e) {
+    const button = $id(e);
     if (button) {
         button.classList.add('is-loading');
         button.disabled = true;
@@ -393,10 +393,10 @@ function addBookmark(e) {
     }
 }
 
-function search(element) {
-    if (!element?.target?.value) return;
+function search(e) {
+    if (!e?.target?.value) return;
 
-    const searchTerm = element.target.value.toLowerCase();
+    const searchTerm = e.target.value.toLowerCase();
     const cards = $$('.card');
 
     cards.forEach(card => {
@@ -431,8 +431,8 @@ function openPopup(e) {
 
     const popup = window.open(
         '/media/archive/' + uid,
-        'PopupWindow',
-        'width=1024,height=768,left=100,top=100,resizable=yes'
+        'Archived',
+        'width=1280,height=720,left=100,top=100,resizable=no,scrollbars=yes,menubar=no,toolbar=no,location=no,noopener,noreferrer'
     );
 }
 
