@@ -47,6 +47,7 @@
                     </button>
                 </div>
             </div>
+            <@csrfform/>
         </form>
     </div>
 </div>

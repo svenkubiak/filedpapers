@@ -63,6 +63,7 @@
                     </button>
                 </div>
             </div>
+            <@csrfform/>
         </form>
         <div class="auth-links">
             <a href="/auth/login">${i18n("auth.signup.link")}</a>

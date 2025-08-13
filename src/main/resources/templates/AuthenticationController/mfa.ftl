@@ -35,6 +35,7 @@
                     <button type="submit" class="button is-link is-fullwidth" id="login-button">${i18n("auth.mfa.button")}</button>
                 </div>
             </div>
+            <@csrfform/>
         </form>
         <div class="auth-links">
             <a href="/auth/logout">${i18n("auth.mfa.cancel")}</a>

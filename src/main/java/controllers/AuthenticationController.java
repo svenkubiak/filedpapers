@@ -5,6 +5,7 @@ import constants.Required;
 import filters.AuthenticationFilter;
 import io.mangoo.annotations.FilterWith;
 import io.mangoo.core.Config;
+import io.mangoo.filters.CsrfFilter;
 import io.mangoo.i18n.Messages;
 import io.mangoo.routing.Response;
 import io.mangoo.routing.bindings.*;
@@ -61,6 +62,7 @@ public class AuthenticationController {
         return Response.redirect(authRedirect).disposeCookie(config.getI18nCookieName());
     }
 
+    @FilterWith(CsrfFilter.class)
     public Response doLogin(Flash flash, Form form, Authentication authentication) {
         form.expectValue("username", messages.get("validation.required.username"));
         form.expectValue("password", messages.get("validation.required.password"));
@@ -94,6 +96,7 @@ public class AuthenticationController {
         return Response.redirect("/auth/login");
     }
 
+    @FilterWith(CsrfFilter.class)
     public Response doMfa(Flash flash, Form form, Authentication authentication) {
         form.expectValue("mfa", messages.get("validation.required.mfa"));
 
@@ -134,7 +137,7 @@ public class AuthenticationController {
         return Response.ok().render("token", action.getToken());
     }
 
-    @FilterWith(AuthenticationFilter.class)
+    @FilterWith({CsrfFilter.class, AuthenticationFilter.class})
     public Response doResetPassword(Request request, Form form) {
         Action action = request.getAttribute(Const.ACTION);
         form.expectValue("password", messages.get("validation.required.current.password"));
@@ -160,6 +163,7 @@ public class AuthenticationController {
         return Response.redirect("/success");
     }
 
+    @FilterWith(CsrfFilter.class)
     public Response doForgot(Form form, Flash flash) {
         form.expectValue("username", messages.get("validation.required.username"));
         form.expectEmail("username", messages.get("validation.required.email"));
@@ -180,6 +184,7 @@ public class AuthenticationController {
         return Response.redirect("/auth/forgot");
     }
 
+    @FilterWith(CsrfFilter.class)
     public Response doSignup(Form form, Flash flash) {
         if (!registration) {
             return Response.redirect("/auth/login");

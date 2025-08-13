@@ -65,6 +65,7 @@
                     <button type="submit" class="button is-link is-fullwidth" id="login-button">${i18n("auth.login.button")}</button>
                 </div>
             </div>
+            <@csrfform/>
         </form>
         <div class="auth-links">
             <#if registration>

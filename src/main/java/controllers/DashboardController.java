@@ -2,8 +2,10 @@ package controllers;
 
 import constants.Const;
 import constants.Required;
+import io.mangoo.annotations.FilterWith;
 import io.mangoo.constants.Hmac;
 import io.mangoo.core.Config;
+import io.mangoo.filters.CsrfFilter;
 import io.mangoo.i18n.Messages;
 import io.mangoo.routing.Response;
 import io.mangoo.routing.bindings.Authentication;
@@ -103,6 +105,7 @@ public class DashboardController {
                 .render("categories", categories.orElseThrow());
     }
 
+    @FilterWith(CsrfFilter.class)
     public Response doMfa(Authentication authentication, Form form, Flash flash) {
         String userUid = authentication.getSubject();
         String mfa = form.get("mfa");
@@ -114,6 +117,7 @@ public class DashboardController {
         return Response.redirect("/dashboard/profile");
     }
 
+    @FilterWith(CsrfFilter.class)
     public Response doLogoutDevices(Authentication authentication) {
         String userUid = authentication.getSubject();
 
@@ -131,6 +135,7 @@ public class DashboardController {
         return Response.redirect("/dashboard");
     }
 
+    @FilterWith(CsrfFilter.class)
     public Response doLanguage(Authentication authentication, Form form, Flash flash) {
         String userUid = authentication.getSubject();
         form.expectValue("language");
@@ -231,6 +236,7 @@ public class DashboardController {
         return Response.redirect("/dashboard");
     }
 
+    @FilterWith(CsrfFilter.class)
     public Response doDeleteAccount(Authentication authentication, Form form, Session session, Flash flash) {
         String userUid = authentication.getSubject();
         form.expectValue("confirmPassword");
@@ -290,6 +296,7 @@ public class DashboardController {
                 .header("Content-Disposition", "attachment; filename=\"filed-papers-export.html\"");
     }
 
+    @FilterWith(CsrfFilter.class)
     public Response doChangeUsername(Form form, Authentication authentication, Flash flash) {
         String userUid = authentication.getSubject();
         form.expectValue("username", messages.get("validation.required.username"));
@@ -324,6 +331,7 @@ public class DashboardController {
         return Response.redirect("/dashboard/profile");
     }
 
+    @FilterWith(CsrfFilter.class)
     public Response doChangePassword(Form form, Authentication authentication, Flash flash) {
         String userUid = authentication.getSubject();
         form.expectValue("password", messages.get("validation.required.current.password"));

@@ -41,6 +41,7 @@
                         ${i18n("profile.mfa.fallback.3")}
                     </div>
                 </#if>
+                <@csrfform/>
             </form>
             <form action="/dashboard/profile/logout-devices" method="POST" class="profile-section">
                 <h2 class="section-title">${i18n("profile.logout.devices.title")}</h2>
@@ -63,6 +64,7 @@
                         ${i18n("profile.mfa.fallback.3")}
                     </div>
                 </#if>
+                <@csrfform/>
             </form>
             <form action="/dashboard/profile/language" method="POST" class="profile-section">
                 <h2 class="section-title">${i18n("profile.language.title")}</h2>
@@ -90,6 +92,7 @@
                         </button>
                     </div>
                 </div>
+                <@csrfform/>
             </form>
             <form action="/dashboard/profile/change-username" method="POST" class="profile-section" onsubmit="showLoading('update-email-button')">
                 <h2 class="section-title">${i18n("profile.email.title")}</h2>
@@ -140,6 +143,7 @@
                         </button>
                     </div>
                 </div>
+                <@csrfform/>
             </form>
             <form action="/dashboard/profile/change-password" method="post" class="profile-section" onsubmit="showLoading('update-password-button')">
                 <h2 class="section-title">${i18n("profile.password.title")}</h2>
@@ -193,6 +197,7 @@
                         </button>
                     </div>
                 </div>
+                <@csrfform/>
             </form>
             <form class="profile-section">
                 <h2 class="section-title">${i18n("profile.danger.title")}</h2>
