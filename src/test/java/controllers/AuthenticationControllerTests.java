@@ -1,8 +1,11 @@
 package controllers;
 
 import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.ListMultimap;
+import com.google.common.collect.Multimap;
 import constants.Const;
+import helpers.Csrf;
+import helpers.TestUtils;
+import io.mangoo.constants.Default;
 import io.mangoo.core.Application;
 import io.mangoo.persistence.interfaces.Datastore;
 import io.mangoo.test.TestRunner;
@@ -38,12 +41,15 @@ public class AuthenticationControllerTests {
     @Test
     public void testLogin() {
         //given
-        ListMultimap<String, String> form = ArrayListMultimap.create();
+        Csrf csrf = TestUtils.getCsrf();
+        Multimap<String, String> form = ArrayListMultimap.create();
         form.put("username", "foo@bar.com");
         form.put("password", "bar");
+        form.put(Default.CSRF_TOKEN, csrf.token());
 
         //when
         TestResponse response = TestRequest.post("/auth/login")
+                .withCookie(csrf.cookie())
                 .withForm(form)
                 .execute();
 
