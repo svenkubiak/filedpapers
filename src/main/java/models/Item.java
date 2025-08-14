@@ -13,7 +13,7 @@ import java.util.Objects;
 
 @Collection(name = Collections.ITEMS)
 public class Item extends Entity implements Serializable {
-    @Indexed(unique = true)
+    @Indexed
     private String uid;
 
     @Indexed
