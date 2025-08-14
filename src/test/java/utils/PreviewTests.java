@@ -31,6 +31,7 @@ public class PreviewTests {
         Assertions.assertTrue(Files.exists(nodeAppPath.resolve("package.json")));
         nodeAppDir = nodeAppPath.toAbsolutePath().toFile();
 
+        killProcessOnPort(3000);
         waitFor(initProcess("npm", "install"), "npm install failed", false);
         waitFor(initProcess("npm", "audit", "--audit-level=high"), "npm audit found vulnerabilities", false);
         waitFor(initProcess("npm", "outdated", "--json"), "npm outdated check failed", false);
@@ -54,6 +55,45 @@ public class PreviewTests {
         }
 
         processes.add(process);
+    }
+
+    private static void killProcessOnPort(int port) {
+        String os = System.getProperty("os.name").toLowerCase();
+
+        try {
+            if (os.contains("win")) {
+                // 1. Run netstat to get all connections
+                Process netstat = new ProcessBuilder("netstat", "-ano").redirectErrorStream(true).start();
+
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(netstat.getInputStream()))) {
+                    String line;
+                    while ((line = reader.readLine()) != null) {
+                        if (line.contains(":" + port)) {
+                            String[] parts = line.trim().split("\\s+");
+                            String pid = parts[parts.length - 1];
+                            // 2. Kill the process
+                            Process killer = new ProcessBuilder("taskkill", "/PID", pid, "/F").start();
+                            killer.waitFor();
+                            System.out.println("Killed PID " + pid + " on port " + port);
+                        }
+                    }
+                }
+            } else {
+                // Unix / macOS
+                Process lsof = new ProcessBuilder("lsof", "-t", "-i:" + port).redirectErrorStream(true).start();
+
+                try (BufferedReader reader = new BufferedReader(new InputStreamReader(lsof.getInputStream()))) {
+                    String pid;
+                    while ((pid = reader.readLine()) != null) {
+                        Process killer = new ProcessBuilder("kill", "-9", pid).start();
+                        killer.waitFor();
+                        System.out.println("Killed PID " + pid + " on port " + port);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     private static void consumeStream(InputStream input, PrintStream target) {
