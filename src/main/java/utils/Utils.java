@@ -138,7 +138,7 @@ public final class Utils {
             cookie.setExpires(DateUtils.localDateTimeToDate(
                     LocalDateTime.now()
                             .plusHours(config.getAuthenticationCookieRememberExpires())));
-        } else if (config.isAuthenticationCookieExpires()) {
+        } else {
             cookie.setExpires(DateUtils.localDateTimeToDate(
                     LocalDateTime.now()
                             .plusMinutes(config.getAuthenticationCookieTokenExpires())));
