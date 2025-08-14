@@ -16,15 +16,15 @@ import services.DataService;
 
 import java.util.Objects;
 
-public class TokenFilter implements PerRequestFilter {
+public class ApiAccessFilter implements PerRequestFilter {
     private final DataService dataService;
     private final AuthenticationService authenticationService;
     private final String cookieName;
 
     @Inject
-    public TokenFilter(DataService dataService,
-                       AuthenticationService authenticationService,
-                       @Named(Key.AUTHENTICATION_COOKIE_NAME) String cookieName) {
+    public ApiAccessFilter(DataService dataService,
+                           AuthenticationService authenticationService,
+                           @Named(Key.AUTHENTICATION_COOKIE_NAME) String cookieName) {
         this.dataService = Objects.requireNonNull(dataService, Required.DATA_SERVICE);
         this.authenticationService = Objects.requireNonNull(authenticationService, Required.DATA_SERVICE);
         this.cookieName = Objects.requireNonNull(cookieName, Required.COOKIE_NAME);
@@ -57,7 +57,7 @@ public class TokenFilter implements PerRequestFilter {
 
             if (token != null) {
                 return authenticationService.validateToken(token).map(userUid -> {
-                    if (dataService.userExists(userUid)) {
+                    if (dataService.userExists(userUid) && request.hasValidCsrf()) {
                         request.addAttribute(Const.USER_UID, userUid);
                         return response;
                     }

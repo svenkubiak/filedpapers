@@ -2,7 +2,7 @@ package controllers;
 
 import constants.Const;
 import constants.Required;
-import filters.AuthenticationFilter;
+import filters.AllowedActionFilter;
 import io.mangoo.annotations.FilterWith;
 import io.mangoo.core.Config;
 import io.mangoo.filters.CsrfFilter;
@@ -131,13 +131,13 @@ public class AuthenticationController {
         return Response.ok().render();
     }
 
-    @FilterWith(AuthenticationFilter.class)
+    @FilterWith(AllowedActionFilter.class)
     public Response resetPassword(Request request) {
         Action action = request.getAttribute(Const.ACTION);
         return Response.ok().render("token", action.getToken());
     }
 
-    @FilterWith({CsrfFilter.class, AuthenticationFilter.class})
+    @FilterWith({CsrfFilter.class, AllowedActionFilter.class})
     public Response doResetPassword(Request request, Form form) {
         Action action = request.getAttribute(Const.ACTION);
         form.expectValue("password", messages.get("validation.required.current.password"));
@@ -154,7 +154,7 @@ public class AuthenticationController {
         return Response.redirect("/auth/reset-password/" + action.getToken());
     }
 
-    @FilterWith(AuthenticationFilter.class)
+    @FilterWith(AllowedActionFilter.class)
     public Response confirm(Request request) {
         Action action = request.getAttribute(Const.ACTION);
         dataService.confirmEmail(action.getUserUid());

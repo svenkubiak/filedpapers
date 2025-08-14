@@ -14,12 +14,12 @@ import java.time.LocalDateTime;
 import java.util.Map;
 import java.util.Objects;
 
-public class AuthenticationFilter implements PerRequestFilter {
+public class AllowedActionFilter implements PerRequestFilter {
     private final DataService dataService;
     private final Map<Type, String> allowed;
 
     @Inject
-    public AuthenticationFilter(DataService dataService) {
+    public AllowedActionFilter(DataService dataService) {
         this.dataService = Objects.requireNonNull(dataService, Required.DATA_SERVICE);
         this.allowed = Map.of(
                 Type.RESET_PASSWORD, "/auth/reset-password",

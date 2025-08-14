@@ -531,7 +531,7 @@ public class DataService {
     }
 
     @SuppressWarnings("unchecked")
-    public void cleanup() {
+    public void upgrade() {
         //Remove outdated Item attributes
         datastore.query(Collections.ITEMS).updateMany(
                 exists("imageBase64"),

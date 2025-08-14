@@ -112,7 +112,7 @@ public class Bootstrap implements MangooBootstrap {
 
     @Override
     public void applicationStarted() {
-        dataService.cleanup();
+        dataService.upgrade();
         mediaService.indexify();
     }
 

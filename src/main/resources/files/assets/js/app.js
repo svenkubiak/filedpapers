@@ -34,6 +34,9 @@ const categoryCreatedSuccess = i18n.categoryCreatedSuccess;
 const bookmarkCreatedSuccess = i18n.bookmarkCreatedSuccess;
 const logoutDevicesSuccess = i18n.logoutDevicesSuccess;
 
+const csrfToken = $id('x-csrf-token')?.dataset?.csrfToken ?? "";
+axios.defaults.headers.common['x-csrf-token'] = csrfToken;
+
 function openModal(e) {
     e.classList.add('is-active');
 

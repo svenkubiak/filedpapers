@@ -13,7 +13,7 @@ import java.util.Objects;
 
 @Collection(name = Collections.ITEMS)
 public class Item extends Entity implements Serializable {
-    @Indexed
+    @Indexed(unique = true)
     private String uid;
 
     @Indexed
@@ -41,6 +41,8 @@ public class Item extends Entity implements Serializable {
     public Item() {
         this.uid = Utils.randomString();
         this.timestamp = LocalDateTime.now();
+        this.archiveUid = Utils.randomString();
+        this.mediaUid = Utils.randomString();
     }
 
     public static Item create() {

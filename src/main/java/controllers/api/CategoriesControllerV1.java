@@ -2,7 +2,7 @@ package controllers.api;
 
 import constants.Const;
 import constants.Required;
-import filters.TokenFilter;
+import filters.ApiAccessFilter;
 import io.mangoo.annotations.FilterWith;
 import io.mangoo.routing.Response;
 import io.mangoo.routing.bindings.Request;
@@ -15,7 +15,7 @@ import utils.Utils;
 import java.util.Map;
 import java.util.Objects;
 
-@FilterWith(TokenFilter.class)
+@FilterWith(ApiAccessFilter.class)
 public class CategoriesControllerV1 {
     public static final String MISSING_DATA = "Missing data";
     private final DataService dataService;
