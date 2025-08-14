@@ -2,6 +2,7 @@ package filters;
 
 import constants.Const;
 import constants.Required;
+import io.mangoo.constants.Header;
 import io.mangoo.constants.Key;
 import io.mangoo.exceptions.MangooTokenException;
 import io.mangoo.interfaces.filters.PerRequestFilter;
@@ -11,6 +12,7 @@ import io.mangoo.utils.RequestUtils;
 import io.mangoo.utils.paseto.Token;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
+import org.apache.commons.lang3.StringUtils;
 import services.AuthenticationService;
 import services.DataService;
 
@@ -36,7 +38,7 @@ public class ApiAccessFilter implements PerRequestFilter {
         Objects.requireNonNull(request, Required.RESPONSE);
 
         var cookie = request.getCookie(cookieName);
-        if (cookie != null) {
+        if (cookie != null && !hasAccessToken(request)) {
             String cookieValue = cookie.getValue();
             return authorize(cookieValue, request, response, true);
         }
@@ -44,6 +46,10 @@ public class ApiAccessFilter implements PerRequestFilter {
         return RequestUtils.getAuthorizationHeader(request)
                 .map(authorization -> authorize(authorization, request, response, false))
                 .orElseGet(() -> Response.unauthorized().end());
+    }
+
+    private boolean hasAccessToken(Request request) {
+        return StringUtils.isNotBlank(request.getHeader(Header.AUTHORIZATION));
     }
 
     private Response authorize(String authorization, Request request, Response response, boolean cookie) {
