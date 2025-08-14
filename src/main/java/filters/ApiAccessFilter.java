@@ -57,10 +57,15 @@ public class ApiAccessFilter implements PerRequestFilter {
 
             if (token != null) {
                 return authenticationService.validateToken(token).map(userUid -> {
-                    if (dataService.userExists(userUid) && request.hasValidCsrf()) {
+                    if (cookie && !request.hasValidCsrf()) {
+                        return Response.unauthorized().end();
+                    }
+
+                    if (dataService.userExists(userUid)) {
                         request.addAttribute(Const.USER_UID, userUid);
                         return response;
                     }
+
                     return Response.unauthorized().end();
                 }).orElseGet(() -> Response.unauthorized().end());
             }
