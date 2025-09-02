@@ -2,7 +2,7 @@
 
 # Set variables
 CONFIG_URL="https://raw.githubusercontent.com/svenkubiak/filedpapers/refs/heads/main/config.yaml"
-COMPOSE_URL="https://raw.githubusercontent.com/svenkubiak/filedpapers/refs/heads/main/compose.yml"
+COMPOSE_URL="https://raw.githubusercontent.com/svenkubiak/filedpapers/refs/heads/main/compose.yaml"
 
 # Fix locale to avoid "Illegal byte sequence" error
 export LC_CTYPE=C.UTF-8
@@ -13,7 +13,10 @@ generate_secret() {
 }
 
 # Create an .env file and add configuration variables
-echo "Creating .env file..."
+echo "1/6 Creating .env file..."
+
+MONGODB_USERNAME=filedpapers
+MONGODB_PASSWORD=$(generate_secret)
 
 cat > .env <<EOL
 # Custom configuration
@@ -32,10 +35,10 @@ SMTP_DEBUG=false
 
 # Auto generated - Change at your own risk
 MONGODB_INITDB_DATABASE=filedpapers
-MONGODB_INITDB_ROOT_USERNAME=filedpapers
-MONGODB_INITDB_ROOT_PASSWORD=$(generate_secret)
-PERSISTENCE_MONGO_USERNAME=${MONGODB_INITDB_ROOT_USERNAME}
-PERSISTENCE_MONGO_PASSWORD=${MONGODB_INITDB_ROOT_PASSWORD}
+MONGODB_INITDB_ROOT_USERNAME=${MONGODB_USERNAME}
+MONGODB_INITDB_ROOT_PASSWORD=${MONGODB_PASSWORD}
+PERSISTENCE_MONGO_USERNAME=${MONGODB_USERNAME}
+PERSISTENCE_MONGO_PASSWORD=${MONGODB_PASSWORD}
 APPLICATION_SECRET=$(generate_secret)
 API_ACCESSTOKEN_SECRET=$(generate_secret)
 API_ACCESSTOKEN_KEY=$(generate_secret)
@@ -52,34 +55,34 @@ FLASH_COOKIE_KEY=$(generate_secret)
 EOL
 
 if [ ! -d "logs" ]; then
-  echo "Creating logs folder..."
+  echo "2/6 Creating logs folder..."
   mkdir "logs"
 else
-  echo "Logs folder already exists."
+  echo "[Skipping] Logs folder already exists."
 fi
 
 # Create config folder if it does not exist
 if [ ! -d "config" ]; then
-  echo "Creating config folder..."
+  echo "3/6 Creating config folder..."
   mkdir "config"
 else
-  echo "Config folder already exists."
+  echo "[Skipping] Config folder already exists."
 fi
 cd config || { echo "Failed to enter config directory."; exit 1; }
 
 # Download the default config.yaml (silent download)
-echo "Downloading config.yaml..."
+echo "4/6 Downloading config.yaml..."
 curl -s -O "$CONFIG_URL"
 
 # Return to the installation directory
 cd .. || { echo "Failed to return to installation directory."; exit 1; }
 
 # Step 5: Download the compose.yaml (silent download)
-echo "Downloading compose.yaml..."
+echo "5/6 Downloading compose.yaml..."
 curl -s -O "$COMPOSE_URL"
 
 # Step 6: Installation complete
-echo "Installation complete!"
+echo "6/6 Installation complete!"
 echo ""
 echo "Please configure your specific environment in your compose.yaml."
 echo "Enjoy Filed Papers!"
