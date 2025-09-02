@@ -20,11 +20,11 @@ import java.util.*;
 
 public final class Utils {
     private static final Pattern RANDOM_PATTERN = Pattern.compile(
-            "^[A-Za-z0-9-]+$",
+            "^[A-Za-z0-9-_]+$",
             Pattern.CASE_INSENSITIVE
     );
     private static final Pattern NAME_PATTERN = Pattern.compile(
-            "(?i)[a-z0-9\\-]{1,32}",
+            "(?i)[-_a-z0-9\\-]{1,32}",
             Pattern.CASE_INSENSITIVE
     );
     private static final Pattern MFA_PATTERN = Pattern.compile("\\d{6}");
@@ -148,6 +148,6 @@ public final class Utils {
     }
 
     public static String randomString() {
-        return MangooUtils.randomString(16);
+        return MangooUtils.randomString(32);
     }
 }

@@ -74,7 +74,6 @@ public class PreviewTests {
                             // 2. Kill the process
                             Process killer = new ProcessBuilder("taskkill", "/PID", pid, "/F").start();
                             killer.waitFor();
-                            System.out.println("Killed PID " + pid + " on port " + port);
                         }
                     }
                 }
@@ -87,7 +86,6 @@ public class PreviewTests {
                     while ((pid = reader.readLine()) != null) {
                         Process killer = new ProcessBuilder("kill", "-9", pid).start();
                         killer.waitFor();
-                        System.out.println("Killed PID " + pid + " on port " + port);
                     }
                 }
             }
@@ -169,7 +167,7 @@ public class PreviewTests {
 
         //then
         assertThat(preview.title(), startsWith("Al-lord Arabische Süßigkeiten · Hansemannstraße 23, 45879 Gelsenkirchen"));
-        assertThat(preview.image(), equalTo("https://lh3.googleusercontent.com/p/AF1QipMhSZ68K3lODLzmFL0arjx5fwh0KsizwUjLZGOz=w900-h900-p-k-no"));
+        assertThat(preview.image(), anyOf(is("https://lh3.googleusercontent.com/p/AF1QipMhSZ68K3lODLzmFL0arjx5fwh0KsizwUjLZGOz=w900-h900-p-k-no"), is("https://lh3.googleusercontent.com/gps-cs-s/AC9h4no7k-07DiCziYx7E4ucHvHxIsaGPD5hsJJJxm9InLyMh-P9SK4QpTpFUAbm3Ka4BMKDriFOgBt4bKJfGPStM76wqydEU__T8upCIIvFJfPWuUYq42OUoSHjECVo_xLbqNZGJDPpglkdTQM=w900-h900-p-k-no")));
         assertThat(preview.domain(), equalTo("google.de"));
         assertThat(preview.description(), notNullValue());
     }

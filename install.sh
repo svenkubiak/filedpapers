@@ -20,7 +20,7 @@ cat > .env <<EOL
 VERSION=latest
 
 APPLICATION_URL=http://localhost
-ALLOW_REGISTRATION=true
+APPLICATION_ALLOW_REGISTRATION=true
 SMTP_HOST=localhost
 SMTP_PORT=25
 SMTP_AUTHENTICATION=true
@@ -34,22 +34,37 @@ SMTP_DEBUG=false
 MONGODB_INITDB_DATABASE=filedpapers
 MONGODB_INITDB_ROOT_USERNAME=filedpapers
 MONGODB_INITDB_ROOT_PASSWORD=$(generate_secret)
+PERSISTENCE_MONGO_USERNAME=${MONGODB_INITDB_ROOT_USERNAME}
+PERSISTENCE_MONGO_PASSWORD=${MONGODB_INITDB_ROOT_PASSWORD}
 APPLICATION_SECRET=$(generate_secret)
-ACCESS_TOKEN_SECRET=$(generate_secret)
-REFRESH_TOKEN_SECRET=$(generate_secret)
-CHALLENGE_TOKEN_SECRET=$(generate_secret)
-SESSION_SECRET=$(generate_secret)
-AUTHENTICATION_SECRET=$(generate_secret)
-FLASH_SECRET=$(generate_secret)
+API_ACCESSTOKEN_SECRET=$(generate_secret)
+API_ACCESSTOKEN_KEY=$(generate_secret)
+API_REFRESHTOKEN_SECRET=$(generate_secret)
+API_REFRESHTOKEN_KEY=$(generate_secret)
+API_CHALLENGETOKEN_SECRET=$(generate_secret)
+API_CHALLENGETOKEN_KEY=$(generate_secret)
+SESSION_COOKIE_SECRET=$(generate_secret)
+SESSION_COOKIE_KEY=$(generate_secret)
+AUTHENTICATION_COOKIE_SECRET=$(generate_secret)
+AUTHENTICATION_COOKIE_KEY=$(generate_secret)
+FLASH_COOKIE_SECRET=$(generate_secret)
+FLASH_COOKIE_KEY=$(generate_secret)
 EOL
 
-# Create logs folder
-echo "Creating logs folder..."
-mkdir -p logs
+if [ ! -d "logs" ]; then
+  echo "Creating logs folder..."
+  mkdir "logs"
+else
+  echo "Logs folder already exists."
+fi
 
-# Create the config folder
-echo "Creating config folder..."
-mkdir -p config
+# Create config folder if it does not exist
+if [ ! -d "config" ]; then
+  echo "Creating config folder..."
+  mkdir "config"
+else
+  echo "Config folder already exists."
+fi
 cd config || { echo "Failed to enter config directory."; exit 1; }
 
 # Download the default config.yaml (silent download)
@@ -65,8 +80,11 @@ curl -s -O "$COMPOSE_URL"
 
 # Step 6: Installation complete
 echo "Installation complete!"
-curl -s -O "$COMPOSE_URL"
-
 echo ""
-echo "Please configure your specific environment in your compose.yaml and remove this shell script."
+echo "Please configure your specific environment in your compose.yaml."
 echo "Enjoy Filed Papers!"
+
+# Cleanup: Remove install script
+echo "Removing install script..."
+rm -- "$0"
+

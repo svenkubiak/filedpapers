@@ -14,7 +14,7 @@ import io.mangoo.persistence.interfaces.Datastore;
 import io.mangoo.utils.CodecUtils;
 import io.mangoo.utils.DateUtils;
 import io.mangoo.utils.JsonUtils;
-import io.mangoo.utils.totp.TotpUtils;
+import io.mangoo.utils.TotpUtils;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.inject.Singleton;
@@ -421,7 +421,7 @@ public class DataService {
         Utils.checkCondition(Utils.isValidOtp(otp), Invalid.OTP);
 
         var user = findUserByUid(userUid);
-        return user != null && user.isMfa() && ( TotpUtils.verifiedTotp(user.getMfaSecret(), otp) || CodecUtils.matchArgon2(otp, user.getSalt(), user.getMfaFallback()));
+        return user != null && user.isMfa() && ( TotpUtils.verifyTotp(user.getMfaSecret(), otp) || CodecUtils.matchArgon2(otp, user.getSalt(), user.getMfaFallback()));
     }
 
     public String changeMfa(String userUid, boolean mfa) {

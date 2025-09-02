@@ -1,34 +1,41 @@
 package helpers;
 
-import io.mangoo.constants.Default;
+import com.nimbusds.jwt.JWTClaimsSet;
+import io.mangoo.constants.Const;
 import io.mangoo.core.Application;
 import io.mangoo.core.Config;
-import io.mangoo.exceptions.MangooTokenException;
+import io.mangoo.exceptions.MangooJwtException;
 import io.mangoo.test.http.TestRequest;
 import io.mangoo.test.http.TestResponse;
-import io.mangoo.utils.paseto.PasetoParser;
-import io.mangoo.utils.paseto.Token;
+import io.mangoo.utils.JwtUtils;
 
 import java.net.HttpCookie;
+import java.nio.charset.StandardCharsets;
+import java.text.ParseException;
 
 public final class TestUtils {
-
     private TestUtils() {}
 
-    public static Csrf getCsrf() throws RuntimeException {
+    public static Csrf getCsrf() {
+        Config config = Application.getInstance(Config.class);
+
         TestResponse response = TestRequest.get("/auth/login")
                 .execute();
 
         HttpCookie cookie = response
-                .getCookie(Application.getInstance(Config.class).getSessionCookieName());
+                .getCookie(config.getSessionCookieName());
+
+        var jwtData = JwtUtils.jwtData()
+                .withKey(config.getSessionCookieKey())
+                .withSecret(config.getSessionCookieSecret().getBytes(StandardCharsets.UTF_8))
+                .withIssuer(config.getApplicationName())
+                .withAudience(config.getSessionCookieName())
+                .withTtlSeconds(config.getSessionCookieTokenExpires());
 
         try {
-            Token parse = PasetoParser.create()
-                    .withValue(cookie.getValue())
-                    .withSecret(Application.getInstance(Config.class).getSessionCookieSecret())
-                    .parse();
-            return new Csrf(cookie, parse.getClaim(Default.CSRF_TOKEN));
-        } catch (MangooTokenException e) {
+            JWTClaimsSet jwtClaimsSet = JwtUtils.parseJwt(cookie.getValue(), jwtData);
+            return new Csrf(cookie, jwtClaimsSet.getClaimAsString(Const.CSRF_TOKEN));
+        } catch (ParseException | MangooJwtException e) {
             throw new RuntimeException(e);
         }
     }

@@ -1,86 +1,82 @@
 package services;
 
+import com.nimbusds.jwt.JWTClaimsSet;
 import constants.Const;
 import constants.Invalid;
 import constants.Required;
-import io.mangoo.constants.Key;
-import io.mangoo.exceptions.MangooTokenException;
-import io.mangoo.utils.paseto.PasetoBuilder;
-import io.mangoo.utils.paseto.PasetoParser;
-import io.mangoo.utils.paseto.Token;
+import io.mangoo.core.Config;
+import io.mangoo.exceptions.MangooJwtException;
+import io.mangoo.utils.JwtUtils;
 import jakarta.inject.Inject;
-import jakarta.inject.Named;
 import jakarta.inject.Singleton;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.util.Strings;
 import utils.Utils;
 
-import java.time.LocalDateTime;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 
 @Singleton
 public class AuthenticationService {
+    private static final String API_CHALLENGE_TOKEN_SECRET = "api.challengeToken.secret";
+    private static final String API_CHALLENGE_TOKEN_KEY = "api.challengeToken.key";
+    private static final String API_ACCESS_TOKEN_SECRET = "api.accessToken.secret";
+    private static final String API_ACCESS_TOKEN_KEY = "api.accessToken.key";
+    private static final String API_ACCESS_TOKEN_EXPIRES = "api.accessToken.expires";
+    private static final String API_REFRESH_TOKEN_SECRET = "api.refreshToken.secret";
+    private static final String API_REFRESH_TOKEN_KEY = "api.refreshToken.key";
+    private static final String API_REFRESH_TOKEN_EXPIRES = "api.refreshToken.expires";
     private final DataService dataService;
-    private final String challengeTokenSecret;
-    private final String accessTokenSecret;
-    private final String refreshTokenSecret;
-    private final String cookieSecret;
-    private final int accessTokenExpires;
-    private final int refreshTokenExpires;
+    private final Config config;
 
     @Inject
-    public AuthenticationService(DataService dataService,
-                                 @Named("api.challengeToken.secret") String challengeTokenSecret,
-                                 @Named("api.accessToken.secret") String accessTokenSecret,
-                                 @Named("api.refreshToken.secret") String refreshTokenSecret,
-                                 @Named(Key.AUTHENTICATION_COOKIE_SECRET) String cookieSecret,
-                                 @Named("api.accessToken.expires") int accessTokenExpires,
-                                 @Named("api.refreshToken.expires") int refreshTokenExpires) {
+    public AuthenticationService(DataService dataService, Config config) {
         this.dataService = Objects.requireNonNull(dataService, Required.DATA_SERVICE);
-        this.challengeTokenSecret = Objects.requireNonNull(challengeTokenSecret, Required.CHALLENGE_TOKEN_SECRET);
-        this.accessTokenSecret = Objects.requireNonNull(accessTokenSecret, Required.ACCESS_TOKEN_SECRET);
-        this.refreshTokenSecret = Objects.requireNonNull(refreshTokenSecret, Required.REFRESH_TOKEN_SECRET);
-        this.cookieSecret = Objects.requireNonNull(cookieSecret, Required.COOKIE_SECRET);
-        this.accessTokenExpires = accessTokenExpires;
-        this.refreshTokenExpires = refreshTokenExpires;
+        this.config = Objects.requireNonNull(config, Required.CONFIG);
     }
 
-    public Map<String, String> getChallengeToken(String userUid) throws MangooTokenException {
+    public Map<String, String> getChallengeToken(String userUid) throws MangooJwtException {
         Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
 
-        var now = LocalDateTime.now();
-
-        String challengeToken = PasetoBuilder.create()
-                .withSecret(challengeTokenSecret)
-                .withExpires(now.plusMinutes(5))
-                .withClaim(Const.NONCE, Utils.randomString())
+        var jwtData = JwtUtils.jwtData()
+                .withSecret(config.getString(API_CHALLENGE_TOKEN_SECRET).getBytes(StandardCharsets.UTF_8))
+                .withKey(config.getString(API_CHALLENGE_TOKEN_KEY))
+                .withClaims(Map.of(Const.NONCE, Utils.randomString()))
                 .withSubject(userUid)
-                .build();
+                .withTtlSeconds(300)
+                .withIssuer(config.getApplicationName())
+                .withAudience(config.getApplicationName());
 
-        return Map.of(Const.CHALLENGE_TOKEN, challengeToken);
+        var jwt = JwtUtils.createJwt(jwtData);
+
+        return Map.of(Const.CHALLENGE_TOKEN, jwt);
     }
 
-    public Map<String, String> getAccessTokens(String userUid) throws MangooTokenException {
+    public Map<String, String> getAccessTokens(String userUid) throws MangooJwtException {
         Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
 
-        var now = LocalDateTime.now();
-        String accessToken = PasetoBuilder.create()
-                .withSecret(accessTokenSecret)
-                .withExpires(now.plusMinutes(accessTokenExpires))
-                .withClaim(Const.NONCE, Utils.randomString())
-                .withClaim(Const.PEPPER, getPepper(userUid))
+        var jwtData = JwtUtils.jwtData()
+                .withSecret(config.getString(API_ACCESS_TOKEN_SECRET).getBytes(StandardCharsets.UTF_8))
+                .withKey(config.getString(API_ACCESS_TOKEN_KEY))
+                .withClaims(Map.of(Const.NONCE, Utils.randomString(), Const.PEPPER, getPepper(userUid)))
                 .withSubject(userUid)
-                .build();
+                .withTtlSeconds(config.getInt(API_ACCESS_TOKEN_EXPIRES) * 60L)
+                .withIssuer(config.getApplicationName())
+                .withAudience(config.getApplicationName());
 
-        String refreshToken = PasetoBuilder.create()
-                .withSecret(refreshTokenSecret)
-                .withExpires(now.plusMinutes(refreshTokenExpires))
-                .withClaim(Const.NONCE, Utils.randomString())
-                .withClaim(Const.PEPPER, getPepper(userUid))
+        var accessToken = JwtUtils.createJwt(jwtData);
+
+        jwtData = JwtUtils.jwtData()
+                .withSecret(config.getString(API_REFRESH_TOKEN_SECRET).getBytes(StandardCharsets.UTF_8))
+                .withKey(config.getString(API_REFRESH_TOKEN_KEY))
+                .withClaims(Map.of(Const.NONCE, Utils.randomString(), Const.PEPPER, getPepper(userUid)))
                 .withSubject(userUid)
-                .build();
+                .withTtlSeconds(config.getInt(API_REFRESH_TOKEN_EXPIRES) * 60L)
+                .withIssuer(config.getApplicationName())
+                .withAudience(config.getApplicationName());
+
+        var refreshToken = JwtUtils.createJwt(jwtData);
 
         return Map.of(Const.ACCESS_TOKEN, accessToken, Const.REFRESH_TOKEN, refreshToken);
     }
@@ -102,49 +98,53 @@ public class AuthenticationService {
         return pepper;
     }
 
-    private Token parsePaseto(String value, String secret) throws MangooTokenException {
+    private JWTClaimsSet parseJwt(String value, String key, String secret, int expires) throws MangooJwtException {
         Objects.requireNonNull(value, Required.VALUE);
         Objects.requireNonNull(secret, Required.SECRET);
 
-        return PasetoParser.create()
-                .withValue(value)
-                .withSecret(secret)
-                .parse();
+        var jwtData = JwtUtils.jwtData()
+                .withKey(key)
+                .withSecret(secret.getBytes(StandardCharsets.UTF_8))
+                .withTtlSeconds(expires)
+                .withIssuer(config.getApplicationName())
+                .withAudience(config.getApplicationName());
+
+        return JwtUtils.parseJwt(value, jwtData);
     }
 
-    public Token parseChallengeToken(String value) throws MangooTokenException {
+    public JWTClaimsSet parseAccessToken(String value) throws MangooJwtException {
         Objects.requireNonNull(value, Required.VALUE);
 
-        return parsePaseto(value, challengeTokenSecret);
+        return parseJwt(value,
+                config.getString(API_ACCESS_TOKEN_KEY),
+                config.getString(API_ACCESS_TOKEN_SECRET),
+                config.getInt(API_ACCESS_TOKEN_EXPIRES) * 60);
     }
 
-    public Token parseRefreshToken(String value) throws MangooTokenException {
+    public JWTClaimsSet parseChallengeToken(String value) throws MangooJwtException {
         Objects.requireNonNull(value, Required.VALUE);
 
-        return parsePaseto(value, refreshTokenSecret);
+        return parseJwt(value,
+                config.getString(API_CHALLENGE_TOKEN_KEY),
+                config.getString(API_CHALLENGE_TOKEN_SECRET),
+                300);
     }
 
-    public Token parseAccessToken(String value) throws MangooTokenException {
+    public JWTClaimsSet parseRefreshToken(String value) throws MangooJwtException {
         Objects.requireNonNull(value, Required.VALUE);
 
-        return parsePaseto(value, accessTokenSecret);
+        return parseJwt(value,
+                config.getString(API_REFRESH_TOKEN_KEY),
+                config.getString(API_REFRESH_TOKEN_SECRET),
+                config.getInt(API_REFRESH_TOKEN_EXPIRES) * 60);
     }
 
-    public Token parseAuthenticationCookie(String value) throws MangooTokenException {
+    public JWTClaimsSet parseAuthenticationCookie(String value) throws MangooJwtException {
         Objects.requireNonNull(value, Required.VALUE);
 
-        return parsePaseto(value, cookieSecret);
-    }
-
-    public Optional<String> validateToken(Token token) {
-        Objects.requireNonNull(token, Required.TOKEN);
-
-        LocalDateTime expires = token.getExpires();
-        String userUid = token.getSubject();
-        if (expires != null && expires.isAfter(LocalDateTime.now()) && Utils.isValidRandom(userUid)) {
-            return Optional.of(userUid);
-        }
-
-        return Optional.empty();
+        return parseJwt(value,
+                config.getAuthenticationCookieKey(),
+                config.getAuthenticationCookieSecret(),
+                (int) config.getAuthenticationCookieTokenExpires() * 60);
     }
 }

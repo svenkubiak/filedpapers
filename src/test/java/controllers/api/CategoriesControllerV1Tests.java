@@ -165,7 +165,6 @@ public class CategoriesControllerV1Tests {
                 .execute();
 
         //then
-        System.out.println(response.getContent());
         assertThat(response).isNotNull();
         assertThat(response.getStatusCode()).isEqualTo(200);
         assertThat(Application.getInstance(DataService.class).findCategory(CATEGORY_UID, USER_UID).getName()).isEqualTo(name);
@@ -181,6 +180,8 @@ public class CategoriesControllerV1Tests {
                 .withContentType("application/json")
                 .withStringBody(JsonUtils.toJson(body))
                 .execute();
+
+        System.out.println("------>" + response.getContent());
 
         //then
         assertThat(response).isNotNull();

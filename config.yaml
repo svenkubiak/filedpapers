@@ -3,26 +3,29 @@
 default:
   application:
     language: en
-    url: arg{}
-    secret: arg{}
-    registration: arg{}
+    url: env{}
+    secret: env{}
+    registration: env{}
   connector:
     http:
       host: 0.0.0.0
       port: 9090
   api:
     accessToken:
-      secret: arg{}
-      expires: 60
+      key: env{}
+      secret: env{}
+      expires: 15 # Minutes
     refreshToken:
-      secret: arg{}
-      expires: 10080
+      secret: env{}
+      key: env{}
+      expires: 10080 # Minutes
     challengeToken:
-      secret: arg{}
+      secret: env{}
   session:
     cookie:
       name: __Host-filedpapers-session
-      secret: arg{}
+      secret: env{}
+      key: env{}
       secure: true
   authentication:
     redirect:
@@ -30,33 +33,35 @@ default:
       mfa: /auth/mfa
     cookie:
       name: __Host-filedpapers-authentication
-      secret: arg{}
+      secret: env{}
+      key: env{}
       secure: true
   flash:
     cookie:
       name: __Host-filedpapers-flash
-      secret: arg{}
+      secret: env{}
+      key: env{}
       secure: true
   i18n:
     cookie:
       name: __Host-filedpapers-i18n
   smtp:
-    host: arg{}
-    port: arg{}
-    authentication: arg{}
-    username: arg{}
-    password: arg{}
-    from: arg{}
-    protocol: arg{}
-    debug: arg{}
+    host: env{}
+    port: env{}
+    authentication: env{}
+    username: env{}
+    password: env{}
+    from: env{}
+    protocol: env{}
+    debug: env{}
   persistence:
     mongo:
       embedded: false
       host: filedpapers-database
       port: 27017
       dbname: filedpapers
-      username: arg{}
-      password: arg{}
+      username: env{}
+      password: env{}
       authdb: admin
       auth: true
       package: models

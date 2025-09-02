@@ -1,15 +1,15 @@
 package filters;
 
+import com.nimbusds.jwt.JWTClaimsSet;
 import constants.Const;
 import constants.Required;
 import io.mangoo.constants.Header;
 import io.mangoo.constants.Key;
-import io.mangoo.exceptions.MangooTokenException;
+import io.mangoo.exceptions.MangooJwtException;
 import io.mangoo.interfaces.filters.PerRequestFilter;
 import io.mangoo.routing.Response;
 import io.mangoo.routing.bindings.Request;
 import io.mangoo.utils.RequestUtils;
-import io.mangoo.utils.paseto.Token;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import org.apache.commons.lang3.StringUtils;
@@ -54,28 +54,28 @@ public class ApiAccessFilter implements PerRequestFilter {
 
     private Response authorize(String authorization, Request request, Response response, boolean cookie) {
         try {
-            Token token;
+            JWTClaimsSet jwtClaimsSet;
             if (cookie) {
-                token = authenticationService.parseAuthenticationCookie(authorization);
+                jwtClaimsSet = authenticationService.parseAuthenticationCookie(authorization);
             } else {
-                token = authenticationService.parseAccessToken(authorization);
+                jwtClaimsSet = authenticationService.parseAccessToken(authorization);
             }
 
-            if (token != null) {
-                return authenticationService.validateToken(token).map(userUid -> {
-                    if (cookie && !request.hasValidCsrf()) {
-                        return Response.unauthorized().end();
-                    }
+            if (jwtClaimsSet != null) {
+                String userUid = jwtClaimsSet.getSubject();
 
-                    if (dataService.userExists(userUid)) {
-                        request.addAttribute(Const.USER_UID, userUid);
-                        return response;
-                    }
-
+                if (cookie && !request.hasValidCsrf()) {
                     return Response.unauthorized().end();
-                }).orElseGet(() -> Response.unauthorized().end());
+                }
+
+                if (dataService.userExists(userUid)) {
+                    request.addAttribute(Const.USER_UID, userUid);
+                    return response;
+                }
+
+                return Response.unauthorized().end();
             }
-        } catch (MangooTokenException e) {
+        } catch (MangooJwtException e) {
             return Response.unauthorized().end();
         }
 

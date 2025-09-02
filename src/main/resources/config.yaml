@@ -19,12 +19,15 @@ default:
   api:
     accessToken:
       secret: 7jxYMCRL1WIyiaSn5gb0ULCnX3a5GTsnBXfv2AJVj4ZIBiUQqRuv9SrhoGor2AIk
+      key: 7jxYMCRL1WIyiaSn5gb0ULCnX3a5GTsnBXfv2AJVj4ZIBiUQqRuv9SrhoGor2AIk
       expires: 60
     refreshToken:
       secret: B9iQO0gF1eWDbUR7Z5qwxz8bgDQoHIQtW1r5WMQudbIWx1a12xmhtAmixtdc8AKJ
+      key: B9iQO0gF1eWDbUR7Z5qwxz8bgDQoHIQtW1r5WMQudbIWx1a12xmhtAmixtdc8AKJ
       expires: 120
     challengeToken:
       secret: RnZ9JZ9g68T5PNKZV5sKUTR1jJdCndU6kSPDy8TsoZKuXC9TnT4zcluU3u7VW2wl
+      key: RnZ9JZ9g68T5PNKZV5sKUTR1jJdCndU6kSPDy8TsoZKuXC9TnT4zcluU3u7VW2wl
   connector:
     http:
       host: localhost
@@ -33,6 +36,7 @@ default:
     cookie:
       name: filedpapers-session
       secret: y1LEAusRqekYYnPEPF4Qfqj4ZNSdqnUklrIK6F0XN1KDj9lFyxbiPfFkvqlMC9pb
+      key: y1LEAusRqekYYnPEPF4Qfqj4ZNSdqnUklrIK6F0XN1KDj9lFyxbiPfFkvqlMC9pb
       secure: true
   authentication:
     redirect:
@@ -41,6 +45,7 @@ default:
     cookie:
       name: filedpapers-authentication
       secret: C4rfFW6PSE9lvDqa5pgBnfaSDJuxBCnFgoHed3k92YE7pmVK39XMo9nVD1M4PEBG
+      key: C4rfFW6PSE9lvDqa5pgBnfaSDJuxBCnFgoHed3k92YE7pmVK39XMo9nVD1M4PEBG
       secure: true
   token:
     secret: X6JdFDrUmDXna5E47xqirx3zzVuzvUPK
@@ -48,6 +53,7 @@ default:
     cookie:
       name: filedpapers-flash
       secret: 1WXhOzfGM60I9JoRNEa60QgXu0fCR6yqyAZeckWLNuvCa3ZV3NuadlEZgq7OnDQo
+      key: 1WXhOzfGM60I9JoRNEa60QgXu0fCR6yqyAZeckWLNuvCa3ZV3NuadlEZgq7OnDQo
       secure: true
   smtp:
     host: host

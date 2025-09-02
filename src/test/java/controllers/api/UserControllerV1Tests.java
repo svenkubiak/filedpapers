@@ -8,7 +8,7 @@ import io.mangoo.test.http.TestRequest;
 import io.mangoo.test.http.TestResponse;
 import io.mangoo.utils.CodecUtils;
 import io.mangoo.utils.JsonUtils;
-import io.mangoo.utils.totp.TotpUtils;
+import io.mangoo.utils.TotpUtils;
 import models.Category;
 import models.Item;
 import models.User;
@@ -68,8 +68,8 @@ public class UserControllerV1Tests {
         assertThat(response.getContent()).contains("accessToken", "refreshToken");
         assertThatJson(response.getContent()).node("accessToken").isString().isNotNull();
         assertThatJson(response.getContent()).node("refreshToken").isString().isNotNull();
-        assertThatJson(response.getContent()).node("accessToken").isString().contains("v4.local");
-        assertThatJson(response.getContent()).node("refreshToken").isString().contains("v4.local");
+        assertThatJson(response.getContent()).node("accessToken").isString().startsWith("ey");
+        assertThatJson(response.getContent()).node("refreshToken").isString().startsWith("ey");
         assertThatJson(response.getContent()).isEqualTo("""
             {
               "accessToken": "${json-unit.any-string}",
@@ -96,7 +96,7 @@ public class UserControllerV1Tests {
         assertThat(response.getStatusCode()).isEqualTo(202);
         assertThat(response.getContent()).isNotNull();
         assertThat(response.getContent()).contains("challengeToken");
-        assertThatJson(response.getContent()).node("challengeToken").isString().contains("v4.local");
+        assertThatJson(response.getContent()).node("challengeToken").isString().startsWith("ey");
         assertThatJson(response.getContent()).isEqualTo("""
             {
               "challengeToken": "${json-unit.any-string}"
@@ -122,7 +122,7 @@ public class UserControllerV1Tests {
         assertThat(response.getStatusCode()).isEqualTo(202);
         assertThat(response.getContent()).isNotNull();
         assertThat(response.getContent()).contains("challengeToken");
-        assertThatJson(response.getContent()).node("challengeToken").isString().contains("v4.local");
+        assertThatJson(response.getContent()).node("challengeToken").isString().startsWith("ey");
 
         //given
         Map<String, String> credentials = JsonUtils.toFlatMap(response.getContent());
@@ -141,8 +141,8 @@ public class UserControllerV1Tests {
         assertThat(response.getContent()).contains("accessToken", "refreshToken");
         assertThatJson(response.getContent()).node("accessToken").isString().isNotNull();
         assertThatJson(response.getContent()).node("refreshToken").isString().isNotNull();
-        assertThatJson(response.getContent()).node("accessToken").isString().contains("v4.local");
-        assertThatJson(response.getContent()).node("refreshToken").isString().contains("v4.local");
+        assertThatJson(response.getContent()).node("accessToken").isString().startsWith("ey");
+        assertThatJson(response.getContent()).node("refreshToken").isString().startsWith("ey");
     }
 
     @Test
@@ -163,7 +163,7 @@ public class UserControllerV1Tests {
         assertThat(response.getStatusCode()).isEqualTo(202);
         assertThat(response.getContent()).isNotNull();
         assertThat(response.getContent()).contains("challengeToken");
-        assertThatJson(response.getContent()).node("challengeToken").isString().contains("v4.local");
+        assertThatJson(response.getContent()).node("challengeToken").isString().startsWith("ey");
 
         //given
         Map<String, String> credentials = JsonUtils.toFlatMap(response.getContent());
@@ -308,8 +308,8 @@ public class UserControllerV1Tests {
         assertThat(response.getContent()).contains("accessToken", "refreshToken");
         assertThatJson(response.getContent()).node("accessToken").isString().isNotNull();
         assertThatJson(response.getContent()).node("refreshToken").isString().isNotNull();
-        assertThatJson(response.getContent()).node("accessToken").isString().contains("v4.local");
-        assertThatJson(response.getContent()).node("refreshToken").isString().contains("v4.local");
+        assertThatJson(response.getContent()).node("accessToken").isString().startsWith("ey");
+        assertThatJson(response.getContent()).node("refreshToken").isString().startsWith("ey");
     }
 
     @Test

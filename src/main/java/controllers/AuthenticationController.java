@@ -10,7 +10,7 @@ import io.mangoo.i18n.Messages;
 import io.mangoo.routing.Response;
 import io.mangoo.routing.bindings.*;
 import io.mangoo.utils.CodecUtils;
-import io.mangoo.utils.totp.TotpUtils;
+import io.mangoo.utils.TotpUtils;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import models.Action;
@@ -105,7 +105,7 @@ public class AuthenticationController {
             String mfa = form.get("mfa");
 
             var user = dataService.findUserByUid(userUid);
-            if (user != null && ( TotpUtils.verifiedTotp(user.getMfaSecret(), mfa) || CodecUtils.matchArgon2(mfa, user.getSalt(), user.getMfaFallback())) ) {
+            if (user != null && ( TotpUtils.verifyTotp(user.getMfaSecret(), mfa) || CodecUtils.matchArgon2(mfa, user.getSalt(), user.getMfaFallback())) ) {
                 authentication.twoFactorAuthentication(false);
                 authentication.update();
 

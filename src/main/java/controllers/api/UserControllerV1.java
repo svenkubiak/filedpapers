@@ -1,8 +1,9 @@
 package controllers.api;
 
+import com.nimbusds.jwt.JWTClaimsSet;
 import constants.Const;
 import constants.Required;
-import io.mangoo.exceptions.MangooTokenException;
+import io.mangoo.exceptions.MangooJwtException;
 import io.mangoo.routing.Response;
 import jakarta.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
@@ -41,7 +42,7 @@ public class UserControllerV1 {
                             return Response.ok()
                                     .bodyJson(authenticationService.getAccessTokens(userUid));
                         }
-                    } catch (MangooTokenException e) {
+                    } catch (MangooJwtException e) {
                         return Response.unauthorized();
                     }
                 }).orElseGet(Response::unauthorized);
@@ -56,22 +57,19 @@ public class UserControllerV1 {
         }
 
         try {
-            var token = authenticationService.parseChallengeToken(challengeToken);
-            if (token == null) {
+            JWTClaimsSet jwtClaimsSet = authenticationService.parseChallengeToken(challengeToken);
+            if (jwtClaimsSet == null) {
                 return Response.forbidden();
             }
 
-            return authenticationService.validateToken(token)
-                    .filter(userUid -> dataService.isValidMfa(userUid, otp))
-                    .map(userUid -> {
-                        try {
-                            return Response.ok().bodyJson(authenticationService.getAccessTokens(userUid));
-                        } catch (MangooTokenException e) {
-                            return Response.forbidden();
-                        }
-                    }).orElseGet(Response::forbidden);
+            String userUid = jwtClaimsSet.getSubject();
 
-        } catch (MangooTokenException e) {
+            if (dataService.isValidMfa(userUid, otp)) {
+                return Response.ok().bodyJson(authenticationService.getAccessTokens(userUid));
+            }
+            return Response.forbidden();
+
+        } catch (MangooJwtException e) {
             return Response.forbidden();
         }
     }
@@ -84,22 +82,15 @@ public class UserControllerV1 {
         }
 
         try {
-            var token = authenticationService.parseRefreshToken(refreshToken);
-            if (token == null) {
+            JWTClaimsSet jwtClaimsSet = authenticationService.parseRefreshToken(refreshToken);
+            if (jwtClaimsSet == null) {
                 return Response.unauthorized();
             }
 
-            return authenticationService.validateToken(token)
-                    .map(userUid -> {
-                        try {
-                            return Response.ok().bodyJson(
-                                    authenticationService.getAccessTokens(userUid));
-                        } catch (MangooTokenException e) {
-                            return Response.unauthorized();
-                        }
-                    }).orElseGet(Response::unauthorized);
-
-        } catch (MangooTokenException e) {
+            String userUid = jwtClaimsSet.getSubject();
+            return Response.ok()
+                   .bodyJson(authenticationService.getAccessTokens(userUid));
+        } catch (MangooJwtException e) {
             return Response.unauthorized();
         }
     }
