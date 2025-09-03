@@ -13,12 +13,15 @@ import io.mangoo.utils.RequestUtils;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import services.AuthenticationService;
 import services.DataService;
 
 import java.util.Objects;
 
 public class ApiAccessFilter implements PerRequestFilter {
+    private static final Logger LOG = LogManager.getLogger(DataService.class);
     private final DataService dataService;
     private final AuthenticationService authenticationService;
     private final String cookieName;
@@ -76,6 +79,7 @@ public class ApiAccessFilter implements PerRequestFilter {
                 return Response.unauthorized().end();
             }
         } catch (MangooJwtException e) {
+            LOG.error("Failed to parse authorization", e);
             return Response.unauthorized().end();
         }
 

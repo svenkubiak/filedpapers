@@ -51,7 +51,7 @@ import static constants.Const.PLACEHOLDER_IMAGE;
 @Singleton
 public class DataService {
     private static final Logger LOG = LogManager.getLogger(DataService.class);
-    public static final String FAILED_TO_FETCH_LINK_PREVIEW = "Failed to fetch link preview";
+    private static final String FAILED_TO_FETCH_LINK_PREVIEW = "Failed to fetch link preview";
     private final Datastore datastore;
     private final MediaService mediaService;
     private final String applicationUrl;

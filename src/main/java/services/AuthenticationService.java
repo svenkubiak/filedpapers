@@ -98,7 +98,7 @@ public class AuthenticationService {
         return pepper;
     }
 
-    private JWTClaimsSet parseJwt(String value, String key, String secret, int expires) throws MangooJwtException {
+    private JWTClaimsSet parseJwt(String value, String key, String secret, String audience, int expires) throws MangooJwtException {
         Objects.requireNonNull(value, Required.VALUE);
         Objects.requireNonNull(secret, Required.SECRET);
 
@@ -107,7 +107,7 @@ public class AuthenticationService {
                 .withSecret(secret.getBytes(StandardCharsets.UTF_8))
                 .withTtlSeconds(expires)
                 .withIssuer(config.getApplicationName())
-                .withAudience(config.getApplicationName());
+                .withAudience(audience);
 
         return JwtUtils.parseJwt(value, jwtData);
     }
@@ -118,6 +118,7 @@ public class AuthenticationService {
         return parseJwt(value,
                 config.getString(API_ACCESS_TOKEN_KEY),
                 config.getString(API_ACCESS_TOKEN_SECRET),
+                config.getApplicationName(),
                 config.getInt(API_ACCESS_TOKEN_EXPIRES) * 60);
     }
 
@@ -127,6 +128,7 @@ public class AuthenticationService {
         return parseJwt(value,
                 config.getString(API_CHALLENGE_TOKEN_KEY),
                 config.getString(API_CHALLENGE_TOKEN_SECRET),
+                config.getApplicationName(),
                 300);
     }
 
@@ -136,6 +138,7 @@ public class AuthenticationService {
         return parseJwt(value,
                 config.getString(API_REFRESH_TOKEN_KEY),
                 config.getString(API_REFRESH_TOKEN_SECRET),
+                config.getApplicationName(),
                 config.getInt(API_REFRESH_TOKEN_EXPIRES) * 60);
     }
 
@@ -145,6 +148,7 @@ public class AuthenticationService {
         return parseJwt(value,
                 config.getAuthenticationCookieKey(),
                 config.getAuthenticationCookieSecret(),
+                config.getAuthenticationCookieName(),
                 (int) config.getAuthenticationCookieTokenExpires() * 60);
     }
 }
