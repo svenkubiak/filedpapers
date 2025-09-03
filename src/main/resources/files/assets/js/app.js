@@ -22,6 +22,7 @@ const forAll = (sel, fn) => {
 let $categoryToRename = null;
 const toastSuccess = 'toast-success';
 const toastError = 'toast-error';
+const poll = $id('poll-js').dataset;
 const i18n = $id('i18n-js').dataset;
 const generalError = i18n.error;
 const archivedSuccess = i18n.archivedSuccess;
@@ -439,6 +440,30 @@ function openPopup(e) {
     );
 }
 
+function setupAutoFocusNext(selector) {
+    forAll(selector, (input, index, inputs) => {
+        on(input, 'input', (e) => {
+            const value = e.target.value;
+            e.target.value = value.replace(/[^0-9]/g, '').slice(0, 1);
+            if (e.target.value && index < inputs.length - 1) {
+                inputs[index + 1].focus();
+            }
+        });
+    });
+}
+
+function focusFirstVisibleInput(selector) {
+    const inputs = document.querySelectorAll(selector);
+    for (let input of inputs) {
+        if (input.offsetParent !== null) {
+            input.focus();
+            break;
+        }
+    }
+}
+
+focusFirstVisibleInput('.otp-input');
+setupAutoFocusNext('.otp-input');
 on(document, 'keydown', handleKeyNavigation);
 on(window, 'load', handleToastsOnLoad);
 on('#add-category-button', 'click', handleAddClick);
@@ -470,7 +495,7 @@ forAll('.menu-list a[data-category]', (target) => {
     target.addEventListener('drop', handleDrop);
 });
 
-async function poll() {
+async function polling() {
     try {
         const count = $$('.card').length;
         const match = window.location.pathname.match(/\/dashboard\/(.+)/);
@@ -496,10 +521,12 @@ async function poll() {
                 console.log(error);
             });
 
-        setTimeout(poll, 3000);
+        setTimeout(polling, 3000);
     } catch (error) {
         console.log(error);
     }
 }
 
-poll();
+if (poll != null && poll.poll === "true") {
+    polling();
+}

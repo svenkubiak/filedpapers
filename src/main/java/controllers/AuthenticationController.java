@@ -105,11 +105,24 @@ public class AuthenticationController {
             String mfa = form.get("mfa");
 
             var user = dataService.findUserByUid(userUid);
-            if (user != null && ( TotpUtils.verifyTotp(user.getMfaSecret(), mfa) || CodecUtils.matchArgon2(mfa, user.getSalt(), user.getMfaFallback())) ) {
-                authentication.twoFactorAuthentication(false);
-                authentication.update();
+            if (user != null) {
+                if (TotpUtils.verifyTotp(user.getMfaSecret(), mfa)) {
+                    authentication.twoFactorAuthentication(false);
+                    authentication.update();
 
-                return Response.redirect("/dashboard");
+                    return Response.redirect("/dashboard");
+                } else if (CodecUtils.matchArgon2(mfa, user.getSalt(), user.getMfaFallback())) {
+                    authentication.twoFactorAuthentication(false);
+                    authentication.update();
+
+                    user.setMfa(false);
+                    user.setMfaFallback(Utils.randomString());
+                    user.setMfaSecret(TotpUtils.createSecret());
+                    dataService.save(user);
+
+                    flash.setWarning(messages.get("dashboard.banner.mfa"));
+                    return Response.redirect("/dashboard");
+                }
             }
         }
 

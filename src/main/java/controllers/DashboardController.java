@@ -3,7 +3,6 @@ package controllers;
 import constants.Const;
 import constants.Required;
 import io.mangoo.annotations.FilterWith;
-import io.mangoo.constants.Hmac;
 import io.mangoo.core.Config;
 import io.mangoo.filters.CsrfFilter;
 import io.mangoo.i18n.Messages;
@@ -32,6 +31,7 @@ import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.*;
 
+import static constants.Const.GENERAL_ERROR;
 import static constants.Const.TOAST_ERROR;
 
 public class DashboardController {
@@ -72,10 +72,11 @@ public class DashboardController {
                 .render("breadcrumb", category.getName())
                 .render("categories", categories.orElseThrow())
                 .render("categoryUid", category.getUid())
-                .render("items", Utils.convertItems(items.orElseThrow()));
+                .render("items", Utils.convertItems(items.orElseThrow()))
+                .render("poll", true);
     }
 
-    public Response profile(Authentication authentication, Flash flash) {
+    public Response profile(Authentication authentication, Flash flash, String mfa) {
         String userUid = authentication.getSubject();
         Optional<List<Map<String, Object>>> categories = dataService.findCategories(userUid);
 
@@ -83,8 +84,16 @@ public class DashboardController {
 
         var user = dataService.findUserByUid(userUid);
         String qrCode = null;
-        if (user.isMfa()) {
-            qrCode = TotpUtils.getQRCode(user.getUsername(), "Filed Papers", user.getMfaSecret(), Hmac.SHA512, "6", "30");
+        if (("enable").equals(mfa) && !user.isMfa()) {
+            String secret  = TotpUtils.createSecret();
+            user.setMfaSecret(secret);
+            dataService.save(user);
+
+            qrCode = TotpUtils.getQRCode(user.getUsername(), "Filed Papers", secret);
+        } else if (("disable").equals(mfa) && user.isMfa()) {
+            user.setMfa(false);
+            dataService.save(user);
+            flash.put(Const.TOAST_SUCCESS, messages.get("toast.mfa.disabled"));
         }
 
         String fallback = null;
@@ -98,6 +107,7 @@ public class DashboardController {
                 .render("username", user.getUsername())
                 .render("confirmed", user.isConfirmed())
                 .render("mfa", user.isMfa())
+                .render("enrollMfa", !user.isMfa() && ("enable").equals(mfa))
                 .render("languages", Utils.getLanguages())
                 .render("language", Utils.language(user))
                 .render("qrCode", qrCode)
@@ -108,11 +118,26 @@ public class DashboardController {
     @FilterWith(CsrfFilter.class)
     public Response doMfa(Authentication authentication, Form form, Flash flash) {
         String userUid = authentication.getSubject();
-        String mfa = form.get("mfa");
+        for (int i=1; i <=6; i++) {
+            form.expectNumeric("otp-" + i);
+            form.expectRangeLength("otp-" + i, 1, 1);
+        }
 
-        String fallback = dataService.changeMfa(userUid, ("on").equals(mfa));
-        flash.put(Const.TOAST_SUCCESS, messages.get("toast.mfa.success", ("on").equals(mfa) ? messages.get("toast.mfa.enabled") : messages.get("toast.mfa.disabled")));
-        flash.put(Const.MFA_FALLBACK, fallback);
+        if (form.isValid()) {
+            String otp = Strings.EMPTY;
+            for (int i=1; i <=6; i++) {
+                otp += form.get("otp-" + i);
+            }
+
+            var user = dataService.findUserByUid(userUid);
+            if (TotpUtils.verifyTotp(user.getMfaSecret(), otp)) {
+                String fallback = dataService.enableMfa(userUid);
+                flash.put(Const.TOAST_SUCCESS, messages.get("toast.mfa.enabled"));
+                flash.put(Const.MFA_FALLBACK, fallback);
+            }
+        } else {
+            flash.put(Const.TOAST_ERROR, GENERAL_ERROR);
+        }
 
         return Response.redirect("/dashboard/profile");
     }

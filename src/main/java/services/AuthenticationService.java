@@ -149,6 +149,6 @@ public class AuthenticationService {
                 config.getAuthenticationCookieKey(),
                 config.getAuthenticationCookieSecret(),
                 config.getAuthenticationCookieName(),
-                (int) config.getAuthenticationCookieTokenExpires() * 60);
+                (int) config.getAuthenticationCookieRememberExpires() * 60);
     }
 }

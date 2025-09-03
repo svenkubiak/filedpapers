@@ -181,8 +181,6 @@ public class CategoriesControllerV1Tests {
                 .withStringBody(JsonUtils.toJson(body))
                 .execute();
 
-        System.out.println("------>" + response.getContent());
-
         //then
         assertThat(response).isNotNull();
         assertThat(response.getStatusCode()).isEqualTo(200);

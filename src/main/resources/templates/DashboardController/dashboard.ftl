@@ -29,6 +29,11 @@
     </#if>
 </div>
 <div class="columns is-multiline">
+    <#if flash.warning??>
+        <div class="notification is-warning">
+            ${flash.warning}
+        </div>
+    </#if>
     <#list items?sort_by("sort")?reverse as item>
         <div class="column is-one-quarter">
             <div class="card" data-uid="${item.uid}" data-category="${categoryUid}">

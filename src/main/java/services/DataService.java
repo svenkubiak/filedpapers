@@ -424,19 +424,17 @@ public class DataService {
         return user != null && user.isMfa() && ( TotpUtils.verifyTotp(user.getMfaSecret(), otp) || CodecUtils.matchArgon2(otp, user.getSalt(), user.getMfaFallback()));
     }
 
-    public String changeMfa(String userUid, boolean mfa) {
+    public String enableMfa(String userUid) {
         Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
 
         String fallback = null;
         var user = findUserByUid(userUid);
-        if (mfa) {
+        if (!user.isMfa()) {
             fallback = Utils.randomString();
-            user.setMfaSecret(Utils.randomString());
             user.setMfaFallback(CodecUtils.hashArgon2(fallback, user.getSalt()));
+            user.setMfa(true);
+            save(user);
         }
-        user.setMfa(mfa);
-
-        save(user);
 
         return fallback;
     }
