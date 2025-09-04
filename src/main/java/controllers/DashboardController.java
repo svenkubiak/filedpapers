@@ -30,6 +30,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.*;
+import java.util.stream.IntStream;
 
 import static constants.Const.GENERAL_ERROR;
 import static constants.Const.TOAST_ERROR;
@@ -77,24 +78,35 @@ public class DashboardController {
     }
 
     public Response profile(Authentication authentication, Flash flash, String mfa) {
-        String userUid = authentication.getSubject();
-        Optional<List<Map<String, Object>>> categories = dataService.findCategories(userUid);
+        var userUid = authentication.getSubject();
 
+        Optional<List<Map<String, Object>>> categories = dataService.findCategories(userUid);
         categories.ifPresent(Utils::sortCategories);
 
         var user = dataService.findUserByUid(userUid);
         String qrCode = null;
-        if (("enable").equals(mfa) && !user.isMfa()) {
-            String secret  = TotpUtils.createSecret();
-            user.setMfaSecret(secret);
-            dataService.save(user);
+        switch (mfa.toLowerCase(Locale.ENGLISH)) {
+            case "enable" -> {
+                if (!user.isMfa()) {
+                    var secret = TotpUtils.createSecret();
+                    user.setMfaSecret(secret);
+                    dataService.save(user);
 
-            qrCode = TotpUtils.getQRCode(user.getUsername(), "Filed Papers", secret);
-        } else if (("disable").equals(mfa) && user.isMfa()) {
-            user.setMfa(false);
-            dataService.save(user);
-            flash.put(Const.TOAST_SUCCESS, messages.get("toast.mfa.disabled"));
-            notificationService.accountChanged(user.getUsername(), messages.get("email.account.changes.mfa.disabled"));
+                    qrCode = TotpUtils.getQRCode(user.getUsername(), "Filed Papers", secret);
+                }
+            }
+            case "disable" -> {
+                if (user.isMfa()) {
+                    user.setMfa(false);
+                    dataService.save(user);
+
+                    flash.put(Const.TOAST_SUCCESS, messages.get("toast.mfa.disabled"));
+                    notificationService.accountChanged(
+                            user.getUsername(),
+                            messages.get("email.account.changes.mfa.disabled")
+                    );
+                }
+            }
         }
 
         String fallback = null;
@@ -119,16 +131,17 @@ public class DashboardController {
     @FilterWith(CsrfFilter.class)
     public Response doMfa(Authentication authentication, Form form, Flash flash) {
         String userUid = authentication.getSubject();
-        for (int i=1; i <=6; i++) {
-            form.expectNumeric("otp-" + i);
-            form.expectRangeLength("otp-" + i, 1, 1);
-        }
+        IntStream.rangeClosed(1, 6)
+                .mapToObj(i -> "otp-" + i)
+                .forEach(key -> {
+                    form.expectNumeric(key);
+                    form.expectRangeLength(key, 1, 1);
+                });
 
         if (form.isValid()) {
-            String otp = Strings.EMPTY;
-            for (int i=1; i <=6; i++) {
-                otp += form.get("otp-" + i);
-            }
+            String otp = java.util.stream.IntStream.rangeClosed(1, 6)
+                    .mapToObj(i -> form.get("otp-" + i))
+                    .collect(java.util.stream.Collectors.joining());
 
             var user = dataService.findUserByUid(userUid);
             if (TotpUtils.verifyTotp(user.getMfaSecret(), otp)) {
