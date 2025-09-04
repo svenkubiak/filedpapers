@@ -94,12 +94,13 @@ public class DashboardController {
             user.setMfa(false);
             dataService.save(user);
             flash.put(Const.TOAST_SUCCESS, messages.get("toast.mfa.disabled"));
+            notificationService.accountChanged(user.getUsername(), messages.get("email.account.changes.mfa.disabled"));
         }
 
         String fallback = null;
         if (StringUtils.isNotBlank(flash.get(Const.MFA_FALLBACK))) {
             fallback = flash.get(Const.MFA_FALLBACK);
-            flash.put(Const.MFA_FALLBACK, Strings.EMPTY);
+            flash.remove(Const.MFA_FALLBACK);
         }
 
         return Response.ok()
@@ -132,8 +133,14 @@ public class DashboardController {
             var user = dataService.findUserByUid(userUid);
             if (TotpUtils.verifyTotp(user.getMfaSecret(), otp)) {
                 String fallback = dataService.enableMfa(userUid);
-                flash.put(Const.TOAST_SUCCESS, messages.get("toast.mfa.enabled"));
-                flash.put(Const.MFA_FALLBACK, fallback);
+                if (StringUtils.isNotBlank(fallback)) {
+                    flash.put(Const.TOAST_SUCCESS, messages.get("toast.mfa.enabled"));
+                    flash.put(Const.MFA_FALLBACK, fallback);
+
+                    notificationService.accountChanged(user.getUsername(), messages.get("email.account.changes.mfa.enabled"));
+                } else {
+                    flash.put(Const.TOAST_ERROR, GENERAL_ERROR);
+                }
             }
         } else {
             flash.put(Const.TOAST_ERROR, GENERAL_ERROR);
@@ -345,6 +352,7 @@ public class DashboardController {
                 dataService.save(new Action(user.getUid(), token, Type.CONFIRM_EMAIL));
                 notificationService.confirmEmail(username, token);
 
+                notificationService.accountChanged(user.getUsername(), messages.get("email.account.changes.username"));
                 flash.put(Const.TOAST_SUCCESS, messages.get("toast.username.success"));
             } else {
                 flash.put(Const.TOAST_ERROR, messages.get("toast.error"));
@@ -378,6 +386,7 @@ public class DashboardController {
                 dataService.save(user);
                 notificationService.passwordChanged(user.getUsername());
 
+                notificationService.accountChanged(user.getUsername(), messages.get("email.account.changes.password"));
                 flash.put(Const.TOAST_SUCCESS, messages.get("toast.password.success"));
             } else {
                 flash.put(Const.TOAST_ERROR, messages.get("toast.error"));
