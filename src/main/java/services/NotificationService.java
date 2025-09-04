@@ -85,28 +85,6 @@ public class NotificationService {
         }
     }
 
-    public void passwordChanged(String username) {
-        Objects.requireNonNull(username, Required.USERNAME);
-
-        var user = dataService.findUser(username);
-        if (user != null) {
-            try {
-                messages.reload(Locale.of(user.getLanguage()));
-                Map<String, Object> content = new HashMap<>();
-                content.put("messages", messages);
-
-                Mail.newMail()
-                        .from(from)
-                        .subject(Const.EMAIL_PREFIX + " " + messages.get("email.confirm.password.subject"))
-                        .to(user.getUsername())
-                        .textMessage("emails/password_changed.ftl", content)
-                        .send();
-            } catch (MangooTemplateEngineException e) {
-                LOG.error("Failed to send password change confirmation", e);
-            }
-        }
-    }
-
     public void accountChanged(String username, String message) {
         Objects.requireNonNull(username, Required.USERNAME);
         Objects.requireNonNull(message, Required.MESSAGE);

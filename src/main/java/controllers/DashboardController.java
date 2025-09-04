@@ -384,7 +384,6 @@ public class DashboardController {
             if (user.getPassword().equals(CodecUtils.hashArgon2(password, user.getSalt()))) {
                 user.setPassword(CodecUtils.hashArgon2(newPassword, user.getSalt()));
                 dataService.save(user);
-                notificationService.passwordChanged(user.getUsername());
 
                 notificationService.accountChanged(user.getUsername(), messages.get("email.account.changes.password"));
                 flash.put(Const.TOAST_SUCCESS, messages.get("toast.password.success"));

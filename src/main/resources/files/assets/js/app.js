@@ -530,3 +530,121 @@ async function polling() {
 if (poll != null && poll.poll === "true") {
     polling();
 }
+
+
+
+// Theme Toggle Functionality
+class ThemeToggle {
+    constructor() {
+        this.theme = localStorage.getItem('theme') || 'light';
+        this.init();
+    }
+
+    init() {
+        this.applyTheme(this.theme);
+        this.createToggleButton();
+    }
+
+    applyTheme(theme) {
+        const html = document.documentElement;
+
+        if (theme === 'dark') {
+            html.setAttribute('data-theme', 'dark');
+            html.classList.add('theme-dark');
+        } else {
+            html.removeAttribute('data-theme');
+            html.classList.remove('theme-dark');
+        }
+
+        this.theme = theme;
+        localStorage.setItem('theme', theme);
+    }
+
+    toggleTheme() {
+        const newTheme = this.theme === 'light' ? 'dark' : 'light';
+        this.applyTheme(newTheme);
+        this.updateToggleButton();
+    }
+
+    createToggleButton() {
+        // Remove existing toggle if it exists
+        const existingToggle = document.getElementById('theme-toggle');
+        if (existingToggle) {
+            existingToggle.remove();
+        }
+
+        const toggle = document.createElement('button');
+        toggle.id = 'theme-toggle';
+        toggle.className = 'theme-toggle-button';
+        toggle.innerHTML = this.getToggleIcon();
+        toggle.setAttribute('aria-label', `Switch to ${this.theme === 'light' ? 'dark' : 'light'} mode`);
+        toggle.setAttribute('title', `Switch to ${this.theme === 'light' ? 'dark' : 'light'} mode`);
+
+        toggle.addEventListener('click', () => this.toggleTheme());
+
+        // Add to page - you can customize where to place it
+        document.body.appendChild(toggle);
+    }
+
+    updateToggleButton() {
+        const toggle = document.getElementById('theme-toggle');
+        if (toggle) {
+            toggle.innerHTML = this.getToggleIcon();
+            toggle.setAttribute('aria-label', `Switch to ${this.theme === 'light' ? 'dark' : 'light'} mode`);
+            toggle.setAttribute('title', `Switch to ${this.theme === 'light' ? 'dark' : 'light'} mode`);
+        }
+    }
+
+    getToggleIcon() {
+        return this.theme === 'light'
+            ? '🌙' // Moon icon for switching to dark
+            : '☀️'; // Sun icon for switching to light
+    }
+}
+
+// Make themeToggle globally accessible
+let themeToggle;
+
+// Initialize theme toggle when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    themeToggle = new ThemeToggle();
+});
+
+// Alternative: Simple function approach (if you prefer)
+function toggleTheme() {
+    const html = document.documentElement;
+    const currentTheme = html.getAttribute('data-theme');
+
+    if (currentTheme === 'dark') {
+        html.removeAttribute('data-theme');
+        html.classList.remove('theme-dark');
+        localStorage.setItem('theme', 'light');
+    } else {
+        html.setAttribute('data-theme', 'dark');
+        html.classList.add('theme-dark');
+        localStorage.setItem('theme', 'dark');
+    }
+
+    // Update icon if using manual button
+    const icon = document.getElementById('theme-icon');
+    if (icon) {
+        icon.textContent = html.getAttribute('data-theme') === 'dark' ? '☀️' : '🌙';
+    }
+}
+
+// Initialize theme on page load
+document.addEventListener('DOMContentLoaded', () => {
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    const html = document.documentElement;
+
+    if (savedTheme === 'dark') {
+        html.setAttribute('data-theme', 'dark');
+        html.classList.add('theme-dark');
+    }
+
+    // Update icon if using manual button
+    const icon = document.getElementById('theme-icon');
+    if (icon) {
+        icon.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
+    }
+});
