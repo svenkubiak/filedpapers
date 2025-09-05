@@ -5,6 +5,7 @@ import constants.Const;
 import constants.Required;
 import io.mangoo.exceptions.MangooJwtException;
 import io.mangoo.routing.Response;
+import io.mangoo.routing.bindings.Authentication;
 import jakarta.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -24,7 +25,7 @@ public class UserControllerV1 {
         this.authenticationService = Objects.requireNonNull(authenticationService, Required.AUTHENTICATION_SERVICE);
     }
 
-    public Response login(Map<String, String> credentials) {
+    public Response login(Map<String, String> credentials, Authentication authentication) {
         String username = credentials.get("username");
         String password = credentials.get("password");
 
@@ -32,7 +33,7 @@ public class UserControllerV1 {
             return Response.unauthorized();
         }
 
-        return dataService.authenticateUser(username, password)
+        return dataService.authenticateUser(username, password, authentication)
                 .map(userUid -> {
                     try {
                         if (dataService.userHasMfa(userUid)) {

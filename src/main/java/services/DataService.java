@@ -11,6 +11,7 @@ import constants.Invalid;
 import constants.Required;
 import de.svenkubiak.http.Http;
 import io.mangoo.persistence.interfaces.Datastore;
+import io.mangoo.routing.bindings.Authentication;
 import io.mangoo.utils.CodecUtils;
 import io.mangoo.utils.DateUtils;
 import io.mangoo.utils.JsonUtils;
@@ -109,12 +110,12 @@ public class DataService {
         return datastore.find(User.class, eq(Const.UID, userUid)) != null;
     }
 
-    public Optional<String> authenticateUser(String username, String password) {
+    public Optional<String> authenticateUser(String username, String password, Authentication authentication) {
         Objects.requireNonNull(username, Required.USERNAME);
         Objects.requireNonNull(password, Required.PASSWORD);
 
         User user = datastore.find(User.class, eq(Const.USERNAME, username));
-        if (user != null && CodecUtils.matchArgon2(password, user.getSalt(), user.getPassword())) {
+        if (user != null && authentication.validLogin(user.getUid(), password, user.getSalt(), user.getPassword())) {
             return Optional.of(user.getUid());
         }
 
