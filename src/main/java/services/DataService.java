@@ -114,7 +114,7 @@ public class DataService {
         Objects.requireNonNull(password, Required.PASSWORD);
 
         User user = datastore.find(User.class, eq(Const.USERNAME, username));
-        if (user != null && user.getPassword().equals(CodecUtils.hashArgon2(password, user.getSalt()))) {
+        if (user != null && CodecUtils.matchArgon2(password, user.getSalt(), user.getPassword())) {
             return Optional.of(user.getUid());
         }
 
