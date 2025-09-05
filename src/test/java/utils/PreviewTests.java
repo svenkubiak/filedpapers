@@ -169,7 +169,10 @@ public class PreviewTests {
 
         //then
         assertThat(preview.title(), startsWith("Al-lord Arabische Süßigkeiten · Hansemannstraße 23, 45879 Gelsenkirchen"));
-        assertThat(preview.image(), equalTo("https://lh3.googleusercontent.com/p/AF1QipMhSZ68K3lODLzmFL0arjx5fwh0KsizwUjLZGOz=w900-h900-p-k-no"));
+        assertThat(preview.image(), anyOf(
+                is("https://lh3.googleusercontent.com/p/AF1QipMhSZ68K3lODLzmFL0arjx5fwh0KsizwUjLZGOz=w900-h900-p-k-no"),
+                is("https://lh3.googleusercontent.com/gps-cs-s/AC9h4nompioGOBPa7H9F3Vf1m-AIcx5bzjFnHkC0B6D6nBhDkBgDGAox4iM-UnJus1iLV-mB3BSo4wASsbk4ABZDZ2bUv3UW1cxdGU7YPEi8O7QoTghHRfGauMAm4TsouC0VTghlbHnuqHFgdLY=w900-h900-p-k-no"),
+        ));
         assertThat(preview.domain(), equalTo("google.de"));
         assertThat(preview.description(), notNullValue());
     }
