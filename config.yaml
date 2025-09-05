@@ -14,7 +14,7 @@ default:
     accessToken:
       key: env{}
       secret: env{}
-      expires: 15 # Minutes
+      expires: 5 # Minutes
     refreshToken:
       secret: env{}
       key: env{}

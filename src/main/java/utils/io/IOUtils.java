@@ -12,8 +12,12 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.Objects;
 
 public final class IOUtils {
+    private static final long MAX_CONTENT_LENGTH = 5 * 1024 * 1024; // 5MB for content
+    public static final int MAX_ELEMENTS = 10000;
+    private static final int MAX_BOOKMARKS_PER_IMPORT = 1000;
 
     private IOUtils() {
     }
@@ -100,7 +104,30 @@ public final class IOUtils {
     }
 
     public static List<Leaf> importItems(String input) {
-        Document doc = Jsoup.parse(input, "UTF-8");
+        // 1. Input length validation
+        if (input == null || input.length() > MAX_CONTENT_LENGTH) {
+            throw new SecurityException("Content too large");
+        }
+
+        // 2. Basic HTML structure validation
+        if (!input.contains("<") || !input.contains(">")) {
+            throw new SecurityException("Invalid HTML content");
+        }
+
+        // 3. Check for potentially dangerous content while preserving bookmark structure
+        if (containsDangerousContent(input)) {
+            throw new SecurityException("Content contains potentially dangerous elements");
+        }
+
+        Document doc = Jsoup.parse(input, StandardCharsets.UTF_8.name());
+
+        // 4. Limit the number of elements to prevent DoS
+        if (doc.getAllElements().size() > MAX_ELEMENTS) {
+            throw new SecurityException("Too many HTML elements");
+        }
+
+        // 5. Validate bookmark-specific structure
+        validateBookmarkStructure(doc);
 
         // The root bookmark that will contain all others
         var root = new Leaf();
@@ -110,7 +137,7 @@ public final class IOUtils {
         // Process all DL elements (bookmark folders)
         var dls = doc.getElementsByTag("dl");
         if (!dls.isEmpty()) {
-            processDL(dls.first(), root);
+            processDL(Objects.requireNonNull(dls.first()), root);
         }
 
         return root.getChildren();
@@ -124,6 +151,35 @@ public final class IOUtils {
         }
 
         return Strings.EMPTY;
+    }
+
+    private static boolean containsDangerousContent(String input) {
+        String lowerInput = input.toLowerCase();
+
+        return lowerInput.contains("<script") ||
+                lowerInput.contains("javascript:") ||
+                lowerInput.contains("vbscript:") ||
+                lowerInput.contains("onload=") ||
+                lowerInput.contains("onerror=") ||
+                lowerInput.contains("onclick=") ||
+                lowerInput.contains("onmouseover=") ||
+                lowerInput.contains("onfocus=") ||
+                lowerInput.contains("onblur=") ||
+                lowerInput.contains("onchange=") ||
+                lowerInput.contains("onsubmit=");
+    }
+
+    private static void validateBookmarkStructure(Document doc) {
+        Elements dls = doc.getElementsByTag("dl");
+        Elements links = doc.getElementsByTag("a");
+
+        if (dls.isEmpty() && links.isEmpty()) {
+            throw new SecurityException("No bookmark structure found");
+        }
+
+        if (links.size() > MAX_BOOKMARKS_PER_IMPORT) {
+            throw new SecurityException("Too many bookmarks");
+        }
     }
 
     private static void processDL(Element dl, Leaf parent) {
