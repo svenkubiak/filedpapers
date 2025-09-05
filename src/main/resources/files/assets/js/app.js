@@ -531,18 +531,35 @@ if (poll != null && poll.poll === "true") {
     polling();
 }
 
-
-
-// Theme Toggle Functionality
-class ThemeToggle {
+// Theme Toggle with localStorage
+class ThemeManager {
     constructor() {
-        this.theme = localStorage.getItem('theme') || 'light';
+        this.theme = this.getStoredTheme();
         this.init();
     }
 
     init() {
         this.applyTheme(this.theme);
         this.createToggleButton();
+    }
+
+    getStoredTheme() {
+        // Priority order:
+        // 1. User's saved preference (localStorage)
+        // 2. System preference (prefers-color-scheme)
+        // 3. Default (light)
+
+        const stored = localStorage.getItem('theme');
+        if (stored && (stored === 'light' || stored === 'dark')) {
+            return stored;
+        }
+
+        // Check system preference
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            return 'dark';
+        }
+
+        return 'light'; // Default
     }
 
     applyTheme(theme) {
@@ -557,6 +574,7 @@ class ThemeToggle {
         }
 
         this.theme = theme;
+        // Save to localStorage
         localStorage.setItem('theme', theme);
     }
 
@@ -582,7 +600,7 @@ class ThemeToggle {
 
         toggle.addEventListener('click', () => this.toggleTheme());
 
-        // Add to page - you can customize where to place it
+        // Add to page
         document.body.appendChild(toggle);
     }
 
@@ -605,46 +623,14 @@ class ThemeToggle {
 // Make themeToggle globally accessible
 let themeToggle;
 
-// Initialize theme toggle when DOM is loaded
+// Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
-    themeToggle = new ThemeToggle();
+    themeToggle = new ThemeManager();
 });
 
-// Alternative: Simple function approach (if you prefer)
+// Simple function for manual buttons
 function toggleTheme() {
-    const html = document.documentElement;
-    const currentTheme = html.getAttribute('data-theme');
-
-    if (currentTheme === 'dark') {
-        html.removeAttribute('data-theme');
-        html.classList.remove('theme-dark');
-        localStorage.setItem('theme', 'light');
-    } else {
-        html.setAttribute('data-theme', 'dark');
-        html.classList.add('theme-dark');
-        localStorage.setItem('theme', 'dark');
-    }
-
-    // Update icon if using manual button
-    const icon = document.getElementById('theme-icon');
-    if (icon) {
-        icon.textContent = html.getAttribute('data-theme') === 'dark' ? '☀️' : '🌙';
+    if (themeToggle) {
+        themeToggle.toggleTheme();
     }
 }
-
-// Initialize theme on page load
-document.addEventListener('DOMContentLoaded', () => {
-    const savedTheme = localStorage.getItem('theme') || 'light';
-    const html = document.documentElement;
-
-    if (savedTheme === 'dark') {
-        html.setAttribute('data-theme', 'dark');
-        html.classList.add('theme-dark');
-    }
-
-    // Update icon if using manual button
-    const icon = document.getElementById('theme-icon');
-    if (icon) {
-        icon.textContent = savedTheme === 'dark' ? '☀️' : '🌙';
-    }
-});
