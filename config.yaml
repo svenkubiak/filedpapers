@@ -18,8 +18,9 @@ default:
     refreshToken:
       secret: env{}
       key: env{}
-      expires: 10080 # Minutes
+      expires: 10080 # Minutes (7 days)
     challengeToken:
+      key: env{}
       secret: env{}
   session:
     cookie:
