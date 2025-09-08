@@ -6,7 +6,7 @@ import io.mangoo.core.Application;
 import io.mangoo.persistence.interfaces.Datastore;
 import io.mangoo.test.http.TestRequest;
 import io.mangoo.test.http.TestResponse;
-import io.mangoo.utils.CodecUtils;
+import io.mangoo.utils.CommonUtils;
 import io.mangoo.utils.JsonUtils;
 import models.Category;
 import models.Item;
@@ -37,7 +37,7 @@ public class CategoriesControllerV1Tests {
         datastore.dropCollection(User.class);
 
         User user = new User("foo@bar.com");
-        user.setPassword(CodecUtils.hashArgon2("bar", user.getSalt()));
+        user.setPassword(CommonUtils.hashArgon2("bar", user.getSalt()));
         datastore.save(user);
         datastore.save(new Category(Const.INBOX, user.getUid(), Role.INBOX));
         datastore.save(new Category(Const.TRASH, user.getUid(), Role.TRASH));
@@ -99,7 +99,7 @@ public class CategoriesControllerV1Tests {
     @Test
     void testDeleteUnauthorized() {
         //when
-        TestResponse response = TestRequest.delete("/api/v1/categories/" + CodecUtils.uuidV4())
+        TestResponse response = TestRequest.delete("/api/v1/categories/" + CommonUtils.uuidV4())
                 .withContentType("application/json")
                 .execute();
 

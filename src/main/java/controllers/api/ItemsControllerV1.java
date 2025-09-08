@@ -6,7 +6,7 @@ import filters.ApiAccessFilter;
 import io.mangoo.annotations.FilterWith;
 import io.mangoo.routing.Response;
 import io.mangoo.routing.bindings.Request;
-import io.mangoo.utils.CodecUtils;
+import io.mangoo.utils.CommonUtils;
 import io.mangoo.utils.JsonUtils;
 import jakarta.inject.Inject;
 import services.DataService;
@@ -52,7 +52,7 @@ public class ItemsControllerV1 {
             return dataService.findItems(userUid, categoryUid)
                     .map(items -> {
                         String json = JsonUtils.toJson(Map.of("items", items));
-                        String hash = CodecUtils.hexSHA512(json);
+                        String hash = CommonUtils.hexSHA512(json);
 
                         if (hash.equals(ifNoneMatch)) {
                             return Response.notModified();

@@ -12,7 +12,7 @@ import constants.Required;
 import de.svenkubiak.http.Http;
 import io.mangoo.persistence.interfaces.Datastore;
 import io.mangoo.routing.bindings.Authentication;
-import io.mangoo.utils.CodecUtils;
+import io.mangoo.utils.CommonUtils;
 import io.mangoo.utils.DateUtils;
 import io.mangoo.utils.JsonUtils;
 import io.mangoo.utils.TotpUtils;
@@ -115,7 +115,7 @@ public class DataService {
         Objects.requireNonNull(password, Required.PASSWORD);
 
         User user = datastore.find(User.class, eq(Const.USERNAME, username));
-        if (user != null && authentication.validLogin(user.getUid(), password, user.getSalt(), user.getPassword())) {
+        if (user != null && authentication.isValidLogin(user.getUid(), password, user.getSalt(), user.getPassword())) {
             return Optional.of(user.getUid());
         }
 
@@ -394,7 +394,7 @@ public class DataService {
         Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
 
         var user = findUserByUid(userUid);
-        if (user != null && user.getPassword().equals(CodecUtils.hashArgon2(password, user.getSalt()))) {
+        if (user != null && user.getPassword().equals(CommonUtils.hashArgon2(password, user.getSalt()))) {
             List<Item> items = datastore.findAll(Item.class, eq(Const.USER_UID, userUid), Sorts.ascending(Const.USER_UID));
             items.stream()
                     .filter(item -> StringUtils.isNotBlank(item.getMediaUid()))
@@ -422,7 +422,7 @@ public class DataService {
         Utils.checkCondition(Utils.isValidOtp(otp), Invalid.OTP);
 
         var user = findUserByUid(userUid);
-        return user != null && user.isMfa() && ( TotpUtils.verifyTotp(user.getMfaSecret(), otp) || CodecUtils.matchArgon2(otp, user.getSalt(), user.getMfaFallback()));
+        return user != null && user.isMfa() && ( TotpUtils.verifyTotp(user.getMfaSecret(), otp) || CommonUtils.matchArgon2(otp, user.getSalt(), user.getMfaFallback()));
     }
 
     public String enableMfa(String userUid) {
@@ -432,7 +432,7 @@ public class DataService {
         var user = findUserByUid(userUid);
         if (!user.isMfa()) {
             fallback = Utils.randomString();
-            user.setMfaFallback(CodecUtils.hashArgon2(fallback, user.getSalt()));
+            user.setMfaFallback(CommonUtils.hashArgon2(fallback, user.getSalt()));
             user.setMfa(true);
             save(user);
         }
@@ -452,7 +452,7 @@ public class DataService {
 
         var user = findUserByUid(userUid);
         if (user != null) {
-            user.setPassword(CodecUtils.hashArgon2(password, user.getSalt()));
+            user.setPassword(CommonUtils.hashArgon2(password, user.getSalt()));
             save(user);
         }
     }

@@ -6,7 +6,7 @@ import io.mangoo.core.Application;
 import io.mangoo.persistence.interfaces.Datastore;
 import io.mangoo.test.http.TestRequest;
 import io.mangoo.test.http.TestResponse;
-import io.mangoo.utils.CodecUtils;
+import io.mangoo.utils.CommonUtils;
 import io.mangoo.utils.JsonUtils;
 import io.mangoo.utils.TotpUtils;
 import models.Category;
@@ -34,11 +34,11 @@ public class UserControllerV1Tests {
         datastore.dropCollection(User.class);
 
         User user = new User("foo");
-        user.setPassword(CodecUtils.hashArgon2("bar", user.getSalt()));
+        user.setPassword(CommonUtils.hashArgon2("bar", user.getSalt()));
         datastore.save(user);
 
         User user2 = new User("bar");
-        user2.setPassword(CodecUtils.hashArgon2("bar", user2.getSalt()));
+        user2.setPassword(CommonUtils.hashArgon2("bar", user2.getSalt()));
         user2.setMfa(true);
         user2.setMfaSecret("foobar");
         user2.setMfaFallback(Utils.randomString());

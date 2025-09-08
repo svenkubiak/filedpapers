@@ -4,8 +4,8 @@ import com.google.re2j.Pattern;
 import constants.Const;
 import constants.Required;
 import io.mangoo.core.Config;
+import io.mangoo.utils.CommonUtils;
 import io.mangoo.utils.DateUtils;
-import io.mangoo.utils.MangooUtils;
 import io.undertow.server.handlers.Cookie;
 import io.undertow.server.handlers.CookieImpl;
 import io.undertow.server.handlers.CookieSameSiteMode;
@@ -77,11 +77,11 @@ public final class Utils {
     }
 
     public static Map<String, String> getLanguages() {
-        int size = MangooUtils.getLanguages().size();
+        int size = io.mangoo.utils.internal.MangooUtils.getLanguages().size();
         int initialCapacity = (int) (size / 0.75f) + 1;
         Map<String, String> languages = HashMap.newHashMap(initialCapacity);
 
-        for (String language : MangooUtils.getLanguages()) {
+        for (String language : io.mangoo.utils.internal.MangooUtils.getLanguages()) {
             var locale = Locale.of(language);
             languages.put(language, locale.getDisplayLanguage(locale));
         }
@@ -148,6 +148,6 @@ public final class Utils {
     }
 
     public static String randomString() {
-        return MangooUtils.randomString(32);
+        return CommonUtils.randomString(32);
     }
 }

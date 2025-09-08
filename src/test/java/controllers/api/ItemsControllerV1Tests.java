@@ -6,7 +6,7 @@ import io.mangoo.core.Application;
 import io.mangoo.persistence.interfaces.Datastore;
 import io.mangoo.test.http.TestRequest;
 import io.mangoo.test.http.TestResponse;
-import io.mangoo.utils.CodecUtils;
+import io.mangoo.utils.CommonUtils;
 import io.mangoo.utils.JsonUtils;
 import models.Category;
 import models.Item;
@@ -44,7 +44,7 @@ public class ItemsControllerV1Tests {
         datastore.dropCollection(User.class);
 
         User user = new User("foo@bar.com");
-        user.setPassword(CodecUtils.hashArgon2("bar", user.getSalt()));
+        user.setPassword(CommonUtils.hashArgon2("bar", user.getSalt()));
         datastore.save(user);
 
         Category inbox = new Category(Const.INBOX, user.getUid(), Role.INBOX);

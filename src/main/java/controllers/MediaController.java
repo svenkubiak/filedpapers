@@ -3,7 +3,7 @@ package controllers;
 import constants.Required;
 import io.mangoo.routing.Response;
 import io.mangoo.routing.bindings.Authentication;
-import io.mangoo.utils.CodecUtils;
+import io.mangoo.utils.CommonUtils;
 import io.undertow.util.Headers;
 import jakarta.inject.Inject;
 import services.DataService;
@@ -35,6 +35,6 @@ public class MediaController {
         var archive = dataService.findArchive(item).orElseThrow();
         String str = new String(archive);
 
-        return Response.ok().render("archive", new String(CodecUtils.decodeFromBase64(str)));
+        return Response.ok().render("archive", new String(CommonUtils.decodeFromBase64(str)));
     }
 }

@@ -9,7 +9,7 @@ import io.mangoo.filters.CsrfFilter;
 import io.mangoo.i18n.Messages;
 import io.mangoo.routing.Response;
 import io.mangoo.routing.bindings.*;
-import io.mangoo.utils.CodecUtils;
+import io.mangoo.utils.CommonUtils;
 import io.mangoo.utils.TotpUtils;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
@@ -77,7 +77,7 @@ public class AuthenticationController {
             Boolean rememberme = form.getBoolean("rememberme").orElse(Boolean.FALSE);
 
             var user = dataService.findUser(username);
-            if (user != null && authentication.validLogin(user.getUid(), password, user.getSalt(), user.getPassword())) {
+            if (user != null && authentication.isValidLogin(user.getUid(), password, user.getSalt(), user.getPassword())) {
                 authentication.login(user.getUid());
                 authentication.rememberMe(rememberme);
                 authentication.twoFactorAuthentication(user.isMfa());
@@ -111,7 +111,7 @@ public class AuthenticationController {
                     authentication.update();
 
                     return Response.redirect("/dashboard");
-                } else if (CodecUtils.matchArgon2(mfa, user.getSalt(), user.getMfaFallback())) {
+                } else if (CommonUtils.matchArgon2(mfa, user.getSalt(), user.getMfaFallback())) {
                     authentication.twoFactorAuthentication(false);
                     authentication.update();
 
@@ -220,7 +220,7 @@ public class AuthenticationController {
             var user = dataService.findUser(username);
             if (user == null) {
                 user = new User(username);
-                user.setPassword(CodecUtils.hashArgon2(password, user.getSalt()));
+                user.setPassword(CommonUtils.hashArgon2(password, user.getSalt()));
                 dataService.save(user);
                 dataService.save(new Category(Const.INBOX, user.getUid(), Role.INBOX));
                 dataService.save(new Category(Const.TRASH, user.getUid(), Role.TRASH));
