@@ -36,6 +36,7 @@ import static constants.Const.GENERAL_ERROR;
 import static constants.Const.TOAST_ERROR;
 
 public class DashboardController {
+    private static final int MAX_FILE_SIZE_BYTES = 10485760; // 10MB
     private final DataService dataService;
     private final NotificationService notificationService;
     private final Config config;
@@ -240,42 +241,48 @@ public class DashboardController {
         return Response.redirect("/dashboard/profile");
     }
 
-    public Response importer(Form form, Authentication authentication) {
+    public Response importer(Form form, Authentication authentication, Flash flash) {
         String userUid = authentication.getSubject();
+        form.expectFile("importfile");
+        form.expectFileMaxSize("importfile", MAX_FILE_SIZE_BYTES);
+        form.expectFileMimeType("importfile", List.of("text/html"));
 
-        var content = Optional.ofNullable(form.getFile("importfile"))
-                .flatMap(file -> file.map(IOUtils::readContent))
-                .orElse(Strings.EMPTY);
+        if (form.isValid()) {
+            var content = form.getFile("importfile")
+                    .map(String::new)
+                    .orElse(Strings.EMPTY);
 
-        try {
-            List<Leaf> leafs = IOUtils.importItems(content);
+            try {
+                List<Leaf> leafs = IOUtils.importItems(content);
+                for (Leaf leaf : leafs) {
+                    if (leaf.isFolder()) {
+                        var category = dataService.findCategoryByName(leaf.getTitle(), userUid);
+                        if (category == null) {
+                            dataService.addCategory(userUid, leaf.getTitle());
+                            category = dataService.findCategoryByName(leaf.getTitle(), userUid);
+                        }
 
-            for (Leaf leaf : leafs) {
-                if (leaf.isFolder()) {
-                    var category = dataService.findCategoryByName(leaf.getTitle(), userUid);
-                    if (category == null) {
-                        dataService.addCategory(userUid, leaf.getTitle());
-                        category = dataService.findCategoryByName(leaf.getTitle(), userUid);
-                    }
+                        for (Leaf child : leaf.getChildren()) {
+                            if (!child.isFolder()) {
+                                var item = Item.create()
+                                        .withTitle(child.getTitle())
+                                        .withUrl(child.getUrl())
+                                        .withCategoryUid(category.getUid())
+                                        .withUserUid(userUid)
+                                        .withImage(child.getDataCover());
 
-                    for (Leaf child : leaf.getChildren()) {
-                        if (!child.isFolder()) {
-                            var item = Item.create()
-                                    .withTitle(child.getTitle())
-                                    .withUrl(child.getUrl())
-                                    .withCategoryUid(category.getUid())
-                                    .withUserUid(userUid)
-                                    .withImage(child.getDataCover());
+                                item.setTimestamp(child.getAddDate().atZone(ZoneId.systemDefault()).toLocalDateTime());
 
-                            item.setTimestamp(child.getAddDate().atZone(ZoneId.systemDefault()).toLocalDateTime());
-
-                            dataService.save(item);
+                                dataService.save(item);
+                            }
                         }
                     }
                 }
+            } catch (Exception e) {
+                //Intentionally left blank
             }
-        } catch (Exception e) {
-            //Intentionally left blank
+        } else {
+            flash.put(TOAST_ERROR, messages.get("toast.error"));
         }
 
         return Response.redirect("/dashboard");
