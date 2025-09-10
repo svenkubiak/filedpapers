@@ -39,6 +39,7 @@ default:
       key: y1LEAusRqekYYnPEPF4Qfqj4ZNSdqnUklrIK6F0XN1KDj9lFyxbiPfFkvqlMC9pb
       secure: true
   authentication:
+    blacklist: true
     redirect:
       login: /auth/login
       mfa: /auth/mfa

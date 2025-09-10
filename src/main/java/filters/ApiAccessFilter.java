@@ -65,12 +65,15 @@ public class ApiAccessFilter implements PerRequestFilter {
             }
 
             if (jwtClaimsSet != null) {
-                String userUid = jwtClaimsSet.getSubject();
-
                 if (cookie && !request.hasValidCsrf()) {
                     return Response.unauthorized().end();
                 }
 
+                if (!cookie && authenticationService.isBlacklisted(jwtClaimsSet.getJWTID())) {
+                    return Response.unauthorized().end();
+                }
+
+                String userUid = jwtClaimsSet.getSubject();
                 if (dataService.userExists(userUid)) {
                     request.addAttribute(Const.USER_UID, userUid);
                     return response;

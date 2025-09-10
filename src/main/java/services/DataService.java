@@ -541,6 +541,11 @@ public class DataService {
                 exists("count"),
                 unset("count"));
 
+        //Add new refresh token key
+        datastore.query(Collections.USERS).updateMany(
+                not(exists("refreshTokenKey")),
+                set("refreshTokenKey", CommonUtils.randomString(64)));
+
         //Add new archived value
         datastore.query(Collections.ITEMS).updateMany(
                 not(exists("archived")),

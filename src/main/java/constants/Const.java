@@ -4,6 +4,7 @@ public final class Const {
     public static final String ACCESS_TOKEN = "accessToken";
     public static final String ACTION = "action";
     public static final String ARCHIVE_UID = "archiveUid";
+    public static final String ATID = "atid";
     public static final String CATEGORY_UID = "categoryUid";
     public static final String CHALLENGE_TOKEN = "challengeToken";
     public static final String COUNT = "count";

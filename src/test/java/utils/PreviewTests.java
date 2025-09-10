@@ -171,6 +171,7 @@ public class PreviewTests {
                 equalTo("https://lh3.googleusercontent.com/p/AF1QipMhSZ68K3lODLzmFL0arjx5fwh0KsizwUjLZGOz=w900-h900-p-k-no"),
                 equalTo("https://lh3.googleusercontent.com/gps-cs-s/AC9h4nompioGOBPa7H9F3Vf1m-AIcx5bzjFnHkC0B6D6nBhDkBgDGAox4iM-UnJus1iLV-mB3BSo4wASsbk4ABZDZ2bUv3UW1cxdGU7YPEi8O7QoTghHRfGauMAm4TsouC0VTghlbHnuqHFgdLY=w900-h900-p-k-no"),
                 equalTo("https://lh3.googleusercontent.com/gps-cs-s/AC9h4no7k-07DiCziYx7E4ucHvHxIsaGPD5hsJJJxm9InLyMh-P9SK4QpTpFUAbm3Ka4BMKDriFOgBt4bKJfGPStM76wqydEU__T8upCIIvFJfPWuUYq42OUoSHjECVo_xLbqNZGJDPpglkdTQM=w900-h900-p-k-no"),
+                equalTo("https://lh3.googleusercontent.com/gps-cs-s/AC9h4npW09MgUdLxxMhJGZeXXgAdlEVyKncBO_8Xq6Yi8B5Nxuiz7cpaWrSWP1OwzOY7JH_umfAP9tLzfCpTsu2k1tdqXSoVwOIoHBBzI9POW-HjDWsrO1IcUr-SPbPEf_qt_YfC5gW-205o8iE=w900-h900-p-k-no"),
                 equalTo("https://lh3.googleusercontent.com/gps-cs-s/AC9h4npwMo-qFIVYjInst5mNZlLkyiHK4_E46uMUXZtdIYzchyYqFAVmIBu8X5W1MYR9NFfoFiVzncqNHfb8cgeGG56rc5rINrpx0KJa-5DBHv7GBUPvMhHfJ8XrGLbDdDgWJ_tFTDTWBls5BiQ=w900-h900-p-k-no")));
         assertThat(preview.domain(), equalTo("google.de"));
         assertThat(preview.description(), notNullValue());

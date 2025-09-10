@@ -15,6 +15,7 @@ public final class Required {
     public static final String DATASTORE = "database can not be null";
     public static final String FROM = "from can not be null";
     public static final String IMAGE = "image can not be null";
+    public static final String IDS = "ids can not be null";
     public static final String ITEMS = "items can not be null";
     public static final String LANGUAGE = "language can not be null";
     public static final String LOGIN_REDIRECT = "loginRedirect can not be null";
@@ -39,6 +40,7 @@ public final class Required {
     public static final String USER_UID = "userUid can not be null";
     public static final String USERNAME = "username can not be null";
     public static final String VALUE = "value can not be null";
+
 
     private Required() {}
 }
