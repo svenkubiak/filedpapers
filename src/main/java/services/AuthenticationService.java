@@ -8,6 +8,8 @@ import constants.Invalid;
 import constants.Required;
 import io.mangoo.cache.Cache;
 import io.mangoo.cache.CacheImpl;
+import io.mangoo.cache.CacheProvider;
+import io.mangoo.core.Application;
 import io.mangoo.core.Config;
 import io.mangoo.exceptions.MangooJwtException;
 import io.mangoo.utils.Arguments;
@@ -49,7 +51,10 @@ public class AuthenticationService {
         this.cache = new CacheImpl( Caffeine.newBuilder()
                 .maximumSize(TEN_THOUSAND)
                 .expireAfterWrite(Duration.of(10, ChronoUnit.MINUTES))
+                .recordStats()
                 .build());
+
+        Application.getInstance(CacheProvider.class).addCache("invalid-jwt", cache);
     }
 
     public Map<String, String> getChallengeToken(String userUid) throws MangooJwtException {
