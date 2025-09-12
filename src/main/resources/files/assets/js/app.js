@@ -398,9 +398,7 @@ function addBookmark(e) {
 }
 
 function search(e) {
-    if (!e?.target?.value) return;
-
-    const searchTerm = e.target.value.toLowerCase();
+    const searchTerm = e?.target?.value.toLowerCase() || '';
     const cards = $$('.card');
 
     cards.forEach(card => {
@@ -408,7 +406,11 @@ function search(e) {
         const column = card.closest('.column');
 
         if (column) {
-            column.style.display = title.includes(searchTerm) ? '' : 'none';
+            if (!searchTerm) {
+                column.style.display = '';
+            } else {
+                column.style.display = title.includes(searchTerm) ? '' : 'none';
+            }
         }
     });
 }
