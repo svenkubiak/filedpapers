@@ -69,7 +69,7 @@ public class ApiAccessFilter implements PerRequestFilter {
                     return Response.unauthorized().end();
                 }
 
-                if (!cookie && authenticationService.isBlacklisted(jwtClaimsSet.getJWTID())) {
+                if (!cookie && authenticationService.isTokenBlacklisted(jwtClaimsSet.getJWTID())) {
                     return Response.unauthorized().end();
                 }
 

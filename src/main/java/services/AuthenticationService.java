@@ -1,7 +1,6 @@
 package services;
 
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.google.common.base.Preconditions;
 import com.nimbusds.jwt.JWTClaimsSet;
 import constants.Const;
 import constants.Invalid;
@@ -17,6 +16,7 @@ import io.mangoo.utils.CommonUtils;
 import io.mangoo.utils.JwtUtils;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
+import models.Token;
 import models.User;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.util.Strings;
@@ -24,8 +24,8 @@ import utils.Utils;
 
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 
@@ -38,6 +38,7 @@ public class AuthenticationService {
     private static final String API_ACCESS_TOKEN_SECRET = "api.accessToken.secret";
     private static final String API_ACCESS_TOKEN_KEY = "api.accessToken.key";
     private static final String API_ACCESS_TOKEN_EXPIRES = "api.accessToken.expires";
+    private static final String API_REFRESH_TOKEN_KEY = "api.refreshToken.key";
     private static final String API_REFRESH_TOKEN_SECRET = "api.refreshToken.secret";
     private static final String API_REFRESH_TOKEN_EXPIRES = "api.refreshToken.expires";
     private final DataService dataService;
@@ -98,7 +99,7 @@ public class AuthenticationService {
         jwtData = JwtUtils.jwtData()
                 .withJwtID(CommonUtils.randomString(32))
                 .withSecret(config.getString(API_REFRESH_TOKEN_SECRET).getBytes(StandardCharsets.UTF_8))
-                .withKey(user.getRefreshTokenKey().getBytes(StandardCharsets.UTF_8))
+                .withKey(config.getString(API_REFRESH_TOKEN_KEY).getBytes(StandardCharsets.UTF_8))
                 .withClaims(Map.of(Const.NONCE, Utils.randomString(), Const.PEPPER, getPepper(userUid), Const.ATID, atid))
                 .withSubject(userUid)
                 .withTtlSeconds(config.getInt(API_REFRESH_TOKEN_EXPIRES) * 60L)
@@ -161,17 +162,11 @@ public class AuthenticationService {
                 300);
     }
 
-    public JWTClaimsSet parseRefreshToken(String value, String userUid) throws MangooJwtException {
+    public JWTClaimsSet parseRefreshToken(String value) throws MangooJwtException {
         Objects.requireNonNull(value, Required.VALUE);
 
-        String key = Strings.EMPTY;
-        User user = dataService.findUserByUid(userUid);
-        if (user != null) {
-            key = user.getRefreshTokenKey();
-        }
-
         return parseJwt(value,
-                key.getBytes(StandardCharsets.UTF_8),
+                config.getString(API_REFRESH_TOKEN_KEY).getBytes(StandardCharsets.UTF_8),
                 config.getString(API_REFRESH_TOKEN_SECRET).getBytes(StandardCharsets.UTF_8),
                 config.getApplicationName(),
                 config.getInt(API_REFRESH_TOKEN_EXPIRES) * 60);
@@ -187,42 +182,27 @@ public class AuthenticationService {
                 (int) config.getAuthenticationCookieRememberExpires() * 60);
     }
 
-    public void blacklist(String... ids) {
-        Objects.requireNonNull(ids, Required.IDS);
-        Preconditions.checkArgument(ids.length > 0, Required.IDS);
-
-        Arrays.stream(ids).forEach(id -> cache.put(INVALID + id, Strings.EMPTY));
+    public void blacklistToken(String id) {
+        Arguments.requireNonBlank(id, Required.ID);
+        cache.put(INVALID + id, Strings.EMPTY);
     }
 
-    public boolean isBlacklisted(String... ids) {
-        Objects.requireNonNull(ids, Required.IDS);
-        if (ids.length == 0) {
-            return true;
-        }
+    public boolean isTokenBlacklisted(String id) {
+        Arguments.requireNonBlank(id, Required.ID);
 
-        return Arrays.stream(ids).anyMatch(id -> cache.get(INVALID + id) != null);
+        return cache.get(INVALID + id) != null;
     }
 
-    public boolean refreshTokenKeyRotate(String userUid) {
-        Arguments.requireNonBlank(userUid, Required.USER_UID);
-
-        User user = dataService.findUserByUid(userUid);
-        if (user != null) {
-            String key = CommonUtils.randomString(64);
-            user.setRefreshTokenKey(key);
-            return dataService.save(user) != null;
-        }
-
-        return false;
+    public boolean isRefreshBlacklisted(String id) {
+        Arguments.requireNonBlank(id, Required.ID);
+        return dataService.tokenExists(id);
     }
 
-    public String getSubject(String jwt) throws MangooJwtException {
-        Arguments.requireNonBlank(jwt, Required.TOKEN);
+    public void blacklistRefreshToken(String id) {
+        Arguments.requireNonBlank(id, Required.ID);
 
-        try {
-            return JwtUtils.extractSubject(jwt, config.getString(API_REFRESH_TOKEN_SECRET).getBytes(StandardCharsets.UTF_8));
-        } catch (MangooJwtException e) {
-            throw new MangooJwtException(e);
+        if (!isRefreshBlacklisted(id)) {
+            dataService.save(new Token(id, LocalDateTime.now()));
         }
     }
 }

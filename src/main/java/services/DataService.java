@@ -3,6 +3,8 @@ package services;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.IndexOptions;
+import com.mongodb.client.model.Indexes;
 import com.mongodb.client.model.Sorts;
 import com.mongodb.client.result.DeleteResult;
 import constants.Collections;
@@ -19,10 +21,7 @@ import io.mangoo.utils.TotpUtils;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.inject.Singleton;
-import models.Action;
-import models.Category;
-import models.Item;
-import models.User;
+import models.*;
 import models.enums.Role;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -40,6 +39,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 import static com.mongodb.client.model.Aggregates.*;
@@ -62,6 +62,13 @@ public class DataService {
         this.datastore = Objects.requireNonNull(datastore, Required.DATASTORE);
         this.mediaService = Objects.requireNonNull(mediaService, Required.MEDIA_SERVICE);
         this.applicationUrl = Objects.requireNonNull(applicationUrl, Required.APPLICATION_URL);
+    }
+
+    public void indexify() {
+        datastore.query(Token.class)
+                .createIndex(
+                        Indexes.descending("timestamp"),
+                        new IndexOptions().expireAfter(8L, TimeUnit.DAYS));
     }
 
     public Optional<List<Map<String, Object>>> findCategories(String userUid) {
@@ -543,8 +550,8 @@ public class DataService {
 
         //Add new refresh token key
         datastore.query(Collections.USERS).updateMany(
-                not(exists("refreshTokenKey")),
-                set("refreshTokenKey", CommonUtils.randomString(64)));
+                exists("refreshTokenKey"),
+                unset("refreshTokenKey"));
 
         //Add new archived value
         datastore.query(Collections.ITEMS).updateMany(
@@ -677,5 +684,9 @@ public class DataService {
         Objects.requireNonNull(item, "item cannot be null");
 
         return mediaService.retrieve(item.getArchiveUid());
+    }
+
+    public boolean tokenExists(String id) {
+        return datastore.query(Token.class).find(eq ("uid", id)).first() != null;
     }
 }

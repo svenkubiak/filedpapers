@@ -69,13 +69,13 @@ public class UserControllerV1 {
 
         try {
             JWTClaimsSet jwtClaimsSet = authenticationService.parseChallengeToken(challengeToken);
-            if (jwtClaimsSet == null || authenticationService.isBlacklisted(jwtClaimsSet.getJWTID())) {
+            if (jwtClaimsSet == null || authenticationService.isTokenBlacklisted(jwtClaimsSet.getJWTID())) {
                 return Response.forbidden();
             }
 
             String userUid = jwtClaimsSet.getSubject();
             if (dataService.isValidMfa(userUid, otp)) {
-                authenticationService.blacklist(jwtClaimsSet.getJWTID());
+                authenticationService.blacklistToken(jwtClaimsSet.getJWTID());
                 return Response.ok().bodyJson(authenticationService.getRefreshAndAccessToken(userUid));
             }
             return Response.forbidden();
@@ -96,24 +96,20 @@ public class UserControllerV1 {
         }
 
         try {
-            String userUid = authenticationService.getSubject(refreshToken);
-            if (StringUtils.isBlank(userUid)) {
-                return Response.unauthorized();
-            }
-
-            JWTClaimsSet jwtClaimsSet = authenticationService.parseRefreshToken(refreshToken, userUid);
+            JWTClaimsSet jwtClaimsSet = authenticationService.parseRefreshToken(refreshToken);
             if (jwtClaimsSet == null) {
                 return Response.unauthorized();
             }
 
-            userUid = jwtClaimsSet.getSubject();
-            authenticationService.blacklist(jwtClaimsSet.getClaimAsString(Const.ATID));
-            if (authenticationService.refreshTokenKeyRotate(userUid)) {
-                return Response.ok()
-                        .bodyJson(authenticationService.getRefreshAndAccessToken(userUid));
-            } else {
+            if (authenticationService.isRefreshBlacklisted(jwtClaimsSet.getJWTID())) {
                 return Response.unauthorized();
             }
+
+            String userUid = jwtClaimsSet.getSubject();
+            authenticationService.blacklistToken(jwtClaimsSet.getClaimAsString(Const.ATID));
+            authenticationService.blacklistRefreshToken(jwtClaimsSet.getJWTID());
+
+            return Response.ok().bodyJson(authenticationService.getRefreshAndAccessToken(userUid));
         } catch (MangooJwtException | ParseException e) {
             return Response.unauthorized();
         }
@@ -125,23 +121,25 @@ public class UserControllerV1 {
         }
 
         String accessToken = Optional.ofNullable(credentials.get(Const.ACCESS_TOKEN)).orElse(Strings.EMPTY);
-        if (StringUtils.isBlank(accessToken)) {
+        String refreshToken = Optional.ofNullable(credentials.get(Const.REFRESH_TOKEN)).orElse(Strings.EMPTY);
+        if (StringUtils.isAnyBlank(accessToken, refreshToken)) {
             return Response.unauthorized();
         }
 
         try {
-            JWTClaimsSet jwtClaimsSet = authenticationService.parseAccessToken(accessToken);
-            if (jwtClaimsSet == null || authenticationService.isBlacklisted(jwtClaimsSet.getJWTID())) {
+            JWTClaimsSet accessTokenClaims = authenticationService.parseAccessToken(accessToken);
+            if (accessTokenClaims == null || authenticationService.isTokenBlacklisted(accessTokenClaims.getJWTID())) {
                 return Response.unauthorized();
             }
 
-            String userUid = jwtClaimsSet.getSubject();
-            authenticationService.blacklist(jwtClaimsSet.getJWTID());
-            if (authenticationService.refreshTokenKeyRotate(userUid)) {
-                return Response.ok();
-            } else {
+            JWTClaimsSet refreshTokenClaims = authenticationService.parseRefreshToken(refreshToken);
+            if (refreshTokenClaims == null || authenticationService.isRefreshBlacklisted(refreshTokenClaims.getJWTID())) {
                 return Response.unauthorized();
             }
+
+            authenticationService.blacklistToken(accessTokenClaims.getJWTID());
+            authenticationService.blacklistRefreshToken(refreshTokenClaims.getJWTID());
+            return Response.ok();
         } catch (MangooJwtException e) {
             return Response.unauthorized();
         }

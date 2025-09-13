@@ -114,6 +114,7 @@ public class Bootstrap implements MangooBootstrap {
     @Override
     public void applicationStarted() {
         dataService.upgrade();
+        dataService.indexify();
         mediaService.indexify();
     }
 

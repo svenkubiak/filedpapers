@@ -6,7 +6,6 @@ import constants.Required;
 import io.mangoo.annotations.Collection;
 import io.mangoo.annotations.Indexed;
 import io.mangoo.persistence.Entity;
-import io.mangoo.utils.CommonUtils;
 import utils.Utils;
 
 import java.io.Serializable;
@@ -28,7 +27,6 @@ public class User extends Entity implements Serializable  {
     private String mfaSecret;
     private String mfaFallback;
     private String language;
-    private String refreshTokenKey;
     private boolean mfa;
     private boolean confirmed;
 
@@ -38,7 +36,6 @@ public class User extends Entity implements Serializable  {
         this.salt = Utils.randomString();
         this.pepper = Utils.randomString();
         this.mfaSecret = Utils.randomString();
-        this.refreshTokenKey = CommonUtils.randomString(64);
         this.language = Const.DEFAULT_LANGUAGE;
     }
 
@@ -123,13 +120,5 @@ public class User extends Entity implements Serializable  {
 
     public void setPepper(String pepper) {
         this.pepper = pepper;
-    }
-
-    public String getRefreshTokenKey() {
-        return refreshTokenKey;
-    }
-
-    public void setRefreshTokenKey(String refreshTokenKey) {
-        this.refreshTokenKey = refreshTokenKey;
     }
 }

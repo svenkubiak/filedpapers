@@ -398,7 +398,7 @@ public class UserControllerV1Tests {
         //when
         response = TestRequest.post("/api/v1/users/logout")
                 .withContentType("application/json")
-                .withStringBody(JsonUtils.toJson(Map.of("accessToken", accessToken)))
+                .withStringBody(JsonUtils.toJson(Map.of("refreshToken", credentials.get("refreshToken"), "accessToken", accessToken)))
                 .execute();
 
         assertThat(response).isNotNull();
