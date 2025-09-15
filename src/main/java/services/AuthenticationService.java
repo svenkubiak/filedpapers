@@ -31,7 +31,7 @@ import java.util.Objects;
 
 @Singleton
 public class AuthenticationService {
-    private static final int TEN_THOUSAND = 10000;
+    private static final int THOUSAND = 1000;
     private static final String INVALID = "invalid_";
     private static final String API_CHALLENGE_TOKEN_SECRET = "api.challengeToken.secret";
     private static final String API_CHALLENGE_TOKEN_KEY = "api.challengeToken.key";
@@ -50,12 +50,9 @@ public class AuthenticationService {
         this.dataService = Objects.requireNonNull(dataService, Required.DATA_SERVICE);
         this.config = Objects.requireNonNull(config, Required.CONFIG);
         this.cache = new CacheImpl( Caffeine.newBuilder()
-                .maximumSize(TEN_THOUSAND)
+                .maximumSize(THOUSAND)
                 .expireAfterWrite(Duration.of(10, ChronoUnit.MINUTES))
-                .recordStats()
                 .build());
-
-        Application.getInstance(CacheProvider.class).addCache("invalid-jwt", cache);
     }
 
     public Map<String, String> getChallengeToken(String userUid) throws MangooJwtException {
