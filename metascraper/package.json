@@ -8,7 +8,7 @@
   },
   "dependencies": {
     "cheerio": "1.1.2",
-    "sharp": "^0.34.3",
+    "sharp": "^0.34.4",
     "axios": "^1.12.2",
     "express": "^5.1.0",
     "single-file-cli": "^2.0.75"
