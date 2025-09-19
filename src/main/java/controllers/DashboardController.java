@@ -86,26 +86,28 @@ public class DashboardController {
 
         var user = dataService.findUserByUid(userUid);
         String qrCode = null;
-        switch (mfa.toLowerCase(Locale.ENGLISH)) {
-            case "enable" -> {
-                if (!user.isMfa()) {
-                    var secret = TotpUtils.createSecret();
-                    user.setMfaSecret(secret);
-                    dataService.save(user);
+        if (StringUtils.isNotBlank(mfa)) {
+            switch (mfa.toLowerCase(Locale.ENGLISH)) {
+                case "enable" -> {
+                    if (!user.isMfa()) {
+                        var secret = TotpUtils.createSecret();
+                        user.setMfaSecret(secret);
+                        dataService.save(user);
 
-                    qrCode = TotpUtils.getQRCode(user.getUsername(), "Filed Papers", secret);
+                        qrCode = TotpUtils.getQRCode(user.getUsername(), "Filed Papers", secret);
+                    }
                 }
-            }
-            case "disable" -> {
-                if (user.isMfa()) {
-                    user.setMfa(false);
-                    dataService.save(user);
+                case "disable" -> {
+                    if (user.isMfa()) {
+                        user.setMfa(false);
+                        dataService.save(user);
 
-                    flash.put(Const.TOAST_SUCCESS, messages.get("toast.mfa.disabled"));
-                    notificationService.accountChanged(
-                            user.getUsername(),
-                            messages.get("email.account.changes.mfa.disabled")
-                    );
+                        flash.put(Const.TOAST_SUCCESS, messages.get("toast.mfa.disabled"));
+                        notificationService.accountChanged(
+                                user.getUsername(),
+                                messages.get("email.account.changes.mfa.disabled")
+                        );
+                    }
                 }
             }
         }
