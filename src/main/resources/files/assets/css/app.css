@@ -1222,3 +1222,11 @@ a.disabled {
 .theme-dark .theme-toggle-navbar:hover {
     background-color: var(--dark-bg-tertiary, #3a3a3a);
 }
+
+#theme-toggle, .theme-toggle-button {
+    position: fixed;      /* Fix to viewport */
+    bottom: 35px;         /* 20px from the bottom edge */
+    right: 215px;         /* Positioned left of the Add Bookmark button */
+    top: auto;            /* Disable top positioning */
+    z-index: 1000;        /* Appear above other elements */
+}
