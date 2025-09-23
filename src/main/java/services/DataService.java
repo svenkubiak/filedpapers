@@ -553,6 +553,11 @@ public class DataService {
                 exists("refreshTokenKey"),
                 unset("refreshTokenKey"));
 
+        //Add language if not exists
+        datastore.query(Collections.USERS).updateMany(
+                not(exists("language")),
+                set("language", Const.DEFAULT_LANGUAGE));
+
         //Add new archived value
         datastore.query(Collections.ITEMS).updateMany(
                 not(exists("archived")),
