@@ -36,9 +36,9 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.14.1</version>
 				<configuration>
-					<source>21</source>
-					<target>21</target>
-					<release>21</release>
+					<source>${jdk.version}</source>
+					<target>${jdk.version}</target>
+					<release>${jdk.version}</release>
 					<debug>false</debug>
 					<showDeprecation>true</showDeprecation>
 					<fork>true</fork>
