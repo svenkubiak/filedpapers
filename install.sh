@@ -84,10 +84,5 @@ curl -s -O "$COMPOSE_URL"
 # Step 6: Installation complete
 echo "6/6 Installation complete!"
 echo ""
-echo "Please configure your specific environment in your compose.yaml."
+echo "Please configure your specific environment in your compose.yaml and remove this script."
 echo "Enjoy Filed Papers!"
-
-# Cleanup: Remove install script
-echo "Removing install script..."
-rm -- "$0"
-
