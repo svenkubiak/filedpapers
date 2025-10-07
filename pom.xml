@@ -6,7 +6,7 @@
 	<version>3.3.1</version>
 	<packaging>jar</packaging>
 	<properties>
-		<mangooio.version>10.0.0-Alpha36</mangooio.version>
+		<mangooio.version>10.0.0-Alpha39</mangooio.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<jdk.version>25</jdk.version>
 		<maven.compiler.optimze>true</maven.compiler.optimze>
