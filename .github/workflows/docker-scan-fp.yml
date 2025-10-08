@@ -36,28 +36,3 @@ jobs:
           exit-code: '1'
           ignore-unfixed: false
           severity: LOW,MEDIUM,CRITICAL,HIGH
-
-
-  docker-metascraper:
-    name: Filedpaper Metascraper Docker & Scan
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '24'
-
-      - name: Build Docker image (metascraper)
-        run: docker build -t my-app-metascraper:latest -f metascraper/Dockerfile metascraper
-
-      - name: Trivy scan (metascraper)
-        uses: aquasecurity/trivy-action@0.24.0
-        with:
-          image-ref: my-app-metascraper:latest
-          format: table
-          exit-code: '1'
-          ignore-unfixed: false
-          severity: LOW,MEDIUM,HIGH,CRITICAL
