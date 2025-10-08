@@ -50,15 +50,8 @@ jobs:
         with:
           node-version: '24'
 
-      - name: Install dependencies
-        working-directory: metascraper
-        run: npm install
-
-      - name: Skip build step (no build script present)
-        run: echo "No npm build step defined; skipping."
-
       - name: Build Docker image (metascraper)
-        run: docker build -t my-app-metascraper:latest -f metascraper/Dockerfile .
+        run: docker build -t my-app-metascraper:latest -f metascraper/Dockerfile metascraper
 
       - name: Trivy scan (metascraper)
         uses: aquasecurity/trivy-action@0.24.0
@@ -68,6 +61,3 @@ jobs:
           exit-code: '1'
           ignore-unfixed: false
           severity: LOW,MEDIUM,HIGH,CRITICAL
-
-
-
