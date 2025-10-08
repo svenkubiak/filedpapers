@@ -49,8 +49,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '24'
-          cache: 'npm'
-
+  
       - name: Install dependencies
         working-directory: metascraper
         run: npm install
@@ -70,4 +69,5 @@ jobs:
           exit-code: '1'
           ignore-unfixed: false
           severity: LOW,MEDIUM,HIGH,CRITICAL
+
 
