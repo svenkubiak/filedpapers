@@ -10,7 +10,7 @@ on:
 
 jobs:
   docker-root:
-    name: Java App Docker & Scan
+    name: Filedpaper App Docker & Scan
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -39,7 +39,7 @@ jobs:
 
 
   docker-metascraper:
-    name: Metascraper Docker & Scan
+    name: Filedpaper Metascraper Docker & Scan
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
