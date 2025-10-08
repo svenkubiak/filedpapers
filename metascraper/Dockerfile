@@ -1,4 +1,4 @@
-FROM node:24-slim
+FROM gcr.io/distroless/nodejs24
 
 # Install Chromium and dependencies
 RUN apt-get update && apt-get install -y \
