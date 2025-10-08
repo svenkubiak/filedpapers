@@ -49,14 +49,13 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '24'
-  
+
       - name: Install dependencies
         working-directory: metascraper
         run: npm install
 
-      - name: Build metascraper app
-        working-directory: metascraper
-        run: npm run build
+      - name: Skip build step (no build script present)
+        run: echo "No npm build step defined; skipping."
 
       - name: Build Docker image (metascraper)
         run: docker build -t my-app-metascraper:latest -f metascraper/Dockerfile .
@@ -69,5 +68,6 @@ jobs:
           exit-code: '1'
           ignore-unfixed: false
           severity: LOW,MEDIUM,HIGH,CRITICAL
+
 
 
