@@ -30,7 +30,7 @@ services:
       - filedpapers-network
 
   filedpapers-database:
-    image: mongodb/mongodb-community-server:latest
+    image: mongodb/mongodb-community-server:8.2.1-ubuntu2204
     container_name: filedpapers-database
     restart: always
     environment:
