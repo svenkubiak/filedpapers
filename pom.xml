@@ -190,7 +190,7 @@
 					<dependency>
 						<groupId>org.codehaus.mojo</groupId>
 						<artifactId>extra-enforcer-rules</artifactId>
-						<version>1.10.0</version>
+						<version>1.11.0</version>
 					</dependency>
 				</dependencies>
 			</plugin>
@@ -286,7 +286,7 @@
 					<plugin>
 						<groupId>org.jacoco</groupId>
 						<artifactId>jacoco-maven-plugin</artifactId>
-						<version>0.8.13</version>
+						<version>0.8.14</version>
 						<executions>
 							<execution>
 								<id>prepare-agent</id>
