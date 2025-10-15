@@ -8,9 +8,9 @@
 	<properties>
 		<mangooio.version>10.0.0-Beta1</mangooio.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<jdk.version>25</jdk.version>
+		<java.version>25</java.version>
 		<maven.compiler.optimze>true</maven.compiler.optimze>
-		<testcontainers.version>1.21.3</testcontainers.version>
+		<testcontainers.version>2.0.0</testcontainers.version>
 	</properties>
 	<build>
 		<resources>
@@ -36,9 +36,9 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 				<version>3.14.1</version>
 				<configuration>
-					<source>${jdk.version}</source>
-					<target>${jdk.version}</target>
-					<release>${jdk.version}</release>
+					<source>${java.version}</source>
+					<target>${java.version}</target>
+					<release>${java.version}</release>
 					<debug>false</debug>
 					<showDeprecation>true</showDeprecation>
 					<fork>true</fork>
@@ -214,7 +214,7 @@
 				<artifactId>modernizer-maven-plugin</artifactId>
 				<version>3.2.0</version>
 				<configuration>
-					<javaVersion>${jdk.version}</javaVersion>
+					<javaVersion>${java.version}</javaVersion>
 				</configuration>
 				<executions>
 					<execution>
