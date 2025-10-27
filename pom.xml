@@ -6,11 +6,11 @@
 	<version>3.3.1</version>
 	<packaging>jar</packaging>
 	<properties>
-		<mangooio.version>10.0.0-Beta1</mangooio.version>
+		<mangooio.version>10.0.0-Beta5</mangooio.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<java.version>25</java.version>
 		<maven.compiler.optimze>true</maven.compiler.optimze>
-		<testcontainers.version>2.0.0</testcontainers.version>
+		<testcontainers.version>1.21.3</testcontainers.version>
 	</properties>
 	<build>
 		<resources>
