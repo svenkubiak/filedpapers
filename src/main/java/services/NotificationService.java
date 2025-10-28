@@ -85,8 +85,9 @@ public class NotificationService {
         }
     }
 
-    public void passwordChanged(String username) {
+    public void accountChanged(String username, String message) {
         Objects.requireNonNull(username, Required.USERNAME);
+        Objects.requireNonNull(message, Required.MESSAGE);
 
         var user = dataService.findUser(username);
         if (user != null) {
@@ -94,15 +95,16 @@ public class NotificationService {
                 messages.reload(Locale.of(user.getLanguage()));
                 Map<String, Object> content = new HashMap<>();
                 content.put("messages", messages);
+                content.put("message", message);
 
                 Mail.newMail()
                         .from(from)
-                        .subject(Const.EMAIL_PREFIX + " " + messages.get("email.confirm.password.subject"))
+                        .subject(Const.EMAIL_PREFIX + " " + messages.get("email.account.changes.subject"))
                         .to(user.getUsername())
-                        .textMessage("emails/password_changed.ftl", content)
+                        .textMessage("emails/account_changed.ftl", content)
                         .send();
             } catch (MangooTemplateEngineException e) {
-                LOG.error("Failed to send password change confirmation", e);
+                LOG.error("Failed to send account changed information", e);
             }
         }
     }

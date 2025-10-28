@@ -9,7 +9,6 @@
         <p class="auth-subtitle">${i18n("auth.forgot.subtitle")}</p>
         <#if flash.success??>
             <div class="notification is-success is-light mb-5">
-                <button class="delete"></button>
                 ${flash.success}
             </div>
         </#if>

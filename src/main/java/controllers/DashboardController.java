@@ -3,7 +3,6 @@ package controllers;
 import constants.Const;
 import constants.Required;
 import io.mangoo.annotations.FilterWith;
-import io.mangoo.constants.Hmac;
 import io.mangoo.core.Config;
 import io.mangoo.filters.CsrfFilter;
 import io.mangoo.i18n.Messages;
@@ -12,8 +11,8 @@ import io.mangoo.routing.bindings.Authentication;
 import io.mangoo.routing.bindings.Flash;
 import io.mangoo.routing.bindings.Form;
 import io.mangoo.routing.bindings.Session;
-import io.mangoo.utils.CodecUtils;
-import io.mangoo.utils.totp.TotpUtils;
+import io.mangoo.utils.CommonUtils;
+import io.mangoo.utils.TotpUtils;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import models.Action;
@@ -31,10 +30,13 @@ import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.*;
+import java.util.stream.IntStream;
 
+import static constants.Const.GENERAL_ERROR;
 import static constants.Const.TOAST_ERROR;
 
 public class DashboardController {
+    private static final int MAX_FILE_SIZE_BYTES = 10485760; // 10MB
     private final DataService dataService;
     private final NotificationService notificationService;
     private final Config config;
@@ -72,25 +74,48 @@ public class DashboardController {
                 .render("breadcrumb", category.getName())
                 .render("categories", categories.orElseThrow())
                 .render("categoryUid", category.getUid())
-                .render("items", Utils.convertItems(items.orElseThrow()));
+                .render("items", Utils.convertItems(items.orElseThrow()))
+                .render("poll", true);
     }
 
-    public Response profile(Authentication authentication, Flash flash) {
-        String userUid = authentication.getSubject();
-        Optional<List<Map<String, Object>>> categories = dataService.findCategories(userUid);
+    public Response profile(Authentication authentication, Flash flash, String mfa) {
+        var userUid = authentication.getSubject();
 
+        Optional<List<Map<String, Object>>> categories = dataService.findCategories(userUid);
         categories.ifPresent(Utils::sortCategories);
 
         var user = dataService.findUserByUid(userUid);
         String qrCode = null;
-        if (user.isMfa()) {
-            qrCode = TotpUtils.getQRCode(user.getUsername(), "Filed Papers", user.getMfaSecret(), Hmac.SHA512, "6", "30");
+        if (StringUtils.isNotBlank(mfa)) {
+            switch (mfa.toLowerCase(Locale.ENGLISH)) {
+                case "enable" -> {
+                    if (!user.isMfa()) {
+                        var secret = TotpUtils.createSecret();
+                        user.setMfaSecret(secret);
+                        dataService.save(user);
+
+                        qrCode = TotpUtils.getQRCode(user.getUsername(), "Filed Papers", secret);
+                    }
+                }
+                case "disable" -> {
+                    if (user.isMfa()) {
+                        user.setMfa(false);
+                        dataService.save(user);
+
+                        flash.put(Const.TOAST_SUCCESS, messages.get("toast.mfa.disabled"));
+                        notificationService.accountChanged(
+                                user.getUsername(),
+                                messages.get("email.account.changes.mfa.disabled")
+                        );
+                    }
+                }
+            }
         }
 
         String fallback = null;
         if (StringUtils.isNotBlank(flash.get(Const.MFA_FALLBACK))) {
             fallback = flash.get(Const.MFA_FALLBACK);
-            flash.put(Const.MFA_FALLBACK, Strings.EMPTY);
+            flash.remove(Const.MFA_FALLBACK);
         }
 
         return Response.ok()
@@ -98,6 +123,7 @@ public class DashboardController {
                 .render("username", user.getUsername())
                 .render("confirmed", user.isConfirmed())
                 .render("mfa", user.isMfa())
+                .render("enrollMfa", !user.isMfa() && ("enable").equals(mfa))
                 .render("languages", Utils.getLanguages())
                 .render("language", Utils.language(user))
                 .render("qrCode", qrCode)
@@ -108,11 +134,33 @@ public class DashboardController {
     @FilterWith(CsrfFilter.class)
     public Response doMfa(Authentication authentication, Form form, Flash flash) {
         String userUid = authentication.getSubject();
-        String mfa = form.get("mfa");
+        IntStream.rangeClosed(1, 6)
+                .mapToObj(i -> "otp-" + i)
+                .forEach(key -> {
+                    form.expectNumeric(key);
+                    form.expectRangeLength(key, 1, 1);
+                });
 
-        String fallback = dataService.changeMfa(userUid, ("on").equals(mfa));
-        flash.put(Const.TOAST_SUCCESS, messages.get("toast.mfa.success", ("on").equals(mfa) ? messages.get("toast.mfa.enabled") : messages.get("toast.mfa.disabled")));
-        flash.put(Const.MFA_FALLBACK, fallback);
+        if (form.isValid()) {
+            String otp = java.util.stream.IntStream.rangeClosed(1, 6)
+                    .mapToObj(i -> form.get("otp-" + i))
+                    .collect(java.util.stream.Collectors.joining());
+
+            var user = dataService.findUserByUid(userUid);
+            if (TotpUtils.verifyTotp(user.getMfaSecret(), otp)) {
+                String fallback = dataService.enableMfa(userUid);
+                if (StringUtils.isNotBlank(fallback)) {
+                    flash.put(Const.TOAST_SUCCESS, messages.get("toast.mfa.enabled"));
+                    flash.put(Const.MFA_FALLBACK, fallback);
+
+                    notificationService.accountChanged(user.getUsername(), messages.get("email.account.changes.mfa.enabled"));
+                } else {
+                    flash.put(Const.TOAST_ERROR, GENERAL_ERROR);
+                }
+            }
+        } else {
+            flash.put(Const.TOAST_ERROR, GENERAL_ERROR);
+        }
 
         return Response.redirect("/dashboard/profile");
     }
@@ -195,42 +243,48 @@ public class DashboardController {
         return Response.redirect("/dashboard/profile");
     }
 
-    public Response importer(Form form, Authentication authentication) {
+    public Response importer(Form form, Authentication authentication, Flash flash) {
         String userUid = authentication.getSubject();
+        form.expectFile("importfile");
+        form.expectFileMaxSize("importfile", MAX_FILE_SIZE_BYTES);
+        form.expectFileMimeType("importfile", List.of("text/html"));
 
-        var content = Optional.ofNullable(form.getFile())
-                .flatMap(file -> file.map(IOUtils::readContent))
-                .orElse(Strings.EMPTY);
+        if (form.isValid()) {
+            var content = form.getFile("importfile")
+                    .map(String::new)
+                    .orElse(Strings.EMPTY);
 
-        try {
-            List<Leaf> leafs = IOUtils.importItems(content);
+            try {
+                List<Leaf> leafs = IOUtils.importItems(content);
+                for (Leaf leaf : leafs) {
+                    if (leaf.isFolder()) {
+                        var category = dataService.findCategoryByName(leaf.getTitle(), userUid);
+                        if (category == null) {
+                            dataService.addCategory(userUid, leaf.getTitle());
+                            category = dataService.findCategoryByName(leaf.getTitle(), userUid);
+                        }
 
-            for (Leaf leaf : leafs) {
-                if (leaf.isFolder()) {
-                    var category = dataService.findCategoryByName(leaf.getTitle(), userUid);
-                    if (category == null) {
-                        dataService.addCategory(userUid, leaf.getTitle());
-                        category = dataService.findCategoryByName(leaf.getTitle(), userUid);
-                    }
+                        for (Leaf child : leaf.getChildren()) {
+                            if (!child.isFolder()) {
+                                var item = Item.create()
+                                        .withTitle(child.getTitle())
+                                        .withUrl(child.getUrl())
+                                        .withCategoryUid(category.getUid())
+                                        .withUserUid(userUid)
+                                        .withImage(child.getDataCover());
 
-                    for (Leaf child : leaf.getChildren()) {
-                        if (!child.isFolder()) {
-                            var item = Item.create()
-                                    .withTitle(child.getTitle())
-                                    .withUrl(child.getUrl())
-                                    .withCategoryUid(category.getUid())
-                                    .withUserUid(userUid)
-                                    .withImage(child.getDataCover());
+                                item.setTimestamp(child.getAddDate().atZone(ZoneId.systemDefault()).toLocalDateTime());
 
-                            item.setTimestamp(child.getAddDate().atZone(ZoneId.systemDefault()).toLocalDateTime());
-
-                            dataService.save(item);
+                                dataService.save(item);
+                            }
                         }
                     }
                 }
+            } catch (Exception e) {
+                //Intentionally left blank
             }
-        } catch (Exception e) {
-            //Intentionally left blank
+        } else {
+            flash.put(TOAST_ERROR, messages.get("toast.error"));
         }
 
         return Response.redirect("/dashboard");
@@ -311,7 +365,7 @@ public class DashboardController {
             String password = form.get("password");
 
             var user = dataService.findUserByUid(userUid);
-            if (user.getPassword().equals(CodecUtils.hashArgon2(password, user.getSalt()))) {
+            if (user.getPassword().equals(CommonUtils.hashArgon2(password, user.getSalt()))) {
                 user.setUsername(username);
                 user.setConfirmed(false);
                 dataService.save(user);
@@ -320,6 +374,7 @@ public class DashboardController {
                 dataService.save(new Action(user.getUid(), token, Type.CONFIRM_EMAIL));
                 notificationService.confirmEmail(username, token);
 
+                notificationService.accountChanged(user.getUsername(), messages.get("email.account.changes.username"));
                 flash.put(Const.TOAST_SUCCESS, messages.get("toast.username.success"));
             } else {
                 flash.put(Const.TOAST_ERROR, messages.get("toast.error"));
@@ -348,11 +403,11 @@ public class DashboardController {
             String newPassword = form.get("new-password");
 
             var user = dataService.findUserByUid(userUid);
-            if (user.getPassword().equals(CodecUtils.hashArgon2(password, user.getSalt()))) {
-                user.setPassword(CodecUtils.hashArgon2(newPassword, user.getSalt()));
+            if (user.getPassword().equals(CommonUtils.hashArgon2(password, user.getSalt()))) {
+                user.setPassword(CommonUtils.hashArgon2(newPassword, user.getSalt()));
                 dataService.save(user);
-                notificationService.passwordChanged(user.getUsername());
 
+                notificationService.accountChanged(user.getUsername(), messages.get("email.account.changes.password"));
                 flash.put(Const.TOAST_SUCCESS, messages.get("toast.password.success"));
             } else {
                 flash.put(Const.TOAST_ERROR, messages.get("toast.error"));

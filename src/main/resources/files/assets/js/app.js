@@ -22,6 +22,7 @@ const forAll = (sel, fn) => {
 let $categoryToRename = null;
 const toastSuccess = 'toast-success';
 const toastError = 'toast-error';
+const poll = $id('poll-js').dataset;
 const i18n = $id('i18n-js').dataset;
 const generalError = i18n.error;
 const archivedSuccess = i18n.archivedSuccess;
@@ -441,6 +442,30 @@ function openPopup(e) {
     );
 }
 
+function setupAutoFocusNext(selector) {
+    forAll(selector, (input, index, inputs) => {
+        on(input, 'input', (e) => {
+            const value = e.target.value;
+            e.target.value = value.replace(/[^0-9]/g, '').slice(0, 1);
+            if (e.target.value && index < inputs.length - 1) {
+                inputs[index + 1].focus();
+            }
+        });
+    });
+}
+
+function focusFirstVisibleInput(selector) {
+    const inputs = document.querySelectorAll(selector);
+    for (let input of inputs) {
+        if (input.offsetParent !== null) {
+            input.focus();
+            break;
+        }
+    }
+}
+
+focusFirstVisibleInput('.otp-input');
+setupAutoFocusNext('.otp-input');
 on(document, 'keydown', handleKeyNavigation);
 on(window, 'load', handleToastsOnLoad);
 on('#add-category-button', 'click', handleAddClick);
@@ -472,7 +497,7 @@ forAll('.menu-list a[data-category]', (target) => {
     target.addEventListener('drop', handleDrop);
 });
 
-async function poll() {
+async function polling() {
     try {
         const count = $$('.card').length;
         const match = window.location.pathname.match(/\/dashboard\/(.+)/);
@@ -498,10 +523,116 @@ async function poll() {
                 console.log(error);
             });
 
-        setTimeout(poll, 3000);
+        setTimeout(polling, 3000);
     } catch (error) {
         console.log(error);
     }
 }
 
-poll();
+if (poll != null && poll.poll === "true") {
+    polling();
+}
+
+// Theme Toggle with localStorage
+class ThemeManager {
+    constructor() {
+        this.theme = this.getStoredTheme();
+        this.init();
+    }
+
+    init() {
+        this.applyTheme(this.theme);
+        this.createToggleButton();
+    }
+
+    getStoredTheme() {
+        // Priority order:
+        // 1. User's saved preference (localStorage)
+        // 2. System preference (prefers-color-scheme)
+        // 3. Default (light)
+
+        const stored = localStorage.getItem('theme');
+        if (stored && (stored === 'light' || stored === 'dark')) {
+            return stored;
+        }
+
+        // Check system preference
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            return 'dark';
+        }
+
+        return 'light'; // Default
+    }
+
+    applyTheme(theme) {
+        const html = document.documentElement;
+
+        if (theme === 'dark') {
+            html.setAttribute('data-theme', 'dark');
+            html.classList.add('theme-dark');
+        } else {
+            html.removeAttribute('data-theme');
+            html.classList.remove('theme-dark');
+        }
+
+        this.theme = theme;
+        // Save to localStorage
+        localStorage.setItem('theme', theme);
+    }
+
+    toggleTheme() {
+        const newTheme = this.theme === 'light' ? 'dark' : 'light';
+        this.applyTheme(newTheme);
+        this.updateToggleButton();
+    }
+
+    createToggleButton() {
+        // Remove existing toggle if it exists
+        const existingToggle = document.getElementById('theme-toggle');
+        if (existingToggle) {
+            existingToggle.remove();
+        }
+
+        const toggle = document.createElement('button');
+        toggle.id = 'theme-toggle';
+        toggle.className = 'theme-toggle-button';
+        toggle.innerHTML = this.getToggleIcon();
+        toggle.setAttribute('aria-label', `Switch to ${this.theme === 'light' ? 'dark' : 'light'} mode`);
+        toggle.setAttribute('title', `Switch to ${this.theme === 'light' ? 'dark' : 'light'} mode`);
+
+        toggle.addEventListener('click', () => this.toggleTheme());
+
+        // Add to page
+        document.body.appendChild(toggle);
+    }
+
+    updateToggleButton() {
+        const toggle = document.getElementById('theme-toggle');
+        if (toggle) {
+            toggle.innerHTML = this.getToggleIcon();
+            toggle.setAttribute('aria-label', `Switch to ${this.theme === 'light' ? 'dark' : 'light'} mode`);
+            toggle.setAttribute('title', `Switch to ${this.theme === 'light' ? 'dark' : 'light'} mode`);
+        }
+    }
+
+    getToggleIcon() {
+        return this.theme === 'light'
+            ? '🌙' // Moon icon for switching to dark
+            : '☀️'; // Sun icon for switching to light
+    }
+}
+
+// Make themeToggle globally accessible
+let themeToggle;
+
+// Initialize when DOM is loaded
+document.addEventListener('DOMContentLoaded', () => {
+    themeToggle = new ThemeManager();
+});
+
+// Simple function for manual buttons
+function toggleTheme() {
+    if (themeToggle) {
+        themeToggle.toggleTheme();
+    }
+}

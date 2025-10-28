@@ -73,7 +73,6 @@ public class PreviewTests {
                             // 2. Kill the process
                             Process killer = new ProcessBuilder("taskkill", "/PID", pid, "/F").start();
                             killer.waitFor();
-                            System.out.println("Killed PID " + pid + " on port " + port);
                         }
                     }
                 }
@@ -86,7 +85,6 @@ public class PreviewTests {
                     while ((pid = reader.readLine()) != null) {
                         Process killer = new ProcessBuilder("kill", "-9", pid).start();
                         killer.waitFor();
-                        System.out.println("Killed PID " + pid + " on port " + port);
                     }
                 }
             }

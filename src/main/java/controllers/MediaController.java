@@ -3,12 +3,13 @@ package controllers;
 import constants.Required;
 import io.mangoo.routing.Response;
 import io.mangoo.routing.bindings.Authentication;
-import io.mangoo.utils.CodecUtils;
+import io.mangoo.utils.CommonUtils;
 import io.undertow.util.Headers;
 import jakarta.inject.Inject;
 import services.DataService;
 import services.MediaService;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 public class MediaController {
@@ -33,8 +34,8 @@ public class MediaController {
         String userUid = authentication.getSubject();
         var item = dataService.findItem(uid, userUid);
         var archive = dataService.findArchive(item).orElseThrow();
-        String str = new String(archive);
+        var string = new String(archive, StandardCharsets.UTF_8);
 
-        return Response.ok().render("archive", new String(CodecUtils.decodeFromBase64(str)));
+        return Response.ok().render("archive", new String(CommonUtils.decodeFromBase64(string), StandardCharsets.UTF_8));
     }
 }

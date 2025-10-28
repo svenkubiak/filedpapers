@@ -12,24 +12,16 @@
 <div class="columns is-multiline">
     <div class="column is-half">
         <div class="profile-form">
-            <form action="/dashboard/profile/enable-mfa" method="POST" class="profile-section">
+            <#if mfa>
                 <h2 class="section-title">${i18n("profile.mfa.title")}</h2>
-                <div class="notification is-info is-light">
-                    ${i18n("profile.mfa.info")}
+                <div class="notification is-success is-light">
+                    ${i18n("profile.mfa.enabled")}
                 </div>
-                <div class="form-field">
-                    <div class="control has-icons-left">
-                        <input class="checkbox" type="checkbox" name="mfa" <#if mfa>checked</#if>> ${i18n("profile.mfa.checkbox")}
-                    </div>
-                </div>
-                <#if qrCode??>
-                    <img src="data:image/png;base64,${qrCode}"/>
-                </#if>
                 <div class="form-field">
                     <div class="control">
-                        <button type="submit" class="button is-link is-fullwidth">
-                            ${i18n("profile.mfa.save")}
-                        </button>
+                        <a href="/dashboard/profile?mfa=disable" class="button is-link is-fullwidth">
+                            ${i18n("profile.mfa.disable")}
+                        </a>
                     </div>
                 </div>
                 <#if mfaFallback??>
@@ -38,11 +30,56 @@
                         <br><br>
                         🔒 ${i18n("profile.mfa.fallback.2")}: <code>${mfaFallback}</code>
                         <br><br>
-                        ${i18n("profile.mfa.fallback.3")}
+                        ${i18n("profile.mfa.fallback.3")?no_esc}
                     </div>
                 </#if>
-                <@csrfform/>
-            </form>
+            <#else>
+               <#if enrollMfa>
+                   <form action="/dashboard/profile/enable-mfa" method="POST" class="profile-section">
+                       <h2 class="section-title">${i18n("profile.mfa.title")}</h2>
+                       <div class="notification is-info is-light">
+                           ${i18n("profile.mfa.enable.info")}
+                       </div>
+                       <#if qrCode??>
+                           <img src="data:image/png;base64,${qrCode}"/>
+                       </#if>
+                       <div class="field">
+                           <label class="label">${i18n("profile.totp.label")}</label>
+                           <div class="control is-flex is-justify-content-center" style="gap: 0.5rem;">
+                               <input class="input otp-input is-medium has-text-centered" name="otp-1" type="text" maxlength="1" pattern="\d*" inputmode="numeric" />
+                               <input class="input otp-input is-medium has-text-centered" name="otp-2" type="text" maxlength="1" pattern="\d*" inputmode="numeric" />
+                               <input class="input otp-input is-medium has-text-centered" name="otp-3" type="text" maxlength="1" pattern="\d*" inputmode="numeric" />
+                               <input class="input otp-input is-medium has-text-centered" name="otp-4" type="text" maxlength="1" pattern="\d*" inputmode="numeric" />
+                               <input class="input otp-input is-medium has-text-centered" name="otp-5" type="text" maxlength="1" pattern="\d*" inputmode="numeric" />
+                               <input class="input otp-input is-medium has-text-centered" name="otp-6" type="text" maxlength="1" pattern="\d*" inputmode="numeric" />
+                           </div>
+                       </div>
+                       <div class="form-field">
+                           <div class="control">
+                               <button type="submit" class="button is-link is-fullwidth">
+                                   ${i18n("profile.mfa.validate")}
+                               </button>
+                           </div>
+                       </div>
+                       <@csrfform/>
+                   </form>
+               <#else>
+                   <h2 class="section-title">${i18n("profile.mfa.title")}</h2>
+                   <div class="notification is-info is-light">
+                       ${i18n("profile.mfa.info")}
+                   </div>
+                   <div class="notification is-warning is-light">
+                       ${i18n("profile.mfa.disabled")}
+                   </div>
+                   <div class="form-field">
+                       <div class="control">
+                           <a href="/dashboard/profile?mfa=enable" class="button is-link is-fullwidth">
+                               ${i18n("profile.mfa.enable")}
+                           </a>
+                       </div>
+                   </div>
+                </#if>
+            </#if>
             <form action="/dashboard/profile/logout-devices" method="POST" class="profile-section">
                 <h2 class="section-title">${i18n("profile.logout.devices.title")}</h2>
                 <div class="notification is-info is-light">
@@ -55,15 +92,6 @@
                         </button>
                     </div>
                 </div>
-                <#if mfaFallback??>
-                    <div class="notification is-warning">
-                        ${i18n("profile.mfa.fallback.1")}
-                        <br><br>
-                        🔒 ${i18n("profile.mfa.fallback.2")}: <code>${mfaFallback}</code>
-                        <br><br>
-                        ${i18n("profile.mfa.fallback.3")}
-                    </div>
-                </#if>
                 <@csrfform/>
             </form>
             <form action="/dashboard/profile/language" method="POST" class="profile-section">
@@ -98,7 +126,7 @@
                 <h2 class="section-title">${i18n("profile.email.title")}</h2>
                 <#if !confirmed>
                 <div class="notification is-warning">
-                    ${i18n("profile.email.notification")}
+                    ${i18n("profile.email.notification")?no_esc}
                 </div>
                 </#if>
                 <div class="form-field">

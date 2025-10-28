@@ -1,17 +1,22 @@
 package controllers.api;
 
+import com.nimbusds.jwt.JWTClaimsSet;
 import constants.Const;
 import constants.Required;
-import io.mangoo.exceptions.MangooTokenException;
+import io.mangoo.exceptions.MangooJwtException;
 import io.mangoo.routing.Response;
+import io.mangoo.routing.bindings.Authentication;
 import jakarta.inject.Inject;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.logging.log4j.util.Strings;
 import services.AuthenticationService;
 import services.DataService;
 
+import java.text.ParseException;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 public class UserControllerV1 {
     private final DataService dataService;
@@ -23,15 +28,18 @@ public class UserControllerV1 {
         this.authenticationService = Objects.requireNonNull(authenticationService, Required.AUTHENTICATION_SERVICE);
     }
 
-    public Response login(Map<String, String> credentials) {
-        String username = credentials.get("username");
-        String password = credentials.get("password");
+    public Response login(Map<String, String> credentials, Authentication authentication) {
+        if (credentials == null || credentials.isEmpty()) {
+            return Response.unauthorized();
+        }
 
+        String username = Optional.ofNullable(credentials.get("username")).orElse(Strings.EMPTY);
+        String password = Optional.ofNullable(credentials.get("password")).orElse(Strings.EMPTY);
         if (StringUtils.isAnyBlank(username, password)) {
             return Response.unauthorized();
         }
 
-        return dataService.authenticateUser(username, password)
+        return dataService.authenticateUser(username, password, authentication)
                 .map(userUid -> {
                     try {
                         if (dataService.userHasMfa(userUid)) {
@@ -39,67 +47,100 @@ public class UserControllerV1 {
                                     .bodyJson(authenticationService.getChallengeToken(userUid));
                         } else {
                             return Response.ok()
-                                    .bodyJson(authenticationService.getAccessTokens(userUid));
+                                    .bodyJson(authenticationService.getRefreshAndAccessToken(userUid));
                         }
-                    } catch (MangooTokenException e) {
+                    } catch (MangooJwtException e) {
                         return Response.unauthorized();
                     }
                 }).orElseGet(Response::unauthorized);
     }
 
     public Response mfa(Map<String, String> credentials) {
-        String challengeToken = credentials.get(Const.CHALLENGE_TOKEN);
-        String otp = credentials.get(Const.OTP);
+        if (credentials == null || credentials.isEmpty()) {
+            return Response.unauthorized();
+        }
+
+        String challengeToken = Optional.ofNullable(credentials.get(Const.CHALLENGE_TOKEN)).orElse(Strings.EMPTY);
+        String otp = Optional.ofNullable(credentials.get(Const.OTP)).orElse(Strings.EMPTY);
 
         if (StringUtils.isAnyBlank(challengeToken, otp) || !NumberUtils.isCreatable(otp)) {
             return Response.forbidden();
         }
 
         try {
-            var token = authenticationService.parseChallengeToken(challengeToken);
-            if (token == null) {
+            JWTClaimsSet jwtClaimsSet = authenticationService.parseChallengeToken(challengeToken);
+            if (jwtClaimsSet == null || authenticationService.isTokenBlacklisted(jwtClaimsSet.getJWTID())) {
                 return Response.forbidden();
             }
 
-            return authenticationService.validateToken(token)
-                    .filter(userUid -> dataService.isValidMfa(userUid, otp))
-                    .map(userUid -> {
-                        try {
-                            return Response.ok().bodyJson(authenticationService.getAccessTokens(userUid));
-                        } catch (MangooTokenException e) {
-                            return Response.forbidden();
-                        }
-                    }).orElseGet(Response::forbidden);
+            String userUid = jwtClaimsSet.getSubject();
+            if (dataService.isValidMfa(userUid, otp)) {
+                authenticationService.blacklistToken(jwtClaimsSet.getJWTID());
+                return Response.ok().bodyJson(authenticationService.getRefreshAndAccessToken(userUid));
+            }
+            return Response.forbidden();
 
-        } catch (MangooTokenException e) {
+        } catch (MangooJwtException e) {
             return Response.forbidden();
         }
     }
 
     public Response refresh(Map<String, String> credentials) {
-        String refreshToken = credentials.get(Const.REFRESH_TOKEN);
+        if (credentials == null || credentials.isEmpty()) {
+            return Response.unauthorized();
+        }
 
+        String refreshToken = Optional.ofNullable(credentials.get(Const.REFRESH_TOKEN)).orElse(Strings.EMPTY);
         if (StringUtils.isBlank(refreshToken)) {
             return Response.unauthorized();
         }
 
         try {
-            var token = authenticationService.parseRefreshToken(refreshToken);
-            if (token == null) {
+            JWTClaimsSet jwtClaimsSet = authenticationService.parseRefreshToken(refreshToken);
+            if (jwtClaimsSet == null) {
                 return Response.unauthorized();
             }
 
-            return authenticationService.validateToken(token)
-                    .map(userUid -> {
-                        try {
-                            return Response.ok().bodyJson(
-                                    authenticationService.getAccessTokens(userUid));
-                        } catch (MangooTokenException e) {
-                            return Response.unauthorized();
-                        }
-                    }).orElseGet(Response::unauthorized);
+            if (authenticationService.isRefreshBlacklisted(jwtClaimsSet.getJWTID())) {
+                return Response.unauthorized();
+            }
 
-        } catch (MangooTokenException e) {
+            String userUid = jwtClaimsSet.getSubject();
+            authenticationService.blacklistToken(jwtClaimsSet.getClaimAsString(Const.ATID));
+            authenticationService.blacklistRefreshToken(jwtClaimsSet.getJWTID());
+
+            return Response.ok().bodyJson(authenticationService.getRefreshAndAccessToken(userUid));
+        } catch (MangooJwtException | ParseException e) {
+            return Response.unauthorized();
+        }
+    }
+
+    public Response logout(Map<String, String> credentials) {
+        if (credentials == null || credentials.isEmpty()) {
+            return Response.unauthorized();
+        }
+
+        String accessToken = Optional.ofNullable(credentials.get(Const.ACCESS_TOKEN)).orElse(Strings.EMPTY);
+        String refreshToken = Optional.ofNullable(credentials.get(Const.REFRESH_TOKEN)).orElse(Strings.EMPTY);
+        if (StringUtils.isAnyBlank(accessToken, refreshToken)) {
+            return Response.unauthorized();
+        }
+
+        try {
+            JWTClaimsSet accessTokenClaims = authenticationService.parseAccessToken(accessToken);
+            if (accessTokenClaims == null || authenticationService.isTokenBlacklisted(accessTokenClaims.getJWTID())) {
+                return Response.unauthorized();
+            }
+
+            JWTClaimsSet refreshTokenClaims = authenticationService.parseRefreshToken(refreshToken);
+            if (refreshTokenClaims == null || authenticationService.isRefreshBlacklisted(refreshTokenClaims.getJWTID())) {
+                return Response.unauthorized();
+            }
+
+            authenticationService.blacklistToken(accessTokenClaims.getJWTID());
+            authenticationService.blacklistRefreshToken(refreshTokenClaims.getJWTID());
+            return Response.ok();
+        } catch (MangooJwtException e) {
             return Response.unauthorized();
         }
     }

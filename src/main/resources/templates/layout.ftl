@@ -105,6 +105,7 @@
      data-logout-devices-success='${i18n("js.logout.devices.success")}'
      data-archived-success='${i18n("js.archived.success")}'>
 </div>
+<div id="poll-js" data-poll="<#if poll??>true<#else>false</#if>"></div>
 <div id="x-csrf-token" data-csrf-token='<@csrftoken/>'></div>
 <script src="/assets/js/axios.min.js"></script>
 <script src="/assets/js/app.min.js"></script>

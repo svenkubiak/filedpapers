@@ -9,7 +9,6 @@
         <p class="auth-subtitle">${i18n("auth.mfa.subtitle")}</p>
         <#if flash.error??>
             <div class="notification is-danger is-light mb-5">
-                <button class="delete"></button>
                 ${flash.error}
             </div>
         </#if>

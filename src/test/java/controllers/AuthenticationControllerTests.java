@@ -5,13 +5,12 @@ import com.google.common.collect.Multimap;
 import constants.Const;
 import helpers.Csrf;
 import helpers.TestUtils;
-import io.mangoo.constants.Default;
 import io.mangoo.core.Application;
 import io.mangoo.persistence.interfaces.Datastore;
 import io.mangoo.test.TestRunner;
 import io.mangoo.test.http.TestRequest;
 import io.mangoo.test.http.TestResponse;
-import io.mangoo.utils.CodecUtils;
+import io.mangoo.utils.CommonUtils;
 import io.undertow.util.StatusCodes;
 import models.Category;
 import models.User;
@@ -32,7 +31,7 @@ public class AuthenticationControllerTests {
         datastore.dropCollection(User.class);
 
         User user = new User("foo@bar.com");
-        user.setPassword(CodecUtils.hashArgon2("bar", user.getSalt()));
+        user.setPassword(CommonUtils.hashArgon2("bar", user.getSalt()));
         datastore.save(user);
         datastore.save(new Category(Const.INBOX, user.getUid(), Role.INBOX));
         datastore.save(new Category(Const.TRASH, user.getUid(), Role.TRASH));
@@ -45,7 +44,7 @@ public class AuthenticationControllerTests {
         Multimap<String, String> form = ArrayListMultimap.create();
         form.put("username", "foo@bar.com");
         form.put("password", "bar");
-        form.put(Default.CSRF_TOKEN, csrf.token());
+        form.put(io.mangoo.constants.Const.CSRF_TOKEN, csrf.token());
 
         //when
         TestResponse response = TestRequest.post("/auth/login")

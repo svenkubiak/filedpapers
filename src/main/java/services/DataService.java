@@ -3,6 +3,8 @@ package services;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.IndexOptions;
+import com.mongodb.client.model.Indexes;
 import com.mongodb.client.model.Sorts;
 import com.mongodb.client.result.DeleteResult;
 import constants.Collections;
@@ -11,17 +13,15 @@ import constants.Invalid;
 import constants.Required;
 import de.svenkubiak.http.Http;
 import io.mangoo.persistence.interfaces.Datastore;
-import io.mangoo.utils.CodecUtils;
+import io.mangoo.routing.bindings.Authentication;
+import io.mangoo.utils.CommonUtils;
 import io.mangoo.utils.DateUtils;
 import io.mangoo.utils.JsonUtils;
-import io.mangoo.utils.totp.TotpUtils;
+import io.mangoo.utils.TotpUtils;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.inject.Singleton;
-import models.Action;
-import models.Category;
-import models.Item;
-import models.User;
+import models.*;
 import models.enums.Role;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -39,6 +39,7 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 import static com.mongodb.client.model.Aggregates.*;
@@ -51,7 +52,7 @@ import static constants.Const.PLACEHOLDER_IMAGE;
 @Singleton
 public class DataService {
     private static final Logger LOG = LogManager.getLogger(DataService.class);
-    public static final String FAILED_TO_FETCH_LINK_PREVIEW = "Failed to fetch link preview";
+    private static final String FAILED_TO_FETCH_LINK_PREVIEW = "Failed to fetch link preview";
     private final Datastore datastore;
     private final MediaService mediaService;
     private final String applicationUrl;
@@ -61,6 +62,13 @@ public class DataService {
         this.datastore = Objects.requireNonNull(datastore, Required.DATASTORE);
         this.mediaService = Objects.requireNonNull(mediaService, Required.MEDIA_SERVICE);
         this.applicationUrl = Objects.requireNonNull(applicationUrl, Required.APPLICATION_URL);
+    }
+
+    public void indexify() {
+        datastore.query(Token.class)
+                .createIndex(
+                        Indexes.descending("timestamp"),
+                        new IndexOptions().expireAfter(8L, TimeUnit.DAYS));
     }
 
     public Optional<List<Map<String, Object>>> findCategories(String userUid) {
@@ -109,12 +117,12 @@ public class DataService {
         return datastore.find(User.class, eq(Const.UID, userUid)) != null;
     }
 
-    public Optional<String> authenticateUser(String username, String password) {
+    public Optional<String> authenticateUser(String username, String password, Authentication authentication) {
         Objects.requireNonNull(username, Required.USERNAME);
         Objects.requireNonNull(password, Required.PASSWORD);
 
         User user = datastore.find(User.class, eq(Const.USERNAME, username));
-        if (user != null && user.getPassword().equals(CodecUtils.hashArgon2(password, user.getSalt()))) {
+        if (user != null && authentication.isValidLogin(user.getUid(), password, user.getSalt(), user.getPassword())) {
             return Optional.of(user.getUid());
         }
 
@@ -393,7 +401,7 @@ public class DataService {
         Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
 
         var user = findUserByUid(userUid);
-        if (user != null && user.getPassword().equals(CodecUtils.hashArgon2(password, user.getSalt()))) {
+        if (user != null && user.getPassword().equals(CommonUtils.hashArgon2(password, user.getSalt()))) {
             List<Item> items = datastore.findAll(Item.class, eq(Const.USER_UID, userUid), Sorts.ascending(Const.USER_UID));
             items.stream()
                     .filter(item -> StringUtils.isNotBlank(item.getMediaUid()))
@@ -421,22 +429,20 @@ public class DataService {
         Utils.checkCondition(Utils.isValidOtp(otp), Invalid.OTP);
 
         var user = findUserByUid(userUid);
-        return user != null && user.isMfa() && ( TotpUtils.verifiedTotp(user.getMfaSecret(), otp) || CodecUtils.matchArgon2(otp, user.getSalt(), user.getMfaFallback()));
+        return user != null && user.isMfa() && ( TotpUtils.verifyTotp(user.getMfaSecret(), otp) || CommonUtils.matchArgon2(otp, user.getSalt(), user.getMfaFallback()));
     }
 
-    public String changeMfa(String userUid, boolean mfa) {
+    public String enableMfa(String userUid) {
         Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
 
         String fallback = null;
         var user = findUserByUid(userUid);
-        if (mfa) {
+        if (!user.isMfa()) {
             fallback = Utils.randomString();
-            user.setMfaSecret(Utils.randomString());
-            user.setMfaFallback(CodecUtils.hashArgon2(fallback, user.getSalt()));
+            user.setMfaFallback(CommonUtils.hashArgon2(fallback, user.getSalt()));
+            user.setMfa(true);
+            save(user);
         }
-        user.setMfa(mfa);
-
-        save(user);
 
         return fallback;
     }
@@ -453,7 +459,7 @@ public class DataService {
 
         var user = findUserByUid(userUid);
         if (user != null) {
-            user.setPassword(CodecUtils.hashArgon2(password, user.getSalt()));
+            user.setPassword(CommonUtils.hashArgon2(password, user.getSalt()));
             save(user);
         }
     }
@@ -542,10 +548,20 @@ public class DataService {
                 exists("count"),
                 unset("count"));
 
+        //Add new refresh token key
+        datastore.query(Collections.USERS).updateMany(
+                exists("refreshTokenKey"),
+                unset("refreshTokenKey"));
+
+        //Add language if not exists
+        datastore.query(Collections.USERS).updateMany(
+                not(exists("language")),
+                set("language", Const.DEFAULT_LANGUAGE));
+
         //Add new archived value
         datastore.query(Collections.ITEMS).updateMany(
                 not(exists("archived")),
-                set("archived", false));
+                set("archived", Boolean.FALSE));
 
         //Add new role type to INBOX
         datastore.query(Collections.CATEGORIES).updateOne(
@@ -641,7 +657,7 @@ public class DataService {
     public Result.Of archive(String uid, String userUid) {
         Objects.requireNonNull(uid, Required.UID);
 
-        Item item = findItem(uid, userUid);
+        var item = findItem(uid, userUid);
         if (item != null) {
             LOG.info("Archiving media with url {}", item.getUrl());
 
@@ -673,5 +689,9 @@ public class DataService {
         Objects.requireNonNull(item, "item cannot be null");
 
         return mediaService.retrieve(item.getArchiveUid());
+    }
+
+    public boolean tokenExists(String id) {
+        return datastore.query(Token.class).find(eq ("uid", id)).first() != null;
     }
 }

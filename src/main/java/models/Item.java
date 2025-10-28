@@ -13,30 +13,24 @@ import java.util.Objects;
 
 @Collection(name = Collections.ITEMS)
 public class Item extends Entity implements Serializable {
+    boolean archived;
     @Indexed
     private String uid;
-
     @Indexed
     private String userUid;
-
     @Indexed
     private String categoryUid;
-
     @Indexed
     private LocalDateTime timestamp;
-
     @Indexed(unique = true)
     private String mediaUid;
-
-    @Indexed(unique = true)
+    @Indexed
     private String archiveUid;
-
     private String url;
     private String image;
     private String title;
     private String description;
     private String domain;
-    boolean archived;
 
     public Item() {
         this.uid = Utils.randomString();

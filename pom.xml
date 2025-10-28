@@ -1,16 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<artifactId>filedpapers</artifactId>
 	<groupId>de.svenkubiak</groupId>
-	<version>3.3.2-SNAPSHOT</version>
+	<version>3.3.1</version>
 	<packaging>jar</packaging>
 	<properties>
-		<mangooio.version>9.9.0</mangooio.version>
+		<mangooio.version>10.0.0-Beta7</mangooio.version>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<jdk.version>21</jdk.version>
+		<java.version>25</java.version>
 		<maven.compiler.optimze>true</maven.compiler.optimze>
-		<testcontainers-version>1.21.3</testcontainers-version>
 	</properties>
 	<build>
 		<resources>
@@ -34,11 +33,11 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
-				<version>3.14.0</version>
+				<version>3.14.1</version>
 				<configuration>
-					<source>21</source>
-					<target>21</target>
-					<release>21</release>
+					<source>${java.version}</source>
+					<target>${java.version}</target>
+					<release>${java.version}</release>
 					<debug>false</debug>
 					<showDeprecation>true</showDeprecation>
 					<fork>true</fork>
@@ -144,7 +143,7 @@
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-enforcer-plugin</artifactId>
-				<version>3.6.1</version>
+				<version>3.6.2</version>
 				<configuration>
 					<rules>
 						<DependencyConvergence>
@@ -190,27 +189,14 @@
 					<dependency>
 						<groupId>org.codehaus.mojo</groupId>
 						<artifactId>extra-enforcer-rules</artifactId>
-						<version>1.10.0</version>
+						<version>1.11.0</version>
 					</dependency>
 				</dependencies>
 			</plugin>
 			<plugin>
-				<groupId>org.cyclonedx</groupId>
-				<artifactId>cyclonedx-maven-plugin</artifactId>
-				<version>2.9.1</version>
-				<executions>
-					<execution>
-						<phase>package</phase>
-						<goals>
-							<goal>makeAggregateBom</goal>
-						</goals>
-					</execution>
-				</executions>
-			</plugin>
-			<plugin>
 				<groupId>org.codehaus.mojo</groupId>
 				<artifactId>versions-maven-plugin</artifactId>
-				<version>2.19.0</version>
+				<version>2.19.1</version>
 				<configuration>
 					<ruleSet>
 						<ignoreVersions>
@@ -227,7 +213,7 @@
 				<artifactId>modernizer-maven-plugin</artifactId>
 				<version>3.2.0</version>
 				<configuration>
-					<javaVersion>${jdk.version}</javaVersion>
+					<javaVersion>${java.version}</javaVersion>
 				</configuration>
 				<executions>
 					<execution>
@@ -246,7 +232,7 @@
 			<groupId>io.mangoo</groupId>
 			<artifactId>mangooio-core</artifactId>
 			<version>${mangooio.version}</version>
-		</dependency>
+        </dependency>
 		<dependency>
 			<groupId>org.jsoup</groupId>
 			<artifactId>jsoup</artifactId>
@@ -272,19 +258,19 @@
 		<dependency>
 			<groupId>net.javacrumbs.json-unit</groupId>
 			<artifactId>json-unit-assertj</artifactId>
-			<version>4.1.1</version>
+			<version>5.0.0</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.testcontainers</groupId>
 			<artifactId>testcontainers</artifactId>
-			<version>${testcontainers-version}</version>
+			<version>2.0.1</version>
 			<scope>test</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.testcontainers</groupId>
 			<artifactId>junit-jupiter</artifactId>
-			<version>${testcontainers-version}</version>
+			<version>1.21.3</version>
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
@@ -299,7 +285,7 @@
 					<plugin>
 						<groupId>org.jacoco</groupId>
 						<artifactId>jacoco-maven-plugin</artifactId>
-						<version>0.8.13</version>
+						<version>0.8.14</version>
 						<executions>
 							<execution>
 								<id>prepare-agent</id>

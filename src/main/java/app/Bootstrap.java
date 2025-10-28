@@ -95,6 +95,7 @@ public class Bootstrap implements MangooBootstrap {
 
         Bind.controller(UserControllerV1.class).withRoutes(
                 On.post().to("/api/v1/users/login").respondeWith("login"),
+                On.post().to("/api/v1/users/logout").respondeWith("logout"),
                 On.post().to("/api/v1/users/mfa").respondeWith("mfa"),
                 On.post().to("/api/v1/users/refresh").respondeWith("refresh")
         );
@@ -113,6 +114,7 @@ public class Bootstrap implements MangooBootstrap {
     @Override
     public void applicationStarted() {
         dataService.upgrade();
+        dataService.indexify();
         mediaService.indexify();
     }
 
