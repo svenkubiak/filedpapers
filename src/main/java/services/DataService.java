@@ -2,6 +2,7 @@ package services;
 
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
+import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.IndexOptions;
 import com.mongodb.client.model.Indexes;
@@ -538,6 +539,13 @@ public class DataService {
 
     @SuppressWarnings("unchecked")
     public void upgrade() {
+        MongoDatabase database = datastore.getMongoDatabase();
+        for (String collectionName : database.listCollectionNames()) {
+            Document command = new Document("reIndex", collectionName);
+            Document result = database.runCommand(command);
+            LOG.info("Reindexed: {} Result: {}", collectionName, result.toJson());
+        }
+
         //Remove outdated Item attributes
         datastore.query(Collections.ITEMS).updateMany(
                 exists("imageBase64"),
