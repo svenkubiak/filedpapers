@@ -5,7 +5,7 @@ import constants.Required;
 import io.mangoo.annotations.Collection;
 import io.mangoo.annotations.Indexed;
 import io.mangoo.persistence.Entity;
-import io.mangoo.utils.Arguments;
+import io.mangoo.utils.Argument;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -20,7 +20,7 @@ public class Token extends Entity implements Serializable {
     public Token() {}
 
     public Token(String uid, LocalDateTime timestamp) {
-        this.uid = Arguments.requireNonBlank(uid, Required.UID);
+        this.uid = Argument.requireNonBlank(uid, Required.UID);
         this.timestamp = Objects.requireNonNull(timestamp, Required.CREATED_AT);
     }
 

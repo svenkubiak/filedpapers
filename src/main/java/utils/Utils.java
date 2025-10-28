@@ -1,6 +1,5 @@
 package utils;
 
-import com.google.re2j.Pattern;
 import constants.Const;
 import constants.Required;
 import io.mangoo.core.Config;
@@ -17,6 +16,7 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
+import java.util.regex.Pattern;
 
 public final class Utils {
     private static final Pattern RANDOM_PATTERN = Pattern.compile(

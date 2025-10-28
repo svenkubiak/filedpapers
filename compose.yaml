@@ -8,8 +8,9 @@ services:
     environment:
       JAVA_OPTS: >
         -Dapplication.config=/app/config/config.yaml  
-        -Xms256m
-        -Xmx1024m
+        -Xms512m
+        -Xmx512m
+        -XX:+UseCompactObjectHeaders
     ports:
       - "127.0.0.1:9090:9090"
     volumes:

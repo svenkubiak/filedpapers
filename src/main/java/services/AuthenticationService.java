@@ -7,11 +7,9 @@ import constants.Invalid;
 import constants.Required;
 import io.mangoo.cache.Cache;
 import io.mangoo.cache.CacheImpl;
-import io.mangoo.cache.CacheProvider;
-import io.mangoo.core.Application;
 import io.mangoo.core.Config;
 import io.mangoo.exceptions.MangooJwtException;
-import io.mangoo.utils.Arguments;
+import io.mangoo.utils.Argument;
 import io.mangoo.utils.CommonUtils;
 import io.mangoo.utils.JwtUtils;
 import jakarta.inject.Inject;
@@ -180,23 +178,23 @@ public class AuthenticationService {
     }
 
     public void blacklistToken(String id) {
-        Arguments.requireNonBlank(id, Required.ID);
+        Argument.requireNonBlank(id, Required.ID);
         cache.put(INVALID + id, Strings.EMPTY);
     }
 
     public boolean isTokenBlacklisted(String id) {
-        Arguments.requireNonBlank(id, Required.ID);
+        Argument.requireNonBlank(id, Required.ID);
 
         return cache.get(INVALID + id) != null;
     }
 
     public boolean isRefreshBlacklisted(String id) {
-        Arguments.requireNonBlank(id, Required.ID);
+        Argument.requireNonBlank(id, Required.ID);
         return dataService.tokenExists(id);
     }
 
     public void blacklistRefreshToken(String id) {
-        Arguments.requireNonBlank(id, Required.ID);
+        Argument.requireNonBlank(id, Required.ID);
 
         if (!isRefreshBlacklisted(id)) {
             dataService.save(new Token(id, LocalDateTime.now()));
