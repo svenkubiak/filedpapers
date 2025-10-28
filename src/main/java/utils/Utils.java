@@ -20,7 +20,7 @@ import java.util.regex.Pattern;
 
 public final class Utils {
     private static final Pattern RANDOM_PATTERN = Pattern.compile(
-            "^[A-Za-z0-9-_]+$",
+            "^[a-z0-9-_]+$",
             Pattern.CASE_INSENSITIVE
     );
     private static final Pattern NAME_PATTERN = Pattern.compile(

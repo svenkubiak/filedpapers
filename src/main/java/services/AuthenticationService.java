@@ -15,7 +15,6 @@ import io.mangoo.utils.JwtUtils;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import models.Token;
-import models.User;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.util.Strings;
 import utils.Utils;
@@ -73,12 +72,12 @@ public class AuthenticationService {
 
     public Map<String, String> getRefreshAndAccessToken(String userUid) throws MangooJwtException {
         Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
-        User user = dataService.findUserByUid(userUid);
+        var user = dataService.findUserByUid(userUid);
         if (user == null) {
             throw new MangooJwtException("User not found");
         }
 
-        String atid = CommonUtils.randomString(32);
+        var atid = CommonUtils.randomString(32);
         var jwtData = JwtUtils.jwtData()
                 .withJwtID(atid)
                 .withSecret(config.getString(API_ACCESS_TOKEN_SECRET).getBytes(StandardCharsets.UTF_8))

@@ -21,7 +21,7 @@ import services.DataService;
 import java.util.Objects;
 
 public class ApiAccessFilter implements PerRequestFilter {
-    private static final Logger LOG = LogManager.getLogger(DataService.class);
+    private static final Logger LOG = LogManager.getLogger(ApiAccessFilter.class);
     private final DataService dataService;
     private final AuthenticationService authenticationService;
     private final String cookieName;

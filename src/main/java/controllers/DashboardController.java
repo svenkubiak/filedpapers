@@ -75,7 +75,7 @@ public class DashboardController {
                 .render("categories", categories.orElseThrow())
                 .render("categoryUid", category.getUid())
                 .render("items", Utils.convertItems(items.orElseThrow()))
-                .render("poll", true);
+                .render("poll", Boolean.TRUE);
     }
 
     public Response profile(Authentication authentication, Flash flash, String mfa) {

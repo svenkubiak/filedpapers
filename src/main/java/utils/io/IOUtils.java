@@ -15,8 +15,8 @@ import java.util.List;
 import java.util.Objects;
 
 public final class IOUtils {
-    private static final long MAX_CONTENT_LENGTH = 5 * 1024 * 1024; // 5MB for content
     public static final int MAX_ELEMENTS = 10000;
+    private static final long MAX_CONTENT_LENGTH = 5L * 1024 * 1024; // 5MB for content
     private static final int MAX_BOOKMARKS_PER_IMPORT = 1000;
 
     private IOUtils() {

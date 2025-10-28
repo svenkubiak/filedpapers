@@ -68,7 +68,7 @@ public class UserControllerV1 {
         }
 
         try {
-            JWTClaimsSet jwtClaimsSet = authenticationService.parseChallengeToken(challengeToken);
+            var jwtClaimsSet = authenticationService.parseChallengeToken(challengeToken);
             if (jwtClaimsSet == null || authenticationService.isTokenBlacklisted(jwtClaimsSet.getJWTID())) {
                 return Response.forbidden();
             }
@@ -96,7 +96,7 @@ public class UserControllerV1 {
         }
 
         try {
-            JWTClaimsSet jwtClaimsSet = authenticationService.parseRefreshToken(refreshToken);
+            var jwtClaimsSet = authenticationService.parseRefreshToken(refreshToken);
             if (jwtClaimsSet == null) {
                 return Response.unauthorized();
             }
