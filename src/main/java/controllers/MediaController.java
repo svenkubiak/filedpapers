@@ -9,6 +9,7 @@ import jakarta.inject.Inject;
 import services.DataService;
 import services.MediaService;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Objects;
 
 public class MediaController {
@@ -33,8 +34,8 @@ public class MediaController {
         String userUid = authentication.getSubject();
         var item = dataService.findItem(uid, userUid);
         var archive = dataService.findArchive(item).orElseThrow();
-        String str = new String(archive);
+        var string = new String(archive, StandardCharsets.UTF_8);
 
-        return Response.ok().render("archive", new String(CommonUtils.decodeFromBase64(str)));
+        return Response.ok().render("archive", new String(CommonUtils.decodeFromBase64(string), StandardCharsets.UTF_8));
     }
 }

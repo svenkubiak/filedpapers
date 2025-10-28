@@ -561,7 +561,7 @@ public class DataService {
         //Add new archived value
         datastore.query(Collections.ITEMS).updateMany(
                 not(exists("archived")),
-                set("archived", false));
+                set("archived", Boolean.FALSE));
 
         //Add new role type to INBOX
         datastore.query(Collections.CATEGORIES).updateOne(
@@ -657,7 +657,7 @@ public class DataService {
     public Result.Of archive(String uid, String userUid) {
         Objects.requireNonNull(uid, Required.UID);
 
-        Item item = findItem(uid, userUid);
+        var item = findItem(uid, userUid);
         if (item != null) {
             LOG.info("Archiving media with url {}", item.getUrl());
 
