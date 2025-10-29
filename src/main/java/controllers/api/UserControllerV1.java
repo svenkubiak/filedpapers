@@ -7,6 +7,8 @@ import io.mangoo.exceptions.MangooJwtException;
 import io.mangoo.routing.Response;
 import io.mangoo.routing.bindings.Authentication;
 import jakarta.inject.Inject;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.logging.log4j.util.Strings;
@@ -28,11 +30,7 @@ public class UserControllerV1 {
         this.authenticationService = Objects.requireNonNull(authenticationService, Required.AUTHENTICATION_SERVICE);
     }
 
-    public Response login(Map<String, String> credentials, Authentication authentication) {
-        if (credentials == null || credentials.isEmpty()) {
-            return Response.unauthorized();
-        }
-
+    public Response login(@NotNull @NotEmpty Map<String, String> credentials, Authentication authentication) {
         String username = Optional.ofNullable(credentials.get("username")).orElse(Strings.EMPTY);
         String password = Optional.ofNullable(credentials.get("password")).orElse(Strings.EMPTY);
         if (StringUtils.isAnyBlank(username, password)) {
@@ -55,11 +53,7 @@ public class UserControllerV1 {
                 }).orElseGet(Response::unauthorized);
     }
 
-    public Response mfa(Map<String, String> credentials) {
-        if (credentials == null || credentials.isEmpty()) {
-            return Response.unauthorized();
-        }
-
+    public Response mfa(@NotNull @NotEmpty Map<String, String> credentials) {
         String challengeToken = Optional.ofNullable(credentials.get(Const.CHALLENGE_TOKEN)).orElse(Strings.EMPTY);
         String otp = Optional.ofNullable(credentials.get(Const.OTP)).orElse(Strings.EMPTY);
 
@@ -85,11 +79,7 @@ public class UserControllerV1 {
         }
     }
 
-    public Response refresh(Map<String, String> credentials) {
-        if (credentials == null || credentials.isEmpty()) {
-            return Response.unauthorized();
-        }
-
+    public Response refresh(@NotNull @NotEmpty Map<String, String> credentials) {
         String refreshToken = Optional.ofNullable(credentials.get(Const.REFRESH_TOKEN)).orElse(Strings.EMPTY);
         if (StringUtils.isBlank(refreshToken)) {
             return Response.unauthorized();
@@ -115,11 +105,7 @@ public class UserControllerV1 {
         }
     }
 
-    public Response logout(Map<String, String> credentials) {
-        if (credentials == null || credentials.isEmpty()) {
-            return Response.unauthorized();
-        }
-
+    public Response logout(@NotNull @NotEmpty Map<String, String> credentials) {
         String accessToken = Optional.ofNullable(credentials.get(Const.ACCESS_TOKEN)).orElse(Strings.EMPTY);
         String refreshToken = Optional.ofNullable(credentials.get(Const.REFRESH_TOKEN)).orElse(Strings.EMPTY);
         if (StringUtils.isAnyBlank(accessToken, refreshToken)) {

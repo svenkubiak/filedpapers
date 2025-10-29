@@ -9,6 +9,8 @@ import io.mangoo.routing.bindings.Request;
 import io.mangoo.utils.CommonUtils;
 import io.mangoo.utils.JsonUtils;
 import jakarta.inject.Inject;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import services.DataService;
 import utils.ResultHandler;
 
@@ -37,14 +39,14 @@ public class ItemsControllerV1 {
         }
     }
 
-    public Response archive(Request request, String uid) {
+    public Response archive(Request request, @NotEmpty String uid) {
         String userUid = request.getAttribute(Const.USER_UID);
         Thread.ofVirtual().start(() -> ResultHandler.handle(() -> dataService.archive(uid, userUid)));
 
         return Response.ok();
     }
 
-    public Response list(Request request, String categoryUid) {
+    public Response list(Request request, @NotEmpty String categoryUid) {
         String userUid = request.getAttribute(Const.USER_UID);
         String ifNoneMatch = request.getHeader("If-None-Match");
 
@@ -68,7 +70,7 @@ public class ItemsControllerV1 {
         }
     }
 
-    public Response delete(Request request, String uid) {
+    public Response delete(Request request, @NotEmpty String uid) {
         String userUid = request.getAttribute(Const.USER_UID);
         return ResultHandler.handle(() -> dataService.deleteItem(uid, userUid));
     }
@@ -78,7 +80,7 @@ public class ItemsControllerV1 {
         return ResultHandler.handle(() -> dataService.emptyTrash(userUid));
     }
 
-    public Response move(Request request, Map<String, String> data) {
+    public Response move(Request request, @NotNull @NotEmpty Map<String, String> data) {
         String userUid = request.getAttribute(Const.USER_UID);
         String categoryUid = data.get("category");
         String uid = data.get("uid");

@@ -6,6 +6,7 @@ import io.mangoo.routing.bindings.Authentication;
 import io.mangoo.utils.CommonUtils;
 import io.undertow.util.Headers;
 import jakarta.inject.Inject;
+import jakarta.validation.constraints.NotEmpty;
 import services.DataService;
 import services.MediaService;
 
@@ -30,7 +31,7 @@ public class MediaController {
                 .orElse(Response.notFound());
     }
 
-    public Response archive(Authentication authentication, String uid) {
+    public Response archive(Authentication authentication, @NotEmpty String uid) {
         String userUid = authentication.getSubject();
         var item = dataService.findItem(uid, userUid);
         var archive = dataService.findArchive(item).orElseThrow();

@@ -7,6 +7,8 @@ import io.mangoo.annotations.FilterWith;
 import io.mangoo.routing.Response;
 import io.mangoo.routing.bindings.Request;
 import jakarta.inject.Inject;
+import jakarta.validation.constraints.NotEmpty;
+import jakarta.validation.constraints.NotNull;
 import org.apache.commons.lang3.StringUtils;
 import services.DataService;
 import utils.ResultHandler;
@@ -69,14 +71,10 @@ public class CategoriesControllerV1 {
         return Response.notModified();
     }
 
-    public Response add(Request request, Map<String, String> data) {
+    public Response add(Request request, @NotNull @NotEmpty Map<String, String> data) {
         String userUid = request.getAttribute(Const.USER_UID);
 
-        if (!data.isEmpty()) {
-            return ResultHandler.handle(() -> dataService.addCategory(userUid, data.get("name")));
-        }
-
-        return Response.badRequest().bodyJsonError(MISSING_DATA);
+        return ResultHandler.handle(() -> dataService.addCategory(userUid, data.get("name")));
     }
 
     public Response edit(Request request, Map<String, String> data) {
@@ -89,7 +87,7 @@ public class CategoriesControllerV1 {
         return Response.badRequest().bodyJsonError(MISSING_DATA);
     }
 
-    public Response delete(Request request, String uid) {
+    public Response delete(Request request, @NotEmpty String uid) {
         String userUid = request.getAttribute(Const.USER_UID);
         return ResultHandler.handle(() -> dataService.deleteCategory(userUid, uid));
     }
