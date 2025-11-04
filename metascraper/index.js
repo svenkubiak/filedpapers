@@ -9,9 +9,58 @@ const path = require('path');
 const { promisify } = require('util');
 
 const execAsync = promisify(exec);
+const { access } = require('fs').promises;
 
 const app = express();
 const PORT = 3000;
+
+// Helper function to find Chromium executable
+const findChromiumPath = async () => {
+  // Try environment variable first
+  if (process.env.CHROME_BIN) {
+    try {
+      await access(process.env.CHROME_BIN);
+      return process.env.CHROME_BIN;
+    } catch (e) {
+      // Path doesn't exist, continue
+    }
+  }
+
+  // Common Chromium paths to try
+  const possiblePaths = [
+    '/usr/bin/chromium',
+    '/usr/bin/chromium-browser',
+    '/usr/bin/google-chrome',
+    '/usr/bin/google-chrome-stable',
+    '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+    '/Applications/Chromium.app/Contents/MacOS/Chromium',
+    process.platform === 'darwin' ? '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' : null,
+  ].filter(Boolean);
+
+  for (const chromiumPath of possiblePaths) {
+    try {
+      await access(chromiumPath);
+      return chromiumPath;
+    } catch (e) {
+      // Path doesn't exist, try next
+      continue;
+    }
+  }
+
+  // If not found, try to use 'which' command
+  try {
+    const { stdout } = await execAsync('which chromium || which chromium-browser || which google-chrome || which google-chrome-stable');
+    const foundPath = stdout.trim();
+    if (foundPath) {
+      return foundPath;
+    }
+  } catch (e) {
+    // which command failed, continue
+  }
+
+  // Last resort: return null and let single-file try to find it automatically
+  return null;
+};
 
 // Constants
 const MAX_IMAGE_SIZE = 1024;
@@ -80,8 +129,40 @@ const getImageDimensions = async (imageUrl) => {
   }
 };
 
+// Check if URL is from Amazon
+const isAmazonUrl = (url) => {
+  try {
+    const urlObj = new URL(url);
+    return urlObj.hostname.includes('amazon.');
+  } catch (e) {
+    return false;
+  }
+};
+
+// Extract Amazon-specific title
+const extractAmazonTitle = ($) => {
+  // Amazon product title
+  const productTitle = $('#productTitle').text();
+  if (productTitle) return cleanText(productTitle);
+
+  // Alternative Amazon selectors
+  const titleSpan = $('span.a-size-large.product-title-word-break').first().text();
+  if (titleSpan) return cleanText(titleSpan);
+
+  const titleH1 = $('h1.a-size-large').first().text();
+  if (titleH1) return cleanText(titleH1);
+
+  return null;
+};
+
 // Extract title following the specified rules
-const extractTitle = ($) => {
+const extractTitle = ($, url) => {
+  // For Amazon, try Amazon-specific selectors first
+  if (url && isAmazonUrl(url)) {
+    const amazonTitle = extractAmazonTitle($);
+    if (amazonTitle) return amazonTitle;
+  }
+
   // Open Graph title
   const ogTitle = $('meta[property="og:title"]').attr('content');
   if (ogTitle) return cleanText(ogTitle);
@@ -117,8 +198,56 @@ const extractTitle = ($) => {
   return null;
 };
 
+// Extract Amazon-specific image
+const extractAmazonImage = async ($, baseUrl) => {
+  // Amazon landing image (main product image)
+  const landingImage = $('#landingImage').attr('src') || $('#landingImage').attr('data-src');
+  if (landingImage) {
+    const resolvedUrl = resolveUrl(landingImage, baseUrl);
+    if (resolvedUrl && await getImageDimensions(resolvedUrl)) {
+      return resolvedUrl;
+    }
+  }
+
+  // Alternative Amazon image selectors
+  const imgBlkFront = $('#imgBlkFront').attr('src') || $('#imgBlkFront').attr('data-src');
+  if (imgBlkFront) {
+    const resolvedUrl = resolveUrl(imgBlkFront, baseUrl);
+    if (resolvedUrl && await getImageDimensions(resolvedUrl)) {
+      return resolvedUrl;
+    }
+  }
+
+  // Amazon main image container
+  const mainImage = $('#main-image img').first().attr('src') || $('#main-image img').first().attr('data-src');
+  if (mainImage) {
+    const resolvedUrl = resolveUrl(mainImage, baseUrl);
+    if (resolvedUrl && await getImageDimensions(resolvedUrl)) {
+      return resolvedUrl;
+    }
+  }
+
+  // Amazon product image in various containers
+  const productImage = $('img[data-a-image-name="landingImage"]').attr('src') || 
+                        $('img[data-a-image-name="landingImage"]').attr('data-src');
+  if (productImage) {
+    const resolvedUrl = resolveUrl(productImage, baseUrl);
+    if (resolvedUrl && await getImageDimensions(resolvedUrl)) {
+      return resolvedUrl;
+    }
+  }
+
+  return null;
+};
+
 // Extract image following the specified rules
 const extractImage = async ($, baseUrl) => {
+  // For Amazon, try Amazon-specific selectors first
+  if (isAmazonUrl(baseUrl)) {
+    const amazonImage = await extractAmazonImage($, baseUrl);
+    if (amazonImage) return amazonImage;
+  }
+
   // Open Graph image
   const ogImage = $('meta[property="og:image"]').attr('content');
   if (ogImage) {
@@ -151,7 +280,7 @@ const extractImage = async ($, baseUrl) => {
   for (const el of $('img').get()) {
     if (candidates >= MAX_IMAGE_CANDIDATES) break;
     
-    const src = $(el).attr('src');
+    const src = $(el).attr('src') || $(el).attr('data-src');
     if (!src || src.startsWith('data:')) continue;
     
     const resolvedUrl = resolveUrl(src, baseUrl);
@@ -191,8 +320,31 @@ const extractDomain = ($, originalUrl) => {
   }
 };
 
+// Extract Amazon-specific description
+const extractAmazonDescription = ($) => {
+  // Amazon product description
+  const productDescription = $('#productDescription').text();
+  if (productDescription) return cleanText(productDescription);
+
+  // Amazon feature bullets
+  const featureBullets = $('#feature-bullets ul').first().text();
+  if (featureBullets) return cleanText(featureBullets);
+
+  // Amazon product overview
+  const productOverview = $('#productOverview_feature_div').text();
+  if (productOverview) return cleanText(productOverview);
+
+  return null;
+};
+
 // Extract description following the specified rules
-const extractDescription = ($) => {
+const extractDescription = ($, url) => {
+  // For Amazon, try Amazon-specific selectors first
+  if (url && isAmazonUrl(url)) {
+    const amazonDesc = extractAmazonDescription($);
+    if (amazonDesc) return amazonDesc;
+  }
+
   // Open Graph description
   const ogDesc = $('meta[property="og:description"]').attr('content');
   if (ogDesc) return cleanText(ogDesc);
@@ -210,6 +362,61 @@ const extractDescription = ($) => {
   if (firstParagraph) return cleanText(firstParagraph);
 
   return null;
+};
+
+// Render page with headless browser for JavaScript-heavy sites
+const renderWithBrowser = async (url) => {
+  try {
+    // Generate a unique temporary filename
+    const timestamp = Date.now();
+    const outputFile = path.join(require('os').tmpdir(), `preview_${timestamp}.html`);
+
+    // Find Chromium executable
+    const chromiumPath = await findChromiumPath();
+    
+    // Build SingleFile command - only include browser-executable-path if we found one
+    // Using 'load' instead of 'networkidle2' for faster rendering - we only need the DOM, not all resources
+    // Reduced max times since we just need metadata extraction, not full page capture
+    let singleFileCommand = `npx single-file "${url}" "${outputFile}" --browser-headless true`;
+    
+    if (chromiumPath) {
+      singleFileCommand += ` --browser-executable-path "${chromiumPath}"`;
+    } else {
+      console.log('Chromium not found in standard paths, letting single-file auto-detect');
+    }
+    
+    // Add Chromium flags for Docker compatibility (no-sandbox, etc.)
+    const chromiumFlags = process.env.CHROMIUM_FLAGS || '--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage --disable-gpu';
+    if (chromiumFlags) {
+      singleFileCommand += ` --browser-args "${chromiumFlags}"`;
+    }
+    
+    singleFileCommand += ` --browser-wait-until load --browser-load-max-time 10000 --browser-capture-max-time 10000 --load-deferred-images false --remove-hidden-elements false --remove-unused-styles false --compress-html false --compress-css false --group-duplicate-images false --resolve-links false --insert-single-file-comment false --blocked-URL-pattern ".*cookie.*" --blocked-URL-pattern ".*consent.*" --blocked-URL-pattern ".*gdpr.*" --blocked-URL-pattern ".*privacy.*" --blocked-URL-pattern ".*banner.*" --blocked-URL-pattern ".*popup.*" --blocked-URL-pattern ".*modal.*" --blocked-URL-pattern ".*overlay.*"`;
+
+    const { stdout, stderr } = await execAsync(singleFileCommand, {
+      timeout: 15000, // 15 second timeout (reduced from 20s since we're using 'load' instead of 'networkidle2')
+      maxBuffer: 50 * 1024 * 1024 // 50MB buffer
+    });
+
+    if (stderr && !stderr.includes('Warning')) {
+      console.error('SingleFile stderr:', stderr);
+    }
+
+    // Read the generated file
+    const html = await fs.readFile(outputFile, 'utf8');
+
+    // Clean up the temporary file
+    try {
+      await fs.unlink(outputFile);
+    } catch (cleanupError) {
+      console.error('Failed to cleanup temporary file:', cleanupError);
+    }
+
+    return html;
+  } catch (error) {
+    console.error('Browser rendering error:', error);
+    return null;
+  }
 };
 
 // Health check endpoint
@@ -231,7 +438,45 @@ app.get('/preview', async (req, res) => {
       domain: null
     };
 
-    // Try each User-Agent
+    // For Amazon URLs, use headless browser first to render JavaScript
+    const isAmazon = isAmazonUrl(url);
+    let html = null;
+    
+    if (isAmazon) {
+      console.log(`Using headless browser for Amazon URL: ${url}`);
+      html = await renderWithBrowser(url);
+      if (html) {
+        const $ = cheerio.load(html);
+        
+        // Extract metadata from rendered HTML
+        const currentTitle = extractTitle($, url);
+        if (currentTitle) {
+          bestMetadata.title = currentTitle;
+        }
+
+        const currentDescription = extractDescription($, url);
+        if (currentDescription) {
+          bestMetadata.description = currentDescription;
+        }
+
+        const currentImage = await extractImage($, url);
+        if (currentImage) {
+          bestMetadata.image = currentImage;
+        }
+
+        const currentDomain = extractDomain($, url);
+        if (currentDomain) {
+          bestMetadata.domain = currentDomain;
+        }
+
+        // If we have all required metadata, return it
+        if (hasAllRequiredMetadata(bestMetadata)) {
+          return res.json(bestMetadata);
+        }
+      }
+    }
+
+    // Try each User-Agent (fallback or for non-Amazon URLs)
     let htmlValidationFailed = true;
     for (const userAgent of USER_AGENTS) {
       try {
@@ -252,10 +497,10 @@ app.get('/preview', async (req, res) => {
         const isHtmlContentType = contentType.includes('text/html') || 
                                  contentType.includes('application/xhtml+xml');
         
-        const html = axiosResponse.data;
-        const isHtmlContent = typeof html === 'string' && 
-                            (html.trim().toLowerCase().startsWith('<!doctype html') || 
-                             html.trim().toLowerCase().startsWith('<html'));
+        const htmlData = axiosResponse.data;
+        const isHtmlContent = typeof htmlData === 'string' && 
+                            (htmlData.trim().toLowerCase().startsWith('<!doctype html') || 
+                             htmlData.trim().toLowerCase().startsWith('<html'));
         
         if (!isHtmlContentType || !isHtmlContent) {
           console.log(`Skipping non-HTML content from ${url} (Content-Type: ${contentType})`);
@@ -263,15 +508,15 @@ app.get('/preview', async (req, res) => {
         }
         
         htmlValidationFailed = false;
-        const $ = cheerio.load(html);
+        const $ = cheerio.load(htmlData);
         
         // Try to get each field, only update if we don't have it yet or if it's better
-        const currentTitle = extractTitle($);
+        const currentTitle = extractTitle($, url);
         if (currentTitle && (!bestMetadata.title || currentTitle.length > bestMetadata.title.length)) {
           bestMetadata.title = currentTitle;
         }
 
-        const currentDescription = extractDescription($);
+        const currentDescription = extractDescription($, url);
         if (currentDescription && (!bestMetadata.description || currentDescription.length > bestMetadata.description.length)) {
           bestMetadata.description = currentDescription;
         }
@@ -342,8 +587,24 @@ app.get('/archive', async (req, res) => {
     
 
     
+    // Find Chromium executable
+    const chromiumPath = await findChromiumPath();
+    
+    // Build SingleFile command - only include browser-executable-path if we found one
     // Use SingleFile CLI with optimized options for speed and cookie banner blocking
-    const singleFileCommand = `npx single-file "${url}" "${outputFile}" --browser-headless true --browser-executable-path /usr/bin/chromium --browser-wait-until load --browser-load-max-time 30000 --browser-capture-max-time 30000 --load-deferred-images false --remove-hidden-elements false --remove-unused-styles false --compress-html false --compress-css false --group-duplicate-images false --resolve-links false --insert-single-file-comment false --blocked-URL-pattern ".*cookie.*" --blocked-URL-pattern ".*consent.*" --blocked-URL-pattern ".*gdpr.*" --blocked-URL-pattern ".*privacy.*" --blocked-URL-pattern ".*banner.*" --blocked-URL-pattern ".*popup.*" --blocked-URL-pattern ".*modal.*" --blocked-URL-pattern ".*overlay.*"`;
+    let singleFileCommand = `npx single-file "${url}" "${outputFile}" --browser-headless true`;
+    
+    if (chromiumPath) {
+      singleFileCommand += ` --browser-executable-path "${chromiumPath}"`;
+    }
+    
+    // Add Chromium flags for Docker compatibility (no-sandbox, etc.)
+    const chromiumFlags = process.env.CHROMIUM_FLAGS || '--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage --disable-gpu';
+    if (chromiumFlags) {
+      singleFileCommand += ` --browser-args "${chromiumFlags}"`;
+    }
+    
+    singleFileCommand += ` --browser-wait-until load --browser-load-max-time 30000 --browser-capture-max-time 30000 --load-deferred-images false --remove-hidden-elements false --remove-unused-styles false --compress-html false --compress-css false --group-duplicate-images false --resolve-links false --insert-single-file-comment false --blocked-URL-pattern ".*cookie.*" --blocked-URL-pattern ".*consent.*" --blocked-URL-pattern ".*gdpr.*" --blocked-URL-pattern ".*privacy.*" --blocked-URL-pattern ".*banner.*" --blocked-URL-pattern ".*popup.*" --blocked-URL-pattern ".*modal.*" --blocked-URL-pattern ".*overlay.*"`;
     
     const { stdout, stderr } = await execAsync(singleFileCommand, {
       timeout: 60000, // 1 minute timeout
