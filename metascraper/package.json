@@ -8,10 +8,10 @@
   },
   "dependencies": {
     "cheerio": "1.1.2",
-    "sharp": "^0.34.4",
+    "sharp": "^0.34.5",
     "axios": "^1.13.2",
     "express": "^5.1.0",
-    "single-file-cli": "^2.0.76"
+    "single-file-cli": "^2.0.80"
   }
 }
 
