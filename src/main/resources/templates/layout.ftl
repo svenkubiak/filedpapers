@@ -18,8 +18,8 @@
     <div class="sidebar-content">
         <p class="menu-label menu-label-with-icon">
             ${i18n("layout.menu.label")}
-            <span class="icon is-small" style="cursor: pointer;" id="add-category-button">
-                <i class="fas fa-plus"></i>
+            <span class="icon" style="cursor: pointer;" id="add-category-button">
+                <i class="fas fa-folder-plus fa-xl"></i>
             </span>
         </p>
         <ul class="menu-list">
@@ -32,22 +32,22 @@
                         <a href="/dashboard/${category.uid}" data-category="${slug}" data-uid="${category.uid}" <#if slug == active>class="is-active"</#if>>
                     </#if>
                     <span class="icon">
-                    <#if slug == "inbox">
-                        <i class="fas fa-inbox"></i>
-                    <#elseif slug == "trash">
-                        <i class="fas fa-trash"></i>
-                    <#else>
-                        <i class="fas fa-folder"></i>
-                    </#if>
-                    </span>
                         <#if slug == "inbox">
-                            ${i18n("layout.inbox.name")}
+                            <i class="fas fa-inbox"></i>
                         <#elseif slug == "trash">
-                            ${i18n("layout.trash.name")}
+                            <i class="fas fa-trash"></i>
                         <#else>
-                            ${category.name?truncate(14, '...')}
+                            <i class="fas fa-folder-<#if slug == active>open<#else>closed</#if>"></i>
                         </#if>
-                        <span class="tag is-rounded is-pulled-right">${category.count}</span>
+                    </span>
+                    <#if slug == "inbox">
+                        ${i18n("layout.inbox.name")}
+                    <#elseif slug == "trash">
+                        ${i18n("layout.trash.name")}
+                    <#else>
+                        ${category.name?truncate(14, '...')}
+                    </#if>
+                    <span class="tag is-rounded is-pulled-right">${category.count}</span>
                     </a>
                 </li>
             </#list>
@@ -57,7 +57,7 @@
         <div class="buttons">
             <a href="/dashboard/profile" class="button is-light is-fullwidth mb-2<#if active == "profile"> is-active</#if>">
                 <span class="icon">
-                    <i class="fas fa-user-cog"></i>
+                    <i class="fas fa-user"></i>
                 </span>
                 <span>${i18n("layout.menu.profile")}</span>
             </a>

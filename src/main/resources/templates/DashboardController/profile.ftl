@@ -4,7 +4,7 @@
     <div class="level-left">
         <nav class="breadcrumb" aria-label="breadcrumbs">
             <ul>
-                <li><a href="/dashboard"><span class="icon is-small"><i class="fas fa-user-cog"></i></span><span>${i18n("profile.breadcrumbs")}</span></a></li>
+                <li><a href="/dashboard"><span class="icon is-small"><i class="fas fa-user"></i></span><span>${i18n("profile.breadcrumbs")}</span></a></li>
             </ul>
         </nav>
     </div>
