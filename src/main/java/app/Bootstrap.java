@@ -8,6 +8,7 @@ import controllers.MediaController;
 import controllers.api.CategoriesControllerV1;
 import controllers.api.ItemsControllerV1;
 import controllers.api.UserControllerV1;
+import de.svenkubiak.http.Http;
 import io.mangoo.interfaces.MangooBootstrap;
 import io.mangoo.routing.Bind;
 import io.mangoo.routing.On;
@@ -120,5 +121,6 @@ public class Bootstrap implements MangooBootstrap {
 
     @Override
     public void applicationStopped() {
+        Http.shutdown();
     }
 }
