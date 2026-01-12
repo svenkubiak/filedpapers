@@ -1,5 +1,7 @@
 #!/bin/bash
-set -u
+set -e
+
+MODE="$1"
 
 check_clean_git() {
   if ! git diff-index --quiet HEAD --; then
@@ -17,8 +19,6 @@ IMAGE_NAME_METASCRAPER="filedpapers-metascraper"
 GHCR_USERNAME="svenkubiak"
 REPO_NAME="filedpapers"
 GHCR_URL="ghcr.io"
-
-MODE="$1"
 
 # === Always run Maven build ===
 
