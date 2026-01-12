@@ -1,5 +1,5 @@
 #!/bin/bash
-set -euo pipefail
+set -u
 
 check_clean_git() {
   if ! git diff-index --quiet HEAD --; then
