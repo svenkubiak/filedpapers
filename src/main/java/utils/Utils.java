@@ -77,14 +77,20 @@ public final class Utils {
     }
 
     public static Map<String, String> getLanguages() {
-        int size = io.mangoo.utils.internal.MangooUtils.getLanguages().size();
-        int initialCapacity = (int) (size / 0.75f) + 1;
-        Map<String, String> languages = HashMap.newHashMap(initialCapacity);
+        Map<String, String> languages = null;
+        try {
+            int size = io.mangoo.utils.internal.MangooUtils.getLanguages().size();
+            int initialCapacity = (int) (size / 0.75f) + 1;
+            languages = HashMap.newHashMap(initialCapacity);
 
-        for (String language : io.mangoo.utils.internal.MangooUtils.getLanguages()) {
-            var locale = Locale.of(language);
-            languages.put(language, locale.getDisplayLanguage(locale));
+            for (String language : io.mangoo.utils.internal.MangooUtils.getLanguages()) {
+                var locale = Locale.of(language);
+                languages.put(language, locale.getDisplayLanguage(locale));
+            }
+        } catch (Exception e) {
+            //intentionally left blank
         }
+
 
         return languages;
     }
@@ -130,7 +136,6 @@ public final class Utils {
         cookie.setValue(language);
         cookie.setHttpOnly(true);
         cookie.setSecure(config.isAuthenticationCookieSecure());
-        cookie.setSameSite(true);
         cookie.setSameSiteMode(CookieSameSiteMode.STRICT.toString());
         cookie.setPath("/");
 
