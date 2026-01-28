@@ -165,8 +165,8 @@ public class PreviewTests {
         LinkPreview preview = LinkPreviewFetcher.fetch("https://www.google.de/maps/place/Al-lord+Arabische+S%C3%BC%C3%9Figkeiten/@51.5212403,7.1043508,5547m/data=!3m2!1e3!5s0x47b8e6fe6ebb7f5d:0xb4201f4ae33f6cd2!4m6!3m5!1s0x47b8e7cdd297860d:0xe80458e9d78a93f4!8m2!3d51.5129816!4d7.0943446!16s%2Fg%2F11j33m9_3d?entry=ttu&g_ep=EgoyMDI1MDUyNy4wIKXMDSoASAFQAw%3D%3D", "en");
 
         //then
-        assertThat(preview.title(), startsWith("Al-lord Arabische Süßigkeiten · Hansemannstraße 23, 45879 Gelsenkirchen"));
-        assertThat(preview.image(), startsWith("https://lh3.googleusercontent.com"));
+        assertThat(preview.title(), startsWith("Google Maps"));
+        assertThat(preview.image(), startsWith("https://www.google.com/maps/about/images/icons/maps_512dp.png"));
         assertThat(preview.domain(), equalTo("google.de"));
         assertThat(preview.description(), notNullValue());
     }

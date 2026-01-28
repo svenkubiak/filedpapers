@@ -7,11 +7,10 @@
     "start": "node index.js"
   },
   "dependencies": {
-    "cheerio": "1.1.2",
+    "cheerio": "1.2.0",
     "sharp": "^0.34.5",
-    "axios": "^1.13.3",
+    "axios": "^1.13.4",
     "express": "^5.2.1",
     "single-file-cli": "^2.0.83"
   }
 }
-
