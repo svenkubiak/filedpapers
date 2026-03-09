@@ -1,20 +1,21 @@
 // api.js — fetch wrapper, no external libs
 
-const csrfTokenElement = document.getElementById('x-csrf-token');
-const csrfToken = csrfTokenElement?.dataset?.csrfToken ?? "";
+// Use unique names to avoid clashes with existing code
+const apiCsrfTokenElement = document.getElementById('x-csrf-token');
+const apiCsrfToken = apiCsrfTokenElement?.dataset?.csrfToken ?? "";
 
-const defaultHeaders = {
-    'x-csrf-token': csrfToken,
+const apiDefaultHeaders = {
+    'x-csrf-token': apiCsrfToken,
     'Content-Type': 'application/json'
 };
 
-async function baseRequest(url, options = {}) {
+async function apiBaseRequest(url, options = {}) {
     const response = await fetch(url, {
-        headers: { ...defaultHeaders, ...(options.headers || {}) },
+        headers: { ...apiDefaultHeaders, ...(options.headers || {}) },
         ...options
     });
 
-    // Throw on non-2xx (Axios/Ky-like)
+    // Throw on non-2xx
     if (!response.ok) {
         const error = new Error(`HTTP ${response.status}`);
         error.response = response;
@@ -24,23 +25,23 @@ async function baseRequest(url, options = {}) {
     return response;
 }
 
-// Convenience helpers mirroring your old Axios usage
+// Public helpers used by your main script
 window.apiPost = (url, body, options = {}) =>
-    baseRequest(url, {
+    apiBaseRequest(url, {
         method: 'POST',
         body: body != null ? JSON.stringify(body) : undefined,
         ...options
     });
 
 window.apiPut = (url, body, options = {}) =>
-    baseRequest(url, {
+    apiBaseRequest(url, {
         method: 'PUT',
         body: body != null ? JSON.stringify(body) : undefined,
         ...options
     });
 
 window.apiDelete = (url, options = {}) =>
-    baseRequest(url, {
+    apiBaseRequest(url, {
         method: 'DELETE',
         ...options
     });
@@ -49,7 +50,7 @@ window.apiDelete = (url, options = {}) =>
 window.apiPostNoThrow = (url, body, options = {}) =>
     fetch(url, {
         method: 'POST',
-        headers: { ...defaultHeaders, ...(options.headers || {}) },
+        headers: { ...apiDefaultHeaders, ...(options.headers || {}) },
         body: body != null ? JSON.stringify(body) : undefined,
         ...options
     });
