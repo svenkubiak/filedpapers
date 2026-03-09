@@ -1,6 +1,3 @@
-// api.js — fetch wrapper, no external libs
-
-// Use unique names to avoid clashes with existing code
 const apiCsrfTokenElement = document.getElementById('x-csrf-token');
 const apiCsrfToken = apiCsrfTokenElement?.dataset?.csrfToken ?? "";
 
@@ -15,7 +12,6 @@ async function apiBaseRequest(url, options = {}) {
         ...options
     });
 
-    // Throw on non-2xx
     if (!response.ok) {
         const error = new Error(`HTTP ${response.status}`);
         error.response = response;
@@ -25,7 +21,6 @@ async function apiBaseRequest(url, options = {}) {
     return response;
 }
 
-// Public helpers used by your main script
 window.apiPost = (url, body, options = {}) =>
     apiBaseRequest(url, {
         method: 'POST',
@@ -46,7 +41,6 @@ window.apiDelete = (url, options = {}) =>
         ...options
     });
 
-// For polling: allow 200 and 304 without throwing
 window.apiPostNoThrow = (url, body, options = {}) =>
     fetch(url, {
         method: 'POST',

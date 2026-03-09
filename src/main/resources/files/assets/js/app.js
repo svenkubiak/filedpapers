@@ -1,5 +1,3 @@
-// main.js
-
 const $id = (select) => document.getElementById(select);
 const $ = (select) => document.querySelector(select);
 const $$ = (select) => document.querySelectorAll(select);
@@ -558,7 +556,6 @@ function toggleTheme() {
     }
 }
 
-// Initial wiring
 focusFirstVisibleInput('.otp-input');
 setupAutoFocusNext('.otp-input');
 on(document, 'keydown', handleKeyNavigation);
