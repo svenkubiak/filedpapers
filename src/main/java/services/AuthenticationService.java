@@ -173,7 +173,7 @@ public class AuthenticationService {
                 config.getAuthenticationCookieKey(),
                 config.getAuthenticationCookieSecret(),
                 config.getAuthenticationCookieName(),
-                (int) config.getAuthenticationCookieRememberExpires() * 60);
+                (int) config.getAuthenticationCookieRememberExpires());
     }
 
     public void blacklistToken(String id) {
