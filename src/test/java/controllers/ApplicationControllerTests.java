@@ -22,7 +22,7 @@ public class ApplicationControllerTests {
         //then
         assertThat(response, not(nullValue()));
         assertThat(response.getStatusCode(), equalTo(StatusCodes.OK));
-        assertThat(response.getContent(), containsString("OK"));
+        assertThat(response.getContent(), containsString("ok"));
     }
 
     @Test
