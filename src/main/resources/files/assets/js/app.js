@@ -449,22 +449,23 @@ async function polling() {
             category: uid
         });
 
+        if (response.status !== 200 && response.status !== 304) {
+            return;
+        }
+
         if (response.status === 200) {
             location.reload();
+            return;
         }
 
         setTimeout(polling, 3000);
-    } catch (error) {
-        console.log(error);
-        setTimeout(polling, 3000);
-    }
+    } catch (error) {}
 }
 
 if (poll != null && poll.poll === "true") {
     polling();
 }
 
-// Theme Toggle with localStorage
 class ThemeManager {
     constructor() {
         this.theme = this.getStoredTheme();
