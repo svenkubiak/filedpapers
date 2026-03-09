@@ -1,3 +1,5 @@
+// main.js
+
 const $id = (select) => document.getElementById(select);
 const $ = (select) => document.querySelector(select);
 const $$ = (select) => document.querySelectorAll(select);
@@ -20,9 +22,11 @@ const forAll = (sel, fn) => {
 };
 
 let $categoryToRename = null;
+let $categoryToDelete = null;
+
 const toastSuccess = 'toast-success';
 const toastError = 'toast-error';
-const poll = $id('poll-js').dataset;
+const poll = $id('poll-js')?.dataset ?? null;
 const i18n = $id('i18n-js').dataset;
 const generalError = i18n.error;
 const bookmarkMovedSuccess = i18n.bookmarkMovedSuccess;
@@ -33,9 +37,6 @@ const bookmarkDeletedSuccess = i18n.bookmarkDeletedSuccess;
 const categoryCreatedSuccess = i18n.categoryCreatedSuccess;
 const bookmarkCreatedSuccess = i18n.bookmarkCreatedSuccess;
 const logoutDevicesSuccess = i18n.logoutDevicesSuccess;
-
-const csrfToken = $id('x-csrf-token')?.dataset?.csrfToken ?? "";
-axios.defaults.headers.common['x-csrf-token'] = csrfToken;
 
 function openModal(e) {
     e.classList.add('is-active');
@@ -92,7 +93,6 @@ function handleDragEnd(e) {
     item.closest('.card')?.classList.remove('dragging');
 }
 
-
 function handleDragOver(e) {
     e.preventDefault();
     e.currentTarget.classList.add('drag-over');
@@ -110,18 +110,18 @@ function handleDrop(e) {
     const uid = e.dataTransfer.getData('text/plain');
     const categoryUid = target.dataset.uid;
 
-    axios.put("/api/v1/items",{
+    window.apiPut("/api/v1/items", {
         uid: uid,
         category: categoryUid
-    } )
-        .then(function (response) {
+    })
+        .then(() => {
             sessionStorage.setItem(toastSuccess, bookmarkMovedSuccess);
         })
-        .catch(function (error) {
+        .catch((error) => {
             console.log(error);
             sessionStorage.setItem(toastError, generalError);
         })
-        .finally(function () {
+        .finally(() => {
             window.location.href = "/dashboard";
         });
 }
@@ -166,16 +166,16 @@ function handleConfirmCategoryDelete() {
     if ($categoryToDelete) {
         const uid = $categoryToDelete.dataset.uid;
 
-        axios.delete("/api/v1/categories/" + uid)
-            .then(function (response) {
+        window.apiDelete(`/api/v1/categories/${uid}`)
+            .then(() => {
                 closeAllModals();
                 sessionStorage.setItem(toastSuccess, categoryDeletedSuccess);
             })
-            .catch(function (error) {
+            .catch((error) => {
                 console.log(error);
                 sessionStorage.setItem(toastError, generalError);
             })
-            .finally(function () {
+            .finally(() => {
                 closeAllModals();
                 window.location.href = "/dashboard";
             });
@@ -183,16 +183,16 @@ function handleConfirmCategoryDelete() {
 }
 
 function handleLogoutDevices() {
-    axios.post("/dashboard/profile/logout-devices")
-        .then(function (response) {
+    window.apiPost("/dashboard/profile/logout-devices", {})
+        .then(() => {
             closeAllModals();
             sessionStorage.setItem(toastSuccess, logoutDevicesSuccess);
         })
-        .catch(function (error) {
+        .catch((error) => {
             console.log(error);
             sessionStorage.setItem(toastError, generalError);
         })
-        .finally(function () {
+        .finally(() => {
             window.location.href = "/dashboard/profile";
         });
 }
@@ -204,19 +204,19 @@ function handleAddCategory(e) {
     const category = categoryInput?.value;
 
     if (category) {
-        axios.post("/api/v1/categories", {
+        window.apiPost("/api/v1/categories", {
             name: category
         })
-            .then(function (response) {
+            .then(() => {
                 sessionStorage.setItem(toastSuccess, categoryCreatedSuccess);
                 categoryInput.value = '';
                 closeAllModals();
             })
-            .catch(function (error) {
+            .catch((error) => {
                 console.log(error);
                 sessionStorage.setItem(toastError, generalError);
             })
-            .finally(function () {
+            .finally(() => {
                 window.location.href = "/dashboard";
             });
     } else {
@@ -232,20 +232,20 @@ function handleRenameCategory(e) {
     const category = categoryInput?.value;
 
     if (category) {
-        axios.put("/api/v1/categories", {
+        window.apiPut("/api/v1/categories", {
             uid: uid,
             name: category
         })
-            .then(function (response) {
+            .then(() => {
                 sessionStorage.setItem(toastSuccess, categoryRenamedSuccess);
                 categoryInput.value = '';
                 closeAllModals();
             })
-            .catch(function (error) {
+            .catch((error) => {
                 console.log(error);
                 sessionStorage.setItem(toastError, generalError);
             })
-            .finally(function () {
+            .finally(() => {
                 window.location.href = "/dashboard/" + uid;
             });
     } else {
@@ -254,16 +254,16 @@ function handleRenameCategory(e) {
 }
 
 function confirmEmptyTrash() {
-    axios.delete("/api/v1/items/trash")
-        .then(function (response) {
+    window.apiDelete("/api/v1/items/trash")
+        .then(() => {
             closeAllModals();
             sessionStorage.setItem(toastSuccess, trashEmptiedSuccess);
         })
-        .catch(function (error) {
+        .catch((error) => {
             console.log(error);
             sessionStorage.setItem(toastError, generalError);
         })
-        .finally(function () {
+        .finally(() => {
             window.location.href = "/dashboard";
         });
 }
@@ -279,7 +279,7 @@ function deleteItem(card) {
     const uid = card.dataset.uid;
     const category = card.dataset.category;
 
-    axios.put("/api/v1/items/" + uid)
+    window.apiPut(`/api/v1/items/${uid}`, {})
         .then(() => {
             closeAllModals();
             sessionStorage.setItem(toastSuccess, bookmarkDeletedSuccess);
@@ -361,22 +361,21 @@ function addBookmark(e) {
         confirmAddBookmark.classList.add('is-loading');
         confirmAddBookmark.disabled = true;
 
-        axios.post('/api/v1/items',
-            {
-                url: url,
-                category: category
-            })
-            .then(function (response) {
+        window.apiPost('/api/v1/items', {
+            url: url,
+            category: category
+        })
+            .then(() => {
                 sessionStorage.setItem(toastSuccess, bookmarkCreatedSuccess);
 
                 closeAllModals();
                 window.location.href = "/dashboard/" + category;
             })
-            .catch(function (error) {
+            .catch((error) => {
                 console.log(error);
                 sessionStorage.setItem(toastError, generalError);
             })
-            .finally(function () {
+            .finally(() => {
                 confirmAddBookmark.classList.remove('is-loading');
                 confirmAddBookmark.disabled = false;
             });
@@ -403,10 +402,10 @@ function search(e) {
 
 function handleKeyNavigation(event) {
     if (event.key === "Enter") {
-        const openModal = $('.modal.is-active');
-        if (!openModal) return;
+        const openModalEl = $('.modal.is-active');
+        if (!openModalEl) return;
 
-        const confirmButton = openModal.querySelector('[data-confirm]');
+        const confirmButton = openModalEl.querySelector('[data-confirm]');
         if (confirmButton) {
             event.preventDefault();
             confirmButton.click();
@@ -419,7 +418,8 @@ function handleKeyNavigation(event) {
 }
 
 function setupAutoFocusNext(selector) {
-    forAll(selector, (input, index, inputs) => {
+    const inputs = document.querySelectorAll(selector);
+    inputs.forEach((input, index) => {
         on(input, 'input', (e) => {
             const value = e.target.value;
             e.target.value = value.replace(/[^0-9]/g, '').slice(0, 1);
@@ -440,6 +440,125 @@ function focusFirstVisibleInput(selector) {
     }
 }
 
+async function polling() {
+    try {
+        const count = $$('.card').length;
+        const match = window.location.pathname.match(/\/dashboard\/(.+)/);
+        const uid = match ? match[1] : null;
+
+        const response = await window.apiPostNoThrow('/api/v1/categories/poll', {
+            count: count.toString(),
+            category: uid
+        });
+
+        if (response.status === 200) {
+            location.reload();
+        }
+
+        setTimeout(polling, 3000);
+    } catch (error) {
+        console.log(error);
+        setTimeout(polling, 3000);
+    }
+}
+
+if (poll != null && poll.poll === "true") {
+    polling();
+}
+
+// Theme Toggle with localStorage
+class ThemeManager {
+    constructor() {
+        this.theme = this.getStoredTheme();
+        this.init();
+    }
+
+    init() {
+        this.applyTheme(this.theme);
+        this.createToggleButton();
+    }
+
+    getStoredTheme() {
+        const stored = localStorage.getItem('theme');
+        if (stored && (stored === 'light' || stored === 'dark')) {
+            return stored;
+        }
+
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            return 'dark';
+        }
+
+        return 'light';
+    }
+
+    applyTheme(theme) {
+        const html = document.documentElement;
+
+        if (theme === 'dark') {
+            html.setAttribute('data-theme', 'dark');
+            html.classList.add('theme-dark');
+        } else {
+            html.removeAttribute('data-theme');
+            html.classList.remove('theme-dark');
+        }
+
+        this.theme = theme;
+        localStorage.setItem('theme', theme);
+    }
+
+    toggleTheme() {
+        const newTheme = this.theme === 'light' ? 'dark' : 'light';
+        this.applyTheme(newTheme);
+        this.updateToggleButton();
+    }
+
+    createToggleButton() {
+        const existingToggle = document.getElementById('theme-toggle');
+        if (existingToggle) {
+            existingToggle.remove();
+        }
+
+        const toggle = document.createElement('button');
+        toggle.id = 'theme-toggle';
+        toggle.className = 'theme-toggle-button';
+        toggle.innerHTML = this.getToggleIcon();
+        toggle.setAttribute('aria-label', `Switch to ${this.theme === 'light' ? 'dark' : 'light'} mode`);
+        toggle.setAttribute('title', `Switch to ${this.theme === 'light' ? 'dark' : 'light'} mode`);
+
+        toggle.addEventListener('click', () => this.toggleTheme());
+
+        document.body.appendChild(toggle);
+    }
+
+    updateToggleButton() {
+        const toggle = document.getElementById('theme-toggle');
+        if (toggle) {
+            toggle.innerHTML = this.getToggleIcon();
+            toggle.setAttribute('aria-label', `Switch to ${this.theme === 'light' ? 'dark' : 'light'} mode`);
+            toggle.setAttribute('title', `Switch to ${this.theme === 'light' ? 'dark' : 'light'} mode`);
+        }
+    }
+
+    getToggleIcon() {
+        return this.theme === 'light'
+            ? '🌙'
+            : '☀️';
+    }
+}
+
+let themeToggle;
+
+document.addEventListener('DOMContentLoaded', () => {
+    themeToggle = new ThemeManager();
+});
+
+function toggleTheme() {
+    if (themeToggle) {
+        themeToggle.toggleTheme();
+    }
+}
+
+// Initial wiring
 focusFirstVisibleInput('.otp-input');
 setupAutoFocusNext('.otp-input');
 on(document, 'keydown', handleKeyNavigation);
@@ -470,143 +589,3 @@ forAll('.menu-list a[data-category]', (target) => {
     target.addEventListener('dragleave', handleDragLeave);
     target.addEventListener('drop', handleDrop);
 });
-
-async function polling() {
-    try {
-        const count = $$('.card').length;
-        const match = window.location.pathname.match(/\/dashboard\/(.+)/);
-        const uid = match ? match[1] : null;
-
-        axios.post('/api/v1/categories/poll',
-            {
-                count: count.toString(),
-                category: uid
-            },
-            {
-                validateStatus: function (status) {
-                    return status === 200 || status === 304;
-                }
-            }
-        )
-            .then(function (response) {
-                if (response.status === 200) {
-                    location.reload();
-                }
-            })
-            .catch(function (error) {
-                console.log(error);
-            });
-
-        setTimeout(polling, 3000);
-    } catch (error) {
-        console.log(error);
-    }
-}
-
-if (poll != null && poll.poll === "true") {
-    polling();
-}
-
-// Theme Toggle with localStorage
-class ThemeManager {
-    constructor() {
-        this.theme = this.getStoredTheme();
-        this.init();
-    }
-
-    init() {
-        this.applyTheme(this.theme);
-        this.createToggleButton();
-    }
-
-    getStoredTheme() {
-        // Priority order:
-        // 1. User's saved preference (localStorage)
-        // 2. System preference (prefers-color-scheme)
-        // 3. Default (light)
-
-        const stored = localStorage.getItem('theme');
-        if (stored && (stored === 'light' || stored === 'dark')) {
-            return stored;
-        }
-
-        // Check system preference
-        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            return 'dark';
-        }
-
-        return 'light'; // Default
-    }
-
-    applyTheme(theme) {
-        const html = document.documentElement;
-
-        if (theme === 'dark') {
-            html.setAttribute('data-theme', 'dark');
-            html.classList.add('theme-dark');
-        } else {
-            html.removeAttribute('data-theme');
-            html.classList.remove('theme-dark');
-        }
-
-        this.theme = theme;
-        // Save to localStorage
-        localStorage.setItem('theme', theme);
-    }
-
-    toggleTheme() {
-        const newTheme = this.theme === 'light' ? 'dark' : 'light';
-        this.applyTheme(newTheme);
-        this.updateToggleButton();
-    }
-
-    createToggleButton() {
-        // Remove existing toggle if it exists
-        const existingToggle = document.getElementById('theme-toggle');
-        if (existingToggle) {
-            existingToggle.remove();
-        }
-
-        const toggle = document.createElement('button');
-        toggle.id = 'theme-toggle';
-        toggle.className = 'theme-toggle-button';
-        toggle.innerHTML = this.getToggleIcon();
-        toggle.setAttribute('aria-label', `Switch to ${this.theme === 'light' ? 'dark' : 'light'} mode`);
-        toggle.setAttribute('title', `Switch to ${this.theme === 'light' ? 'dark' : 'light'} mode`);
-
-        toggle.addEventListener('click', () => this.toggleTheme());
-
-        // Add to page
-        document.body.appendChild(toggle);
-    }
-
-    updateToggleButton() {
-        const toggle = document.getElementById('theme-toggle');
-        if (toggle) {
-            toggle.innerHTML = this.getToggleIcon();
-            toggle.setAttribute('aria-label', `Switch to ${this.theme === 'light' ? 'dark' : 'light'} mode`);
-            toggle.setAttribute('title', `Switch to ${this.theme === 'light' ? 'dark' : 'light'} mode`);
-        }
-    }
-
-    getToggleIcon() {
-        return this.theme === 'light'
-            ? '🌙' // Moon icon for switching to dark
-            : '☀️'; // Sun icon for switching to light
-    }
-}
-
-// Make themeToggle globally accessible
-let themeToggle;
-
-// Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-    themeToggle = new ThemeManager();
-});
-
-// Simple function for manual buttons
-function toggleTheme() {
-    if (themeToggle) {
-        themeToggle.toggleTheme();
-    }
-}

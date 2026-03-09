@@ -1,11 +1,20 @@
 package controllers;
 
+import io.mangoo.persistence.interfaces.Datastore;
 import io.mangoo.routing.Response;
 
+import java.util.Objects;
+
 public class ApplicationController {
+    private final Datastore datastore;
+
+    public ApplicationController(Datastore datastore) {
+        this.datastore = Objects.requireNonNull(datastore, "datastore must not be null");
+    }
 
     public Response health() {
-        return Response.ok().bodyText("OK");
+        String status = datastore.isHealthy() ? "ok" : "error";
+        return Response.ok().bodyText(status);
     }
 
     public Response error() {
