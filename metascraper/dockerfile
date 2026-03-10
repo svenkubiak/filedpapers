@@ -1,4 +1,4 @@
-FROM node:24-slim
+FROM registry.opencode.de/open-code/oci/nodejs:24-minimal
 
 # Install Chromium and all required dependencies
 RUN apt-get update && apt-get install -y \
