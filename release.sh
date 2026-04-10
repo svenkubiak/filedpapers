@@ -4,6 +4,7 @@ set -e
 MODE="$1"
 
 check_clean_git() {
+  git status
   if ! git diff-index --quiet HEAD --; then
     echo "There are uncommitted changes in the repository. Please commit or stash them before running this script."
     exit 1
