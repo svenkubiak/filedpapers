@@ -9,7 +9,7 @@
   "dependencies": {
     "cheerio": "1.2.0",
     "sharp": "^0.34.5",
-    "axios": "^1.15.1",
+    "axios": "^1.15.2",
     "express": "^5.2.1",
     "single-file-cli": "^2.0.83"
   }
