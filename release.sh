@@ -73,6 +73,21 @@ fi
 mvn versions:set -DnewVersion="$NEW_VERSION"
 STATUS=$?
 
+if [ $STATUS -ne 0 ]; then
+    echo "❌ Failed to set new version! Exiting..."
+    exit 1
+fi
+
+# 4) Rebuild JAR with the new version so the correct version tag ends up in the image
+echo "🔧 Rebuilding JAR with new version $NEW_VERSION..."
+mvn clean package -DskipTests
+if [ $? -ne 0 ]; then
+  echo "❌ Maven rebuild failed! Exiting..."
+  exit 1
+else
+  echo "✅ Maven rebuild succeeded."
+fi
+
 IMAGE_VERSION=$(mvn help:evaluate -Dexpression=project.version -q -DforceStdout)
 IMAGE_FULL_PATH="$GHCR_URL/$GHCR_USERNAME/$REPO_NAME/$IMAGE_NAME:$IMAGE_VERSION"
 IMAGE_METASCRAPER_FULL_PATH="$GHCR_URL/$GHCR_USERNAME/$REPO_NAME/$IMAGE_NAME_METASCRAPER:$IMAGE_VERSION"
@@ -87,56 +102,51 @@ is_stable_release() {
     fi
 }
 
-if [ $STATUS -ne 0 ]; then
-    echo "❌ Failed to set new version! Exiting..."
-    exit 1
+echo "[Filedpapers] Building Version Docker image..."
+docker build --no-cache -t "$IMAGE_NAME:$IMAGE_VERSION" .
+
+if is_stable_release; then
+    docker tag "$IMAGE_NAME:$IMAGE_VERSION" "$IMAGE_NAME:latest"
+fi
+
+docker tag "$IMAGE_NAME:$IMAGE_VERSION" "$IMAGE_FULL_PATH"
+if is_stable_release; then
+    docker tag "$IMAGE_NAME:latest" "$IMAGE_LATEST_PATH"
+fi
+
+docker push "$IMAGE_FULL_PATH"
+if is_stable_release; then
+    docker push "$IMAGE_LATEST_PATH"
+fi
+
+### Filedpapers Metascraper ###
+cd metascraper
+docker build --no-cache -t "$IMAGE_NAME_METASCRAPER:$IMAGE_VERSION" .
+
+if is_stable_release; then
+    docker tag "$IMAGE_NAME_METASCRAPER:$IMAGE_VERSION" "$IMAGE_NAME_METASCRAPER:latest"
+fi
+
+docker tag "$IMAGE_NAME_METASCRAPER:$IMAGE_VERSION" "$IMAGE_METASCRAPER_FULL_PATH"
+if is_stable_release; then
+    docker tag "$IMAGE_NAME_METASCRAPER:latest" "$IMAGE_LATEST_METASCRAPER_PATH"
+fi
+
+docker push "$IMAGE_METASCRAPER_FULL_PATH"
+if is_stable_release; then
+    docker push "$IMAGE_LATEST_METASCRAPER_PATH"
+fi
+cd ..
+
+if [ $? -eq 0 ]; then
+    git tag "$IMAGE_VERSION"
+    mvn release:update-versions
+    git commit -am "Updated version after release"
+    git push --tags origin main
+    echo "🎉 Released $IMAGE_VERSION!"
 else
-    echo "[Filedpapers] Building Version Docker image..."
-    docker build --no-cache -t "$IMAGE_NAME:$IMAGE_VERSION" .
-
-    if is_stable_release; then
-        docker tag "$IMAGE_NAME:$IMAGE_VERSION" "$IMAGE_NAME:latest"
-    fi
-
-    docker tag "$IMAGE_NAME:$IMAGE_VERSION" "$IMAGE_FULL_PATH"
-    if is_stable_release; then
-        docker tag "$IMAGE_NAME:latest" "$IMAGE_LATEST_PATH"
-    fi
-
-    docker push "$IMAGE_FULL_PATH"
-    if is_stable_release; then
-        docker push "$IMAGE_LATEST_PATH"
-    fi
-
-    ### Filedpapers Metascraper ###
-    cd metascraper
-    docker build --no-cache -t "$IMAGE_NAME_METASCRAPER:$IMAGE_VERSION" .
-
-    if is_stable_release; then
-        docker tag "$IMAGE_NAME_METASCRAPER:$IMAGE_VERSION" "$IMAGE_NAME_METASCRAPER:latest"
-    fi
-
-    docker tag "$IMAGE_NAME_METASCRAPER:$IMAGE_VERSION" "$IMAGE_METASCRAPER_FULL_PATH"
-    if is_stable_release; then
-        docker tag "$IMAGE_NAME_METASCRAPER:latest" "$IMAGE_LATEST_METASCRAPER_PATH"
-    fi
-
-    docker push "$IMAGE_METASCRAPER_FULL_PATH"
-    if is_stable_release; then
-        docker push "$IMAGE_LATEST_METASCRAPER_PATH"
-    fi
-    cd ..
-
-    if [ $? -eq 0 ]; then
-        git tag "$IMAGE_VERSION"
-        mvn release:update-versions
-        git commit -am "Updated version after release"
-        git push --tags origin main
-        echo "🎉 Released $IMAGE_VERSION!"
-    else
-        echo "❌ Failed to push the image. Exiting..."
-        exit 1
-    fi
+    echo "❌ Failed to push the image. Exiting..."
+    exit 1
 fi
 
 rm -f pom.xml.versionsBackup
