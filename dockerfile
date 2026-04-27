@@ -13,4 +13,4 @@ RUN chown appuser:appgroup /app/filedpapers.jar
 
 USER appuser
 
-ENTRYPOINT ["sh", "-c", "java $JAVA_OPTS -jar /app/filedpapers.jar"]
+ENTRYPOINT ["sh", "-c", "exec java $JAVA_OPTS -jar /app/filedpapers.jar"]
