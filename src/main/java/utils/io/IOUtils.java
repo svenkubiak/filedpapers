@@ -145,7 +145,7 @@ public final class IOUtils {
 
     public static String readContent(InputStream file) {
         try (file) {
-            return org.apache.commons.io.IOUtils.toString(file, StandardCharsets.UTF_8);
+            return new String(file.readAllBytes(), StandardCharsets.UTF_8);
         } catch (IOException e) {
             //Intentionally left blank
         }
