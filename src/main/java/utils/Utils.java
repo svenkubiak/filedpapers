@@ -24,8 +24,8 @@ public final class Utils {
             Pattern.CASE_INSENSITIVE
     );
     private static final Pattern NAME_PATTERN = Pattern.compile(
-            "(?i)[-_a-z0-9\\-]{1,32}",
-            Pattern.CASE_INSENSITIVE
+            "[-_a-z0-9äöüß]{1,32}",
+            Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE
     );
     private static final Pattern MFA_PATTERN = Pattern.compile("\\d{6}");
 
