@@ -80,6 +80,7 @@ function handleDragStart(e) {
 
     item.closest('.card')?.classList.add('dragging');
     e.dataTransfer.setData('text/plain', item.dataset.uid);
+    e.dataTransfer.setData('category', item.dataset.category);
 
     setTimeout(() => {
         document.body.removeChild(dragIcon);
@@ -107,7 +108,7 @@ function handleDrop(e) {
 
     const uid = e.dataTransfer.getData('text/plain');
     const categoryUid = target.dataset.uid;
-    const category = target.dataset.category;
+    const category = e.dataTransfer.getData('category');
 
     window.apiPut("/api/v1/items", {
         uid: uid,

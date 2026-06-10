@@ -51,7 +51,7 @@
                         </p>
                         <div class="is-flex">
                             <span class="icon card-move" data-tooltip="${i18n("dashboard.card.drag.tooltip")}">
-                                <i class="fas fa-folder-open dragging" draggable="true" data-uid="${item.uid}"></i>
+                                <i class="fas fa-folder-open dragging" draggable="true" data-uid="${item.uid}" data-category="${categoryUid}"></i>
                             </span>
                             <#if active != 'trash'>
                             <span class="icon card-trash" data-tooltip="${i18n("dashboard.card.delete.tooltip")}">
