@@ -107,6 +107,7 @@ function handleDrop(e) {
 
     const uid = e.dataTransfer.getData('text/plain');
     const categoryUid = target.dataset.uid;
+    const category = target.dataset.category;
 
     window.apiPut("/api/v1/items", {
         uid: uid,
@@ -120,7 +121,7 @@ function handleDrop(e) {
             sessionStorage.setItem(toastError, generalError);
         })
         .finally(() => {
-            window.location.href = "/dashboard";
+            window.location.href = "/dashboard/" + category;
         });
 }
 
