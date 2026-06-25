@@ -77,6 +77,14 @@ const USER_AGENTS = [
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
 ];
 
+// Google Maps serves rich OG metadata only to social preview crawlers
+const GOOGLE_MAPS_USER_AGENTS = [
+  'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)',
+  'Twitterbot/1.0',
+  'Slackbot-LinkExpanding 1.0 (+https://api.slack.com/robots)',
+  'Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)'
+];
+
 // Helper function to clean text
 const cleanText = (text) => {
   return text ? text.trim().replace(/\s+/g, ' ') : null;
@@ -137,6 +145,56 @@ const isAmazonUrl = (url) => {
   } catch (e) {
     return false;
   }
+};
+
+// Check if URL is a Google Maps place or search page
+const isGoogleMapsUrl = (url) => {
+  try {
+    const urlObj = new URL(url);
+    return urlObj.hostname.includes('google.') && urlObj.pathname.includes('/maps/');
+  } catch (e) {
+    return false;
+  }
+};
+
+const getUserAgentsForUrl = (url) => {
+  if (isGoogleMapsUrl(url)) {
+    return [...GOOGLE_MAPS_USER_AGENTS, ...USER_AGENTS];
+  }
+  return USER_AGENTS;
+};
+
+const isGenericGoogleMapsImage = (imageUrl) => {
+  return imageUrl && imageUrl.includes('maps/about/images/icons/maps_');
+};
+
+// Fallback: extract place name from /maps/place/Name/@... URL path
+const extractGoogleMapsPlaceNameFromUrl = (url) => {
+  try {
+    const match = url.match(/\/maps\/place\/([^/@?]+)/);
+    if (match) {
+      return cleanText(decodeURIComponent(match[1].replace(/\+/g, ' ')));
+    }
+  } catch (e) {
+    // Ignore malformed URLs
+  }
+  return null;
+};
+
+// Fallback: parse embedded XSSI JSON that Google includes in the initial HTML
+const extractGoogleMapsMetadataFromHtml = (html) => {
+  const metadata = { title: null, description: null };
+
+  const xssiIndex = html.indexOf(")]}'");
+  if (xssiIndex >= 0) {
+    const chunk = html.substring(xssiIndex, xssiIndex + 8000);
+    const placeMatch = chunk.match(/\["0x[a-f0-9]+:0x[a-f0-9]+","([^"]+)"/i);
+    if (placeMatch) {
+      metadata.title = cleanText(placeMatch[1]);
+    }
+  }
+
+  return metadata;
 };
 
 // Extract Amazon-specific title
@@ -478,7 +536,8 @@ app.get('/preview', async (req, res) => {
 
     // Try each User-Agent (fallback or for non-Amazon URLs)
     let htmlValidationFailed = true;
-    for (const userAgent of USER_AGENTS) {
+    let lastHtml = html;
+    for (const userAgent of getUserAgentsForUrl(url)) {
       try {
         const axiosResponse = await axios.get(url, {
           headers: {
@@ -508,6 +567,7 @@ app.get('/preview', async (req, res) => {
         }
         
         htmlValidationFailed = false;
+        lastHtml = htmlData;
         const $ = cheerio.load(htmlData);
         
         // Try to get each field, only update if we don't have it yet or if it's better
@@ -523,7 +583,8 @@ app.get('/preview', async (req, res) => {
 
         const currentImage = await extractImage($, url);
         // Always update image if we find a better one (not the default Google Maps icon)
-        if (currentImage && (!bestMetadata.image || 
+        if (currentImage && !isGenericGoogleMapsImage(currentImage) &&
+            (!bestMetadata.image || isGenericGoogleMapsImage(bestMetadata.image) ||
             (currentImage.includes('googleusercontent.com') && !bestMetadata.image.includes('googleusercontent.com')))) {
           bestMetadata.image = currentImage;
         }
@@ -539,6 +600,24 @@ app.get('/preview', async (req, res) => {
         }
       } catch (error) {
         // Continue with next User-Agent
+      }
+    }
+
+    // Google Maps fallbacks when social preview crawlers did not return full metadata
+    if (isGoogleMapsUrl(url)) {
+      if (!bestMetadata.title) {
+        bestMetadata.title = extractGoogleMapsPlaceNameFromUrl(url);
+      }
+
+      if (lastHtml && !bestMetadata.title) {
+        const embeddedMetadata = extractGoogleMapsMetadataFromHtml(lastHtml);
+        if (embeddedMetadata.title) {
+          bestMetadata.title = embeddedMetadata.title;
+        }
+      }
+
+      if (isGenericGoogleMapsImage(bestMetadata.image)) {
+        bestMetadata.image = null;
       }
     }
 
