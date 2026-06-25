@@ -168,6 +168,68 @@ const isGenericGoogleMapsImage = (imageUrl) => {
   return imageUrl && imageUrl.includes('maps/about/images/icons/maps_');
 };
 
+const isGoogleMapsStaticMapImage = (imageUrl) => {
+  return imageUrl && imageUrl.includes('/maps/api/staticmap');
+};
+
+const getGoogleMapsImageScore = (imageUrl) => {
+  if (!imageUrl) return -1;
+  if (isGenericGoogleMapsImage(imageUrl)) return 0;
+  if (/googleusercontent\.com\/(gps-cs-s|gpms-cs-s|p\/)/.test(imageUrl)) return 100;
+  if (imageUrl.includes('googleusercontent.com')) return 50;
+  if (isGoogleMapsStaticMapImage(imageUrl)) return 10;
+  return 20;
+};
+
+const addGoogleMapsImageCandidate = (candidates, url, baseUrl) => {
+  const resolvedUrl = resolveUrl(url, baseUrl);
+  if (resolvedUrl) {
+    candidates.add(resolvedUrl);
+  }
+};
+
+const extractGoogleMapsImageCandidates = ($, html, baseUrl) => {
+  const candidates = new Set();
+
+  addGoogleMapsImageCandidate(candidates, $('meta[property="og:image"]').attr('content'), baseUrl);
+  addGoogleMapsImageCandidate(candidates, $('meta[name="twitter:image"]').attr('content'), baseUrl);
+  addGoogleMapsImageCandidate(candidates, $('link[rel="image_src"]').attr('href'), baseUrl);
+
+  for (const match of html.matchAll(/https:\/\/lh3\.googleusercontent\.com\/(?:gps-cs-s|gpms-cs-s|p\/)[^"'\\s]+/g)) {
+    candidates.add(match[0]);
+  }
+
+  return [...candidates];
+};
+
+const extractBestGoogleMapsImage = async ($, html, baseUrl) => {
+  const candidates = extractGoogleMapsImageCandidates($, html, baseUrl);
+  let bestImage = null;
+  let bestScore = -1;
+
+  for (const candidate of candidates) {
+    const score = getGoogleMapsImageScore(candidate);
+    if (score <= bestScore) {
+      continue;
+    }
+
+    if (await getImageDimensions(candidate)) {
+      bestImage = candidate;
+      bestScore = score;
+    }
+  }
+
+  return bestImage;
+};
+
+const shouldReplaceGoogleMapsImage = (currentImage, nextImage) => {
+  if (!nextImage || isGenericGoogleMapsImage(nextImage)) {
+    return false;
+  }
+
+  return getGoogleMapsImageScore(nextImage) > getGoogleMapsImageScore(currentImage);
+};
+
 // Fallback: extract place name from /maps/place/Name/@... URL path
 const extractGoogleMapsPlaceNameFromUrl = (url) => {
   try {
@@ -299,11 +361,16 @@ const extractAmazonImage = async ($, baseUrl) => {
 };
 
 // Extract image following the specified rules
-const extractImage = async ($, baseUrl) => {
+const extractImage = async ($, baseUrl, html = null) => {
   // For Amazon, try Amazon-specific selectors first
   if (isAmazonUrl(baseUrl)) {
     const amazonImage = await extractAmazonImage($, baseUrl);
     if (amazonImage) return amazonImage;
+  }
+
+  if (isGoogleMapsUrl(baseUrl) && html) {
+    const googleMapsImage = await extractBestGoogleMapsImage($, html, baseUrl);
+    if (googleMapsImage) return googleMapsImage;
   }
 
   // Open Graph image
@@ -581,9 +648,12 @@ app.get('/preview', async (req, res) => {
           bestMetadata.description = currentDescription;
         }
 
-        const currentImage = await extractImage($, url);
-        // Always update image if we find a better one (not the default Google Maps icon)
-        if (currentImage && !isGenericGoogleMapsImage(currentImage) &&
+        const currentImage = await extractImage($, url, htmlData);
+        if (isGoogleMapsUrl(url)) {
+          if (shouldReplaceGoogleMapsImage(bestMetadata.image, currentImage)) {
+            bestMetadata.image = currentImage;
+          }
+        } else if (currentImage && !isGenericGoogleMapsImage(currentImage) &&
             (!bestMetadata.image || isGenericGoogleMapsImage(bestMetadata.image) ||
             (currentImage.includes('googleusercontent.com') && !bestMetadata.image.includes('googleusercontent.com')))) {
           bestMetadata.image = currentImage;
@@ -596,6 +666,10 @@ app.get('/preview', async (req, res) => {
 
         // If we have all required metadata, we can stop trying
         if (hasAllRequiredMetadata(bestMetadata)) {
+          break;
+        }
+
+        if (isGoogleMapsUrl(url) && getGoogleMapsImageScore(bestMetadata.image) >= 100) {
           break;
         }
       } catch (error) {
