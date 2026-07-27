@@ -10,10 +10,16 @@ import utils.preview.LinkPreview;
 import utils.preview.LinkPreviewFetcher;
 
 import java.io.*;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -24,6 +30,154 @@ public class PreviewTests {
     private static final List<Process> processes = new ArrayList<>();
     private static File nodeAppDir;
 
+    @BeforeAll
+    public static void setup() throws Exception {
+        System.out.println("===== PreviewTests setup =====");
+        System.out.println("user.dir: " + System.getProperty("user.dir"));
+        System.out.println("PATH: " + System.getenv("PATH"));
+        System.out.println("Java: " + System.getProperty("java.version"));
+        System.out.println("OS: " + System.getProperty("os.name"));
+        System.out.println("Architektur: " + System.getProperty("os.arch"));
+
+        Path nodeAppPath = Path.of("metascraper")
+                .toAbsolutePath()
+                .normalize();
+
+        System.out.println("Metascraper-Pfad: " + nodeAppPath);
+
+        Assertions.assertTrue(
+                Files.exists(nodeAppPath.resolve("package.json")),
+                "package.json fehlt unter "
+                        + nodeAppPath.resolve("package.json")
+        );
+
+        nodeAppDir = nodeAppPath.toFile();
+
+        System.out.println("===== npm ci =====");
+
+        Process installProcess = initProcess("npm", "ci");
+        waitForFinished(installProcess, "npm ci");
+
+        System.out.println("===== npm start =====");
+
+        Process serverProcess = initProcess("npm", "start");
+
+        waitForServerProcess(serverProcess);
+
+        System.out.println("===== HTTP-Bereitschaft prüfen =====");
+
+        waitForHttp(
+                URI.create("http://127.0.0.1:3000"),
+                serverProcess,
+                Duration.ofSeconds(30)
+        );
+
+        System.setProperty(
+                "application.metascraper.url",
+                "http://127.0.0.1:3000"
+        );
+
+        System.out.println("===== Metascraper ist bereit =====");
+    }
+
+    private static void waitForHttp(
+            URI uri,
+            Process serverProcess,
+            Duration timeout
+    ) throws InterruptedException {
+
+        HttpClient client = HttpClient.newBuilder()
+                .connectTimeout(Duration.ofSeconds(2))
+                .build();
+
+        long deadline = System.nanoTime() + timeout.toNanos();
+        Exception lastException = null;
+
+        while (System.nanoTime() < deadline) {
+            if (!serverProcess.isAlive()) {
+                throw new IllegalStateException(
+                        "Metascraper-Prozess wurde beendet, Exit-Code "
+                                + serverProcess.exitValue()
+                );
+            }
+
+            try {
+                HttpRequest request = HttpRequest.newBuilder(uri)
+                        .timeout(Duration.ofSeconds(3))
+                        .GET()
+                        .build();
+
+                HttpResponse<Void> response = client.send(
+                        request,
+                        HttpResponse.BodyHandlers.discarding()
+                );
+
+                System.out.println(
+                        "Metascraper antwortet mit HTTP "
+                                + response.statusCode()
+                );
+
+                return;
+            } catch (IOException e) {
+                lastException = e;
+
+                System.out.println(
+                        "Metascraper noch nicht erreichbar: "
+                                + e.getMessage()
+                );
+            }
+
+            Thread.sleep(500);
+        }
+
+        throw new IllegalStateException(
+                "Metascraper wurde innerhalb von "
+                        + timeout.toSeconds()
+                        + " Sekunden nicht erreichbar",
+                lastException
+        );
+    }
+
+    private static void waitForServerProcess(
+            Process process
+    ) throws InterruptedException {
+
+        boolean exited = process.waitFor(
+                5,
+                TimeUnit.SECONDS
+        );
+
+        if (exited) {
+            throw new IllegalStateException(
+                    "npm start wurde vorzeitig beendet, Exit-Code "
+                            + process.exitValue()
+            );
+        }
+
+        System.out.println(
+                "npm start läuft weiterhin, PID: " + process.pid()
+        );
+    }
+
+    private static void waitForFinished(
+            Process process,
+            String description
+    ) throws InterruptedException {
+
+        int exitCode = process.waitFor();
+
+        System.out.println(
+                description + " beendet mit Exit-Code " + exitCode
+        );
+
+        if (exitCode != 0) {
+            throw new IllegalStateException(
+                    description + " fehlgeschlagen, Exit-Code " + exitCode
+            );
+        }
+    }
+
+    /**
     @BeforeAll
     public static void setup() throws IOException, InterruptedException {
         Path nodeAppPath = Path.of("metascraper");
@@ -39,7 +193,7 @@ public class PreviewTests {
         Thread.sleep(3000);
         System.setProperty("application.metascraper.url", "http://localhost:3000");
     }
-
+**/
     private static void waitFor(Process process, String error, boolean wait) throws InterruptedException {
         if (wait) {
             if (process.waitFor(10, SECONDS)) {
