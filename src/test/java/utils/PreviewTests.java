@@ -1,10 +1,7 @@
 package utils;
 
-import controllers.TestExtension;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
+import io.mangoo.test.TestRunner;
+import org.junit.jupiter.api.*;
 import org.junit.jupiter.api.extension.ExtendWith;
 import utils.preview.LinkPreview;
 import utils.preview.LinkPreviewFetcher;
@@ -19,7 +16,8 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
-@ExtendWith({TestExtension.class})
+@Order(1)
+@ExtendWith({TestRunner.class})
 public class PreviewTests {
     private static final List<Process> processes = new ArrayList<>();
     private static File nodeAppDir;
