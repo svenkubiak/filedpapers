@@ -1,20 +1,11 @@
-FROM node:26-trixie-slim AS dependencies
-
-WORKDIR /app
-
-COPY package.json package-lock.json ./
-
-RUN npm ci --omit=dev \
-    && npm cache clean --force
-
-
-FROM node:26-trixie-slim AS runtime
+FROM node:26-trixie-slim
 
 ENV NODE_ENV=production \
     PORT=3000 \
     CHROME_BIN=/usr/bin/chromium \
     PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
-    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium \
+    CHROMIUM_FLAGS="--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage"
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
@@ -23,20 +14,20 @@ RUN apt-get update \
         chromium-sandbox \
         fonts-liberation \
         fonts-dejavu-core \
-    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+
+RUN npm ci \
+    && npm cache clean --force \
     && rm -rf /usr/local/lib/node_modules/npm \
     && rm -f /usr/local/bin/npm \
               /usr/local/bin/npx \
               /usr/local/bin/corepack
 
-WORKDIR /app
-
-COPY --from=dependencies --chown=node:node \
-    /app/node_modules ./node_modules
-
-COPY --chown=node:node . .
-
-USER node
+COPY . .
 
 EXPOSE 3000
 
