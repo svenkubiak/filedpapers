@@ -1,66 +1,34 @@
 FROM node:26-trixie-slim
 
-# Install Chromium and all required dependencies
-RUN apt-get update && apt-get install -y \
-    ca-certificates \
-    curl \
-    chromium \
-    chromium-sandbox \
-    fonts-liberation \
-    fonts-dejavu-core \
-    libasound2 \
-    libatk-bridge2.0-0 \
-    libatk1.0-0 \
-    libatspi2.0-0 \
-    libcups2 \
-    libdbus-1-3 \
-    libdrm2 \
-    libgbm1 \
-    libgtk-3-0 \
-    libnspr4 \
-    libnss3 \
-    libx11-6 \
-    libx11-xcb1 \
-    libxcb1 \
-    libxcomposite1 \
-    libxcursor1 \
-    libxdamage1 \
-    libxext6 \
-    libxfixes3 \
-    libxi6 \
-    libxrandr2 \
-    libxrender1 \
-    libxss1 \
-    libxtst6 \
-    xdg-utils \
+ENV NODE_ENV=production \
+    PORT=3000 \
+    CHROME_BIN=/usr/bin/chromium \
+    PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
+    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        ca-certificates \
+        chromium \
+        chromium-sandbox \
+        fonts-liberation \
+        fonts-dejavu-core \
     && rm -rf /var/lib/apt/lists/*
 
-# Set Chromium environment variables
-ENV CHROME_BIN=/usr/bin/chromium
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
-ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
-# Add flags for running Chromium in Docker
-ENV CHROMIUM_FLAGS="--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage --disable-gpu"
-
-# Create app directory
 WORKDIR /app
 
-# Copy package files
-COPY package.json ./
+COPY package.json package-lock.json ./
 
-# Install dependencies
-RUN npm install
+RUN npm ci --omit=dev \
+    && npm cache clean --force \
+    && rm -rf /usr/local/lib/node_modules/npm \
+    && rm -f /usr/local/bin/npm /usr/local/bin/npx \
+    && rm -f /usr/local/bin/corepack
 
-# Copy the rest of the code
-COPY . .
+COPY --chown=node:node . .
 
-# Set environment variables
-ENV NODE_ENV=production
-ENV PORT=3000
+USER node
 
-# Expose the port
 EXPOSE 3000
 
-# Start the application
 CMD ["node", "index.js"]
-
