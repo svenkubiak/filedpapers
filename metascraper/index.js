@@ -4,13 +4,14 @@ const cheerio = require('cheerio');
 const sharp = require('sharp');
 const puppeteer = require('puppeteer-core');
 const { URL } = require('url');
-const { exec } = require('child_process');
+const { exec, execFile } = require('child_process');
 const fs = require('fs').promises;
 const path = require('path');
 const { promisify } = require('util');
 const os = require('os');
 
 const execAsync = promisify(exec);
+const execFileAsync = promisify(execFile);
 const { access } = require('fs').promises;
 
 const app = express();
@@ -132,23 +133,45 @@ const renderWithBrowser = async (url) => {
     const timestamp = Date.now();
     const outputFile = path.join(os.tmpdir(), `preview_${timestamp}.html`);
     const chromiumPath = await findChromiumPath();
+    const chromiumFlags = getChromiumArgs();
 
-    let singleFileCommand = `"${SINGLE_FILE_BIN}" "${url}" "${outputFile}" --browser-headless true`;
+    const args = [
+      url,
+      outputFile,
+      '--browser-headless', 'true',
+      '--browser-wait-until', 'load',
+      '--browser-load-max-time', '10000',
+      '--browser-capture-max-time', '10000',
+      '--load-deferred-images', 'false',
+      '--remove-hidden-elements', 'false',
+      '--remove-unused-styles', 'false',
+      '--compress-html', 'false',
+      '--compress-css', 'false',
+      '--group-duplicate-images', 'false',
+      '--resolve-links', 'false',
+      '--insert-single-file-comment', 'false',
+      '--blocked-URL-pattern', '.*cookie.*',
+      '--blocked-URL-pattern', '.*consent.*',
+      '--blocked-URL-pattern', '.*gdpr.*',
+      '--blocked-URL-pattern', '.*privacy.*',
+      '--blocked-URL-pattern', '.*banner.*',
+      '--blocked-URL-pattern', '.*popup.*',
+      '--blocked-URL-pattern', '.*modal.*',
+      '--blocked-URL-pattern', '.*overlay.*'
+    ];
 
     if (chromiumPath) {
-      singleFileCommand += ` --browser-executable-path "${chromiumPath}"`;
+      args.push('--browser-executable-path', chromiumPath);
     } else {
       console.log('Chromium not found in standard paths, letting single-file auto-detect');
     }
 
-    const chromiumFlags = process.env.CHROMIUM_FLAGS || '--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage --disable-gpu';
-    if (chromiumFlags) {
-      singleFileCommand += ` --browser-args "${chromiumFlags}"`;
+    // single-file-cli expects browser-args as a JSON array
+    if (chromiumFlags.length) {
+      args.push('--browser-args', JSON.stringify(chromiumFlags));
     }
 
-    singleFileCommand += ` --browser-wait-until load --browser-load-max-time 10000 --browser-capture-max-time 10000 --load-deferred-images false --remove-hidden-elements false --remove-unused-styles false --compress-html false --compress-css false --group-duplicate-images false --resolve-links false --insert-single-file-comment false --blocked-URL-pattern ".*cookie.*" --blocked-URL-pattern ".*consent.*" --blocked-URL-pattern ".*gdpr.*" --blocked-URL-pattern ".*privacy.*" --blocked-URL-pattern ".*banner.*" --blocked-URL-pattern ".*popup.*" --blocked-URL-pattern ".*modal.*" --blocked-URL-pattern ".*overlay.*"`;
-
-    const { stderr } = await execAsync(singleFileCommand, {
+    const { stderr } = await execFileAsync(SINGLE_FILE_BIN, args, {
       timeout: 15000,
       maxBuffer: 50 * 1024 * 1024
     });
@@ -348,7 +371,10 @@ const resolveUrl = (url, baseUrl) => {
 };
 
 // Helper function to check image dimensions
-const getImageDimensions = async (imageUrl) => {
+const getImageDimensions = async (imageUrl, options = {}) => {
+  const maxArea = options.maxArea ?? MAX_IMAGE_AREA;
+  const maxAspectRatio = options.maxAspectRatio ?? MAX_ASPECT_RATIO;
+
   try {
     const response = await axios.get(imageUrl, {
       responseType: 'arraybuffer',
@@ -373,13 +399,22 @@ const getImageDimensions = async (imageUrl) => {
     return metadata.width >= MIN_IMAGE_SIZE &&
         metadata.height >= MIN_IMAGE_SIZE &&
         area >= MIN_IMAGE_AREA &&
-        area <= MAX_IMAGE_AREA &&
-        aspectRatioWidth <= MAX_ASPECT_RATIO &&
-        aspectRatioHeight <= MAX_ASPECT_RATIO;
+        area <= maxArea &&
+        aspectRatioWidth <= maxAspectRatio &&
+        aspectRatioHeight <= maxAspectRatio;
 
   } catch (e) {
     return false;
   }
+};
+
+// Amazon product photos are often larger than the generic preview max area
+const AMAZON_MAX_IMAGE_AREA = 4000 * 4000;
+const isValidAmazonImage = async (imageUrl) => {
+  return getImageDimensions(imageUrl, {
+    maxArea: AMAZON_MAX_IMAGE_AREA,
+    maxAspectRatio: 4
+  });
 };
 
 // Check if URL is from Amazon
@@ -591,18 +626,38 @@ const extractGoogleMapsMetadataFromHtml = (html) => {
   return metadata;
 };
 
+const isGenericAmazonTitle = (title) => {
+  if (!title) return true;
+  const normalized = title.toLowerCase().trim();
+  return /^(amazon(\.(de|com|co\.uk|fr|it|es|nl|pl|se|com\.br|com\.mx|ca|in|com\.au))?|amazon\.com:?\s*amazon\.com)$/i.test(normalized);
+};
+
+const cleanAmazonTitle = (title) => {
+  const cleaned = cleanText(title);
+  if (!cleaned || isGenericAmazonTitle(cleaned)) return null;
+  // Strip leading "Amazon.de: " / "Amazon.com: " prefixes when the product name follows
+  const withoutPrefix = cleaned.replace(/^Amazon(?:\.[a-z.]+)?:\s*/i, '').trim();
+  return withoutPrefix && !isGenericAmazonTitle(withoutPrefix) ? withoutPrefix : cleaned;
+};
+
 // Extract Amazon-specific title
 const extractAmazonTitle = ($) => {
   // Amazon product title
-  const productTitle = $('#productTitle').text();
-  if (productTitle) return cleanText(productTitle);
+  const productTitle = cleanAmazonTitle($('#productTitle').text());
+  if (productTitle) return productTitle;
 
   // Alternative Amazon selectors
-  const titleSpan = $('span.a-size-large.product-title-word-break').first().text();
-  if (titleSpan) return cleanText(titleSpan);
+  const titleSpan = cleanAmazonTitle($('span.a-size-large.product-title-word-break').first().text());
+  if (titleSpan) return titleSpan;
 
-  const titleH1 = $('h1.a-size-large').first().text();
-  if (titleH1) return cleanText(titleH1);
+  const titleH1 = cleanAmazonTitle($('h1.a-size-large').first().text());
+  if (titleH1) return titleH1;
+
+  const ogTitle = cleanAmazonTitle($('meta[property="og:title"]').attr('content'));
+  if (ogTitle) return ogTitle;
+
+  const docTitle = cleanAmazonTitle($('title').text());
+  if (docTitle) return docTitle;
 
   return null;
 };
@@ -650,44 +705,67 @@ const extractTitle = ($, url) => {
   return null;
 };
 
+const pickAmazonImageCandidate = async (url, baseUrl) => {
+  const resolvedUrl = resolveUrl(url, baseUrl);
+  if (resolvedUrl && await isValidAmazonImage(resolvedUrl)) {
+    return resolvedUrl;
+  }
+  return null;
+};
+
+const extractAmazonDynamicImage = async (el, baseUrl) => {
+  const dynamic = el.attr('data-a-dynamic-image');
+  if (!dynamic) return null;
+
+  try {
+    const parsed = JSON.parse(dynamic);
+    const candidates = Object.keys(parsed);
+    // Prefer the largest declared candidate
+    candidates.sort((a, b) => {
+      const aSize = (parsed[a][0] || 0) * (parsed[a][1] || 0);
+      const bSize = (parsed[b][0] || 0) * (parsed[b][1] || 0);
+      return bSize - aSize;
+    });
+
+    for (const candidate of candidates) {
+      const accepted = await pickAmazonImageCandidate(candidate, baseUrl);
+      if (accepted) return accepted;
+    }
+  } catch (e) {
+    // Ignore malformed dynamic image JSON
+  }
+
+  return null;
+};
+
 // Extract Amazon-specific image
 const extractAmazonImage = async ($, baseUrl) => {
-  // Amazon landing image (main product image)
-  const landingImage = $('#landingImage').attr('src') || $('#landingImage').attr('data-src');
-  if (landingImage) {
-    const resolvedUrl = resolveUrl(landingImage, baseUrl);
-    if (resolvedUrl && await getImageDimensions(resolvedUrl)) {
-      return resolvedUrl;
-    }
+  const landingEl = $('#landingImage');
+  const candidates = [
+    landingEl.attr('data-old-hires'),
+    landingEl.attr('data-src'),
+    landingEl.attr('src'),
+    $('#imgBlkFront').attr('data-old-hires'),
+    $('#imgBlkFront').attr('data-src'),
+    $('#imgBlkFront').attr('src'),
+    $('#main-image img').first().attr('data-old-hires'),
+    $('#main-image img').first().attr('data-src'),
+    $('#main-image img').first().attr('src'),
+    $('img[data-a-image-name="landingImage"]').attr('data-old-hires'),
+    $('img[data-a-image-name="landingImage"]').attr('data-src'),
+    $('img[data-a-image-name="landingImage"]').attr('src'),
+    $('meta[property="og:image"]').attr('content'),
+    $('meta[name="twitter:image"]').attr('content')
+  ];
+
+  for (const candidate of candidates) {
+    if (!candidate || candidate.startsWith('data:')) continue;
+    const accepted = await pickAmazonImageCandidate(candidate, baseUrl);
+    if (accepted) return accepted;
   }
 
-  // Alternative Amazon image selectors
-  const imgBlkFront = $('#imgBlkFront').attr('src') || $('#imgBlkFront').attr('data-src');
-  if (imgBlkFront) {
-    const resolvedUrl = resolveUrl(imgBlkFront, baseUrl);
-    if (resolvedUrl && await getImageDimensions(resolvedUrl)) {
-      return resolvedUrl;
-    }
-  }
-
-  // Amazon main image container
-  const mainImage = $('#main-image img').first().attr('src') || $('#main-image img').first().attr('data-src');
-  if (mainImage) {
-    const resolvedUrl = resolveUrl(mainImage, baseUrl);
-    if (resolvedUrl && await getImageDimensions(resolvedUrl)) {
-      return resolvedUrl;
-    }
-  }
-
-  // Amazon product image in various containers
-  const productImage = $('img[data-a-image-name="landingImage"]').attr('src') || 
-                        $('img[data-a-image-name="landingImage"]').attr('data-src');
-  if (productImage) {
-    const resolvedUrl = resolveUrl(productImage, baseUrl);
-    if (resolvedUrl && await getImageDimensions(resolvedUrl)) {
-      return resolvedUrl;
-    }
-  }
+  const dynamicImage = await extractAmazonDynamicImage(landingEl, baseUrl);
+  if (dynamicImage) return dynamicImage;
 
   return null;
 };
@@ -862,7 +940,7 @@ app.get('/preview', async (req, res) => {
     let html = null;
     
     if (isAmazon) {
-      console.log(`Using headless browser for Amazon URL: ${url}`);
+      console.log(`Using single-file browser for Amazon URL: ${url}`);
       html = await renderWithBrowser(url);
       if (html) {
         const $ = cheerio.load(html);
@@ -888,16 +966,17 @@ app.get('/preview', async (req, res) => {
           bestMetadata.domain = currentDomain;
         }
 
-        // If we have product title and image, return (domain filled via URL fallback if needed)
-        if (bestMetadata.title && bestMetadata.image) {
-          applyUrlFallbacks(bestMetadata, url);
+        applyUrlFallbacks(bestMetadata, url);
+
+        // Amazon uses its own renderer — never fall through to Puppeteer screenshots
+        if (bestMetadata.title || bestMetadata.image) {
           return res.json(bestMetadata);
         }
       }
     }
 
     // Try each User-Agent (fallback or for non-Amazon URLs)
-    let htmlValidationFailed = true;
+    let htmlValidationFailed = !html;
     let lastHtml = html;
     for (const userAgent of getUserAgentsForUrl(url)) {
       try {
@@ -991,7 +1070,8 @@ app.get('/preview', async (req, res) => {
     }
 
     // axios could not fetch HTML (e.g. Cloudflare) — try Chromium
-    if (htmlValidationFailed) {
+    // Amazon has its own single-file path and must not fall into Puppeteer screenshots
+    if (htmlValidationFailed && !isAmazon) {
       console.log(`HTML fetch failed for ${url}, trying browser fallback`);
       const browserMetadata = await fetchMetadataWithBrowser(url);
 
@@ -1000,7 +1080,7 @@ app.get('/preview', async (req, res) => {
         if (browserMetadata.description) bestMetadata.description = browserMetadata.description;
         if (browserMetadata.image) bestMetadata.image = browserMetadata.image;
         if (browserMetadata.domain) bestMetadata.domain = browserMetadata.domain;
-      } else if (!isAmazonUrl(url)) {
+      } else {
         console.log(`Browser fallback failed for ${url}, trying screenshot only`);
         const screenshotUrl = await captureScreenshot(url);
         if (screenshotUrl) {
