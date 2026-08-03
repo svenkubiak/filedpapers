@@ -28,6 +28,7 @@ import static org.awaitility.Awaitility.await;
 
 @ExtendWith({TestExtension.class})
 public class ItemsControllerV1Tests {
+    private static final long ASYNC_ADD_TIMEOUT_SECONDS = 40;
     private static Datastore datastore;
     private static String ACCESS_TOKEN;
     private static String USER_UID;
@@ -269,8 +270,8 @@ public class ItemsControllerV1Tests {
         assertThat(response).isNotNull();
         assertThat(response.getStatusCode()).isEqualTo(200);
         assertThat(response.getContent()).isEmpty();
-        await().atMost(3, TimeUnit.SECONDS).untilAsserted(() -> assertThat(datastore.find(Item.class, eq("url", url))).isNotNull());
-        await().atMost(3, TimeUnit.SECONDS).untilAsserted(() -> assertThat(datastore.find(Item.class, eq("url", url)).getCategoryUid()).isEqualTo(TEST_UID));
+        await().atMost(ASYNC_ADD_TIMEOUT_SECONDS, TimeUnit.SECONDS).untilAsserted(() -> assertThat(datastore.find(Item.class, eq("url", url))).isNotNull());
+        await().atMost(ASYNC_ADD_TIMEOUT_SECONDS, TimeUnit.SECONDS).untilAsserted(() -> assertThat(datastore.find(Item.class, eq("url", url)).getCategoryUid()).isEqualTo(TEST_UID));
     }
 
     @Test
@@ -311,8 +312,8 @@ public class ItemsControllerV1Tests {
         assertThat(response).isNotNull();
         assertThat(response.getStatusCode()).isEqualTo(200);
         assertThat(response.getContent()).isEmpty();
-        await().atMost(3, TimeUnit.SECONDS).untilAsserted(() -> assertThat(datastore.find(Item.class, eq("url", url))).isNotNull());
-        await().atMost(3, TimeUnit.SECONDS).untilAsserted(() -> assertThat(datastore.find(Item.class, eq("url", url)).getCategoryUid()).isEqualTo(INBOX_UID));
+        await().atMost(ASYNC_ADD_TIMEOUT_SECONDS, TimeUnit.SECONDS).untilAsserted(() -> assertThat(datastore.find(Item.class, eq("url", url))).isNotNull());
+        await().atMost(ASYNC_ADD_TIMEOUT_SECONDS, TimeUnit.SECONDS).untilAsserted(() -> assertThat(datastore.find(Item.class, eq("url", url)).getCategoryUid()).isEqualTo(INBOX_UID));
     }
 
     @Test

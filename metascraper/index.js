@@ -2,11 +2,13 @@ const express = require('express');
 const axios = require('axios');
 const cheerio = require('cheerio');
 const sharp = require('sharp');
+const puppeteer = require('puppeteer-core');
 const { URL } = require('url');
 const { exec } = require('child_process');
 const fs = require('fs').promises;
 const path = require('path');
 const { promisify } = require('util');
+const os = require('os');
 
 const execAsync = promisify(exec);
 const { access } = require('fs').promises;
@@ -58,8 +60,13 @@ const findChromiumPath = async () => {
     // which command failed, continue
   }
 
-  // Last resort: return null and let single-file try to find it automatically
+  // Last resort: return null
   return null;
+};
+
+const getChromiumArgs = () => {
+  const flags = process.env.CHROMIUM_FLAGS || '--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage --disable-gpu';
+  return flags.split(/\s+/).filter(Boolean);
 };
 
 // Constants
@@ -69,6 +76,201 @@ const MIN_IMAGE_SIZE = 100;
 const MIN_IMAGE_AREA = MIN_IMAGE_SIZE * MIN_IMAGE_SIZE; // 2.5KB in pixels
 const MAX_IMAGE_CANDIDATES = 10;
 const MAX_ASPECT_RATIO = 3; // Maximum width/height or height/width ratio
+const BROWSER_VIEWPORT = { width: 1280, height: 720 };
+const BROWSER_TIMEOUT_MS = 20000;
+const BROWSER_SETTLE_MS = 1000;
+const SCREENSHOT_DIR = path.join(os.tmpdir(), 'metascraper-screenshots');
+const SCREENSHOT_TTL_MS = 60 * 60 * 1000;
+
+const launchBrowser = async () => {
+  const chromiumPath = await findChromiumPath();
+  if (!chromiumPath) {
+    return null;
+  }
+
+  return puppeteer.launch({
+    executablePath: chromiumPath,
+    headless: true,
+    args: getChromiumArgs(),
+    timeout: BROWSER_TIMEOUT_MS
+  });
+};
+
+const withBrowserPage = async (url, pageHandler) => {
+  let browser;
+
+  try {
+    browser = await launchBrowser();
+    if (!browser) {
+      console.error('Browser launch failed: Chromium not found');
+      return null;
+    }
+
+    const page = await browser.newPage();
+    await page.setViewport(BROWSER_VIEWPORT);
+    await page.goto(url, {
+      waitUntil: 'networkidle2',
+      timeout: BROWSER_TIMEOUT_MS
+    });
+    await new Promise((resolve) => setTimeout(resolve, BROWSER_SETTLE_MS));
+
+    return await pageHandler(page);
+  } catch (error) {
+    console.error('Browser page error:', error);
+    return null;
+  } finally {
+    if (browser) {
+      await browser.close().catch(() => {});
+    }
+  }
+};
+
+const fetchRenderedHtml = async (url) => {
+  return withBrowserPage(url, async (page) => page.content());
+};
+
+const extractDomainFromUrl = (url) => {
+  try {
+    const domain = new URL(url).hostname;
+    return domain.startsWith('www.') ? domain.substring(4) : domain;
+  } catch (e) {
+    return null;
+  }
+};
+
+const BOT_CHALLENGE_INDICATORS = [
+  'cf-browser-verification',
+  'challenge-platform',
+  'cdn-cgi/challenge',
+  'checking your browser before accessing',
+  'checking your browser',
+  'just a moment',
+  'attention required',
+  'cloudflare ray id',
+  'enable javascript and cookies',
+  '__cf_chl',
+  'turnstile',
+  'ddos protection by cloudflare',
+  'please wait while we verify',
+  'bot verification'
+];
+
+const BOT_CHALLENGE_TITLES = [
+  'just a moment',
+  'attention required',
+  'please wait',
+  'checking your browser',
+  'access denied',
+  '403 forbidden',
+  'security check'
+];
+
+const isBotChallengePage = (html, title) => {
+  const lowerHtml = (html || '').toLowerCase();
+  const lowerTitle = (title || '').toLowerCase();
+
+  if (BOT_CHALLENGE_TITLES.some((entry) => lowerTitle.includes(entry))) {
+    return true;
+  }
+
+  return BOT_CHALLENGE_INDICATORS.some((indicator) => lowerHtml.includes(indicator));
+};
+
+const stripBotChallengeMetadata = (metadata) => {
+  const title = (metadata.title || '').toLowerCase();
+  if (BOT_CHALLENGE_TITLES.some((entry) => title.includes(entry))) {
+    metadata.title = null;
+    metadata.description = null;
+  }
+  return metadata;
+};
+
+const ensureScreenshotDir = async () => {
+  await fs.mkdir(SCREENSHOT_DIR, { recursive: true });
+};
+
+const cleanupOldScreenshots = async () => {
+  try {
+    const files = await fs.readdir(SCREENSHOT_DIR);
+    const now = Date.now();
+
+    await Promise.all(files.map(async (file) => {
+      const filePath = path.join(SCREENSHOT_DIR, file);
+      try {
+        const stat = await fs.stat(filePath);
+        if (now - stat.mtimeMs > SCREENSHOT_TTL_MS) {
+          await fs.unlink(filePath);
+        }
+      } catch (e) {
+        // Ignore missing or unreadable files
+      }
+    }));
+  } catch (e) {
+    // Ignore cleanup errors
+  }
+};
+
+const saveScreenshotFromPage = async (page) => {
+  const html = await page.content();
+  const title = await page.title();
+  if (isBotChallengePage(html, title)) {
+    console.log('Skipping screenshot of bot challenge page');
+    return null;
+  }
+
+  await ensureScreenshotDir();
+  await cleanupOldScreenshots();
+
+  const pngBuffer = await page.screenshot({ type: 'png' });
+  const filename = `${Date.now()}_${Math.random().toString(36).slice(2, 10)}.webp`;
+  const filePath = path.join(SCREENSHOT_DIR, filename);
+
+  const webpBuffer = await sharp(pngBuffer)
+    .resize(MAX_IMAGE_SIZE, MAX_IMAGE_SIZE, { fit: 'inside', withoutEnlargement: true })
+    .webp({ quality: 80 })
+    .toBuffer();
+
+  await fs.writeFile(filePath, webpBuffer);
+
+  return `/screenshots/${filename}`;
+};
+
+const captureScreenshot = async (url) => {
+  return withBrowserPage(url, async (page) => saveScreenshotFromPage(page));
+};
+
+const fetchMetadataWithBrowser = async (url) => {
+  return withBrowserPage(url, async (page) => {
+    const html = await page.content();
+    const pageTitle = await page.title();
+
+    if (isBotChallengePage(html, pageTitle)) {
+      console.log(`Bot challenge detected for ${url}, skipping browser extraction`);
+      return applyUrlFallbacks({
+        title: null,
+        description: null,
+        image: null,
+        domain: null
+      }, url);
+    }
+
+    const $ = cheerio.load(html);
+
+    const metadata = stripBotChallengeMetadata({
+      title: extractTitle($, url),
+      description: extractDescription($, url),
+      image: await extractImage($, url, html),
+      domain: extractDomain($, url) || extractDomainFromUrl(url)
+    });
+
+    if (!metadata.image) {
+      console.log(`No image found in browser for ${url}, capturing screenshot`);
+      metadata.image = await saveScreenshotFromPage(page);
+    }
+
+    return metadata;
+  });
+};
 
 // Common set of User-Agents for all URLs
 const USER_AGENTS = [
@@ -241,6 +443,93 @@ const extractGoogleMapsPlaceNameFromUrl = (url) => {
     // Ignore malformed URLs
   }
   return null;
+};
+
+const GENERIC_PATH_SEGMENTS = new Set([
+  'index', 'home', 'default', 'main', 'page', 'view', 'article', 'posts', 'watch', 'embed'
+]);
+
+const formatUrlSegment = (segment) => {
+  if (!segment) return null;
+
+  let decoded;
+  try {
+    decoded = decodeURIComponent(segment);
+  } catch (e) {
+    decoded = segment;
+  }
+
+  decoded = decoded.replace(/\.(html?|php|aspx?|jsp)$/i, '');
+  decoded = decoded.replace(/[-_+]+/g, ' ');
+  return cleanText(decoded);
+};
+
+const toTitleCase = (text) => {
+  if (!text) return null;
+  return text.replace(/\b[\p{L}\p{N}]+\b/gu, (word) =>
+    word.charAt(0).toUpperCase() + word.slice(1).toLowerCase()
+  );
+};
+
+const isOpaquePathSegment = (segment) => {
+  if (/^\d+$/.test(segment)) return true;
+  if (/^[a-f0-9-]{20,}$/i.test(segment)) return true;
+  if (/^B[0-9A-Z]{8,}$/i.test(segment)) return true;
+  return false;
+};
+
+// Fallback: derive a readable title from the URL when HTML metadata is unavailable
+const extractTitleFromUrl = (url) => {
+  const mapsTitle = extractGoogleMapsPlaceNameFromUrl(url);
+  if (mapsTitle) return mapsTitle;
+
+  try {
+    const urlObj = new URL(url);
+
+    if (urlObj.hostname.includes('amazon.')) {
+      const amazonMatch = urlObj.pathname.match(/\/([^/]+)\/dp\//)
+        || urlObj.pathname.match(/\/gp\/product\/([^/]+)/);
+      if (amazonMatch && !['dp', 'gp'].includes(amazonMatch[1])) {
+        const formatted = formatUrlSegment(amazonMatch[1]);
+        if (formatted) return toTitleCase(formatted);
+      }
+    }
+
+    const segments = urlObj.pathname.split('/').filter(Boolean);
+    for (let i = segments.length - 1; i >= 0; i--) {
+      const segment = segments[i];
+      if (isOpaquePathSegment(segment)) continue;
+
+      const formatted = formatUrlSegment(segment);
+      if (!formatted || formatted.length < 2) continue;
+      if (GENERIC_PATH_SEGMENTS.has(formatted.toLowerCase())) continue;
+
+      return toTitleCase(formatted);
+    }
+
+    const hostname = urlObj.hostname.replace(/^www\./, '');
+    const domainParts = hostname.split('.');
+    if (domainParts.length >= 2) {
+      const siteName = formatUrlSegment(domainParts[domainParts.length - 2]);
+      if (siteName && siteName.length > 1) {
+        return toTitleCase(siteName);
+      }
+    }
+
+    return toTitleCase(formatUrlSegment(hostname.replace(/\./g, ' ')));
+  } catch (e) {
+    return null;
+  }
+};
+
+const applyUrlFallbacks = (metadata, url) => {
+  if (!metadata.title) {
+    metadata.title = extractTitleFromUrl(url);
+  }
+  if (!metadata.domain) {
+    metadata.domain = extractDomainFromUrl(url);
+  }
+  return metadata;
 };
 
 // Fallback: parse embedded XSSI JSON that Google includes in the initial HTML
@@ -489,64 +778,26 @@ const extractDescription = ($, url) => {
   return null;
 };
 
-// Render page with headless browser for JavaScript-heavy sites
-const renderWithBrowser = async (url) => {
-  try {
-    // Generate a unique temporary filename
-    const timestamp = Date.now();
-    const outputFile = path.join(require('os').tmpdir(), `preview_${timestamp}.html`);
-
-    // Find Chromium executable
-    const chromiumPath = await findChromiumPath();
-    
-    // Build SingleFile command - only include browser-executable-path if we found one
-    // Using 'load' instead of 'networkidle2' for faster rendering - we only need the DOM, not all resources
-    // Reduced max times since we just need metadata extraction, not full page capture
-    let singleFileCommand = `npx single-file "${url}" "${outputFile}" --browser-headless true`;
-    
-    if (chromiumPath) {
-      singleFileCommand += ` --browser-executable-path "${chromiumPath}"`;
-    } else {
-      console.log('Chromium not found in standard paths, letting single-file auto-detect');
-    }
-    
-    // Add Chromium flags for Docker compatibility (no-sandbox, etc.)
-    const chromiumFlags = process.env.CHROMIUM_FLAGS || '--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage --disable-gpu';
-    if (chromiumFlags) {
-      singleFileCommand += ` --browser-args "${chromiumFlags}"`;
-    }
-    
-    singleFileCommand += ` --browser-wait-until load --browser-load-max-time 10000 --browser-capture-max-time 10000 --load-deferred-images false --remove-hidden-elements false --remove-unused-styles false --compress-html false --compress-css false --group-duplicate-images false --resolve-links false --insert-single-file-comment false --blocked-URL-pattern ".*cookie.*" --blocked-URL-pattern ".*consent.*" --blocked-URL-pattern ".*gdpr.*" --blocked-URL-pattern ".*privacy.*" --blocked-URL-pattern ".*banner.*" --blocked-URL-pattern ".*popup.*" --blocked-URL-pattern ".*modal.*" --blocked-URL-pattern ".*overlay.*"`;
-
-    const { stdout, stderr } = await execAsync(singleFileCommand, {
-      timeout: 15000, // 15 second timeout (reduced from 20s since we're using 'load' instead of 'networkidle2')
-      maxBuffer: 50 * 1024 * 1024 // 50MB buffer
-    });
-
-    if (stderr && !stderr.includes('Warning')) {
-      console.error('SingleFile stderr:', stderr);
-    }
-
-    // Read the generated file
-    const html = await fs.readFile(outputFile, 'utf8');
-
-    // Clean up the temporary file
-    try {
-      await fs.unlink(outputFile);
-    } catch (cleanupError) {
-      console.error('Failed to cleanup temporary file:', cleanupError);
-    }
-
-    return html;
-  } catch (error) {
-    console.error('Browser rendering error:', error);
-    return null;
-  }
-};
-
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
+});
+
+app.get('/screenshots/:filename', async (req, res) => {
+  const filename = path.basename(req.params.filename);
+  if (!/^[a-zA-Z0-9_-]+\.webp$/.test(filename)) {
+    return res.status(400).send('Invalid filename');
+  }
+
+  const filePath = path.join(SCREENSHOT_DIR, filename);
+
+  try {
+    await access(filePath);
+    res.type('image/webp');
+    return res.sendFile(filePath);
+  } catch (e) {
+    return res.status(404).send('Not found');
+  }
 });
 
 // Main endpoint
@@ -569,7 +820,7 @@ app.get('/preview', async (req, res) => {
     
     if (isAmazon) {
       console.log(`Using headless browser for Amazon URL: ${url}`);
-      html = await renderWithBrowser(url);
+      html = await fetchRenderedHtml(url);
       if (html) {
         const $ = cheerio.load(html);
         
@@ -695,29 +946,49 @@ app.get('/preview', async (req, res) => {
       }
     }
 
-    // If HTML validation failed for all User-Agents, return an error response
+    // axios could not fetch HTML (e.g. Cloudflare) — try Chromium
     if (htmlValidationFailed) {
-      return res.status(400).json({
-        error: 'The provided URL did not return valid HTML content',
-        metadata: {
-          title: null,
-          description: null,
-          image: null,
-          domain: null
+      console.log(`HTML fetch failed for ${url}, trying browser fallback`);
+      const browserMetadata = await fetchMetadataWithBrowser(url);
+
+      if (browserMetadata) {
+        if (browserMetadata.title) bestMetadata.title = browserMetadata.title;
+        if (browserMetadata.description) bestMetadata.description = browserMetadata.description;
+        if (browserMetadata.image) bestMetadata.image = browserMetadata.image;
+        if (browserMetadata.domain) bestMetadata.domain = browserMetadata.domain;
+      } else {
+        console.log(`Browser fallback failed for ${url}, trying screenshot only`);
+        const screenshotUrl = await captureScreenshot(url);
+        if (screenshotUrl) {
+          bestMetadata.image = screenshotUrl;
         }
-      });
+      }
+
+      if (!bestMetadata.domain) {
+        bestMetadata.domain = extractDomainFromUrl(url);
+      }
     }
+
+    if (!bestMetadata.image && !htmlValidationFailed) {
+      console.log(`No image found for ${url}, capturing screenshot fallback`);
+      const screenshotUrl = await captureScreenshot(url);
+      if (screenshotUrl) {
+        bestMetadata.image = screenshotUrl;
+      }
+    }
+
+    applyUrlFallbacks(bestMetadata, url);
 
     // Always return the metadata, even if some fields are null
     res.json(bestMetadata);
   } catch (err) {
-    // In case of any errors, return all null values with 200 status
-    res.json({
+    // In case of any errors, return URL-derived fallbacks with 200 status
+    res.json(applyUrlFallbacks({
       title: null,
       description: null,
       image: null,
       domain: null
-    });
+    }, url));
   }
 });
 

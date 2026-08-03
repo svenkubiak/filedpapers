@@ -109,7 +109,7 @@ environments:
         secure: false
     persistence:
       mongo:
-        embedded: false
+        embedded: true
         host: localhost
         port: 31031
         package: models

@@ -24,7 +24,7 @@ public final class LinkPreviewFetcher {
         if (StringUtils.isBlank(language)) { language = "en"; }
 
         var result = Http.get(getUrl() + "/preview?lang=" + language + "&url=" + URLEncoder.encode(url, StandardCharsets.UTF_8))
-                .withTimeout(Duration.ofSeconds(10))
+                .withTimeout(Duration.ofSeconds(30))
                 .send();
 
         LOG.info("Link preview fetch result: {}", result.body());
@@ -42,7 +42,7 @@ public final class LinkPreviewFetcher {
 
         String title = Optional.ofNullable(flatMap.get("title")).orElse(Application.getInstance(Messages.class).get("item.missing.title"));
         String description = Optional.ofNullable(flatMap.get("description")).orElse(Strings.EMPTY);
-        String image = Optional.ofNullable(flatMap.get("image")).orElse(Const.PLACEHOLDER_IMAGE);
+        String image = resolveImageUrl(Optional.ofNullable(flatMap.get("image")).orElse(Const.PLACEHOLDER_IMAGE));
         String domain = Optional.ofNullable(flatMap.get("domain")).orElse(Strings.EMPTY);
 
         LOG.info("LinkPreview title: {}", title);
@@ -51,6 +51,14 @@ public final class LinkPreviewFetcher {
         LOG.info("LinkPreview domain: {}", domain);
 
         return new LinkPreview(title, description, url, domain, image);
+    }
+
+    private static String resolveImageUrl(String image) {
+        if (StringUtils.isNotBlank(image) && image.startsWith("/screenshots/")) {
+            return getUrl() + image;
+        }
+
+        return image;
     }
 
     public static String getUrl() {
