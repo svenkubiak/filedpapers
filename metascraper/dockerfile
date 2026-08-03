@@ -1,4 +1,14 @@
-FROM node:26-trixie-slim
+FROM node:26-trixie-slim AS dependencies
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+
+RUN npm ci --omit=dev \
+    && npm cache clean --force
+
+
+FROM node:26-trixie-slim AS runtime
 
 ENV NODE_ENV=production \
     PORT=3000 \
@@ -13,17 +23,16 @@ RUN apt-get update \
         chromium-sandbox \
         fonts-liberation \
         fonts-dejavu-core \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /usr/local/lib/node_modules/npm \
+    && rm -f /usr/local/bin/npm \
+              /usr/local/bin/npx \
+              /usr/local/bin/corepack
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
-
-RUN npm ci --omit=dev \
-    && npm cache clean --force \
-    && rm -rf /usr/local/lib/node_modules/npm \
-    && rm -f /usr/local/bin/npm /usr/local/bin/npx \
-    && rm -f /usr/local/bin/corepack
+COPY --from=dependencies --chown=node:node \
+    /app/node_modules ./node_modules
 
 COPY --chown=node:node . .
 
