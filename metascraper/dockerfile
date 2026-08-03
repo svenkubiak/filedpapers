@@ -1,4 +1,4 @@
-FROM node:24-slim
+FROM node:26-trixie-slim
 
 # Install Chromium and all required dependencies
 RUN apt-get update && apt-get install -y \
