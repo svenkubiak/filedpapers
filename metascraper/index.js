@@ -81,6 +81,7 @@ const BROWSER_TIMEOUT_MS = 20000;
 const BROWSER_SETTLE_MS = 1000;
 const SCREENSHOT_DIR = path.join(os.tmpdir(), 'metascraper-screenshots');
 const SCREENSHOT_TTL_MS = 60 * 60 * 1000;
+const SINGLE_FILE_BIN = path.join(__dirname, 'node_modules', '.bin', 'single-file');
 
 const launchBrowser = async () => {
   const chromiumPath = await findChromiumPath();
@@ -125,8 +126,50 @@ const withBrowserPage = async (url, pageHandler) => {
   }
 };
 
-const fetchRenderedHtml = async (url) => {
-  return withBrowserPage(url, async (page) => page.content());
+// Render Amazon pages with single-file-cli — Puppeteer page.content() does not reliably capture product metadata
+const renderWithBrowser = async (url) => {
+  try {
+    const timestamp = Date.now();
+    const outputFile = path.join(os.tmpdir(), `preview_${timestamp}.html`);
+    const chromiumPath = await findChromiumPath();
+
+    let singleFileCommand = `"${SINGLE_FILE_BIN}" "${url}" "${outputFile}" --browser-headless true`;
+
+    if (chromiumPath) {
+      singleFileCommand += ` --browser-executable-path "${chromiumPath}"`;
+    } else {
+      console.log('Chromium not found in standard paths, letting single-file auto-detect');
+    }
+
+    const chromiumFlags = process.env.CHROMIUM_FLAGS || '--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage --disable-gpu';
+    if (chromiumFlags) {
+      singleFileCommand += ` --browser-args "${chromiumFlags}"`;
+    }
+
+    singleFileCommand += ` --browser-wait-until load --browser-load-max-time 10000 --browser-capture-max-time 10000 --load-deferred-images false --remove-hidden-elements false --remove-unused-styles false --compress-html false --compress-css false --group-duplicate-images false --resolve-links false --insert-single-file-comment false --blocked-URL-pattern ".*cookie.*" --blocked-URL-pattern ".*consent.*" --blocked-URL-pattern ".*gdpr.*" --blocked-URL-pattern ".*privacy.*" --blocked-URL-pattern ".*banner.*" --blocked-URL-pattern ".*popup.*" --blocked-URL-pattern ".*modal.*" --blocked-URL-pattern ".*overlay.*"`;
+
+    const { stderr } = await execAsync(singleFileCommand, {
+      timeout: 15000,
+      maxBuffer: 50 * 1024 * 1024
+    });
+
+    if (stderr && !stderr.includes('Warning')) {
+      console.error('SingleFile stderr:', stderr);
+    }
+
+    const html = await fs.readFile(outputFile, 'utf8');
+
+    try {
+      await fs.unlink(outputFile);
+    } catch (cleanupError) {
+      console.error('Failed to cleanup temporary file:', cleanupError);
+    }
+
+    return html;
+  } catch (error) {
+    console.error('Browser rendering error:', error);
+    return null;
+  }
 };
 
 const extractDomainFromUrl = (url) => {
@@ -820,7 +863,7 @@ app.get('/preview', async (req, res) => {
     
     if (isAmazon) {
       console.log(`Using headless browser for Amazon URL: ${url}`);
-      html = await fetchRenderedHtml(url);
+      html = await renderWithBrowser(url);
       if (html) {
         const $ = cheerio.load(html);
         
@@ -845,8 +888,9 @@ app.get('/preview', async (req, res) => {
           bestMetadata.domain = currentDomain;
         }
 
-        // If we have all required metadata, return it
-        if (hasAllRequiredMetadata(bestMetadata)) {
+        // If we have product title and image, return (domain filled via URL fallback if needed)
+        if (bestMetadata.title && bestMetadata.image) {
+          applyUrlFallbacks(bestMetadata, url);
           return res.json(bestMetadata);
         }
       }
@@ -956,7 +1000,7 @@ app.get('/preview', async (req, res) => {
         if (browserMetadata.description) bestMetadata.description = browserMetadata.description;
         if (browserMetadata.image) bestMetadata.image = browserMetadata.image;
         if (browserMetadata.domain) bestMetadata.domain = browserMetadata.domain;
-      } else {
+      } else if (!isAmazonUrl(url)) {
         console.log(`Browser fallback failed for ${url}, trying screenshot only`);
         const screenshotUrl = await captureScreenshot(url);
         if (screenshotUrl) {
@@ -969,7 +1013,7 @@ app.get('/preview', async (req, res) => {
       }
     }
 
-    if (!bestMetadata.image && !htmlValidationFailed) {
+    if (!bestMetadata.image && !htmlValidationFailed && !isAmazonUrl(url)) {
       console.log(`No image found for ${url}, capturing screenshot fallback`);
       const screenshotUrl = await captureScreenshot(url);
       if (screenshotUrl) {
