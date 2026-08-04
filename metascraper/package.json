@@ -7,11 +7,19 @@
     "start": "node index.js"
   },
   "dependencies": {
-    "cheerio": "1.2.0",
-    "sharp": "^0.35.3",
     "axios": "^1.19.0",
     "express": "^5.2.1",
+    "metascraper": "^5.53.0",
+    "metascraper-amazon": "^5.53.0",
+    "metascraper-description": "^5.53.0",
+    "metascraper-image": "^5.53.0",
+    "metascraper-title": "^5.53.0",
+    "metascraper-url": "^5.53.0",
     "puppeteer-core": "^25.4.0",
+    "sharp": "^0.35.3",
     "single-file-cli": "^2.0.83"
+  },
+  "allowScripts": {
+    "re2@1.26.1": true
   }
 }
