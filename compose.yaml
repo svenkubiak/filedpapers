@@ -27,6 +27,11 @@ services:
       timeout: 5s
       retries: 3
       start_period: 30s
+    cpus: "1"
+    cpu_shares: 1024
+    mem_limit: 768m
+    mem_reservation: 512m
+    stop_grace_period: 30s
     networks:
       - filedpapers-network
 
@@ -47,6 +52,11 @@ services:
       timeout: 5s
       retries: 5
       start_period: 30s
+    cpus: "1"
+    cpu_shares: 1024
+    mem_limit: 768m
+    mem_reservation: 512m
+    stop_grace_period: 30s
     networks:
       - filedpapers-network
 
@@ -54,6 +64,15 @@ services:
     container_name: filedpapers-metascraper
     image: ghcr.io/svenkubiak/filedpapers/filedpapers-metascraper:${VERSION}
     restart: always
+    # Chromium/single-file for Amazon needs more than 1g — 1g in prod causes OOM kills.
+    shm_size: "512mb"
+    cpus: "2"
+    cpu_shares: 1024
+    mem_limit: 1536m
+    mem_reservation: 1024m
+    stop_grace_period: 30s
+    networks:
+      - filedpapers-network
     healthcheck:
       test:
         [

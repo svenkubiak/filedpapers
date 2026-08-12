@@ -47,6 +47,15 @@ const SCREENSHOT_DIR = path.join(os.tmpdir(), 'metascraper-screenshots');
 const SCREENSHOT_TTL_MS = 60 * 60 * 1000;
 const SINGLE_FILE_BIN = path.join(__dirname, 'node_modules', '.bin', 'single-file');
 
+// Only one Chromium/single-file job at a time — prevents OOM when multiple previews queue up.
+let browserJobQueue = Promise.resolve();
+
+const runWithBrowserLock = (task) => {
+  const job = browserJobQueue.then(task, task);
+  browserJobQueue = job.then(() => {}, () => {});
+  return job;
+};
+
 const USER_AGENTS = [
   'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
   'Mozilla/5.0 (compatible; LinkPreviewBot/1.0; +http://example.com/bot)',
@@ -521,6 +530,26 @@ const findValidImageInHtml = async (html, baseUrl, pageUrl) => {
   return null;
 };
 
+const findAmazonImageInHtml = async (html, pageUrl) => {
+  if (!html) return null;
+
+  const imgTags = html.match(/<img\b[^>]*>/gi) || [];
+  for (const tag of imgTags) {
+    const isAmazonImage = /(?:id=["']landingImage["']|data-a-image-name=["']landingImage["']|class=["'][^"']*a-dynamic-image)/i.test(tag);
+    if (!isAmazonImage) continue;
+
+    const hires = tag.match(/\bdata-old-hires=["']([^"']+)["']/i);
+    const src = tag.match(/\b(?:src|data-src)=["']([^"']+)["']/i);
+    const candidate = hires?.[1] || src?.[1];
+    if (!candidate || candidate.startsWith('data:')) continue;
+
+    const valid = await validateImageUrl(resolveUrl(candidate, pageUrl), pageUrl);
+    if (valid) return valid;
+  }
+
+  return null;
+};
+
 const normalizeScrapedMetadata = async (scraped, url, html) => {
   let title = cleanText(scraped.title);
   if (isAmazonUrl(url)) {
@@ -535,6 +564,10 @@ const normalizeScrapedMetadata = async (scraped, url, html) => {
 
   if (isGoogleMapsUrl(url) && html) {
     image = await resolveGoogleMapsImage(html, url, image);
+  }
+
+  if (!image && html && isAmazonUrl(url)) {
+    image = await findAmazonImageInHtml(html, url);
   }
 
   if (!image && html && !isAmazonUrl(url) && !isGoogleMapsUrl(url)) {
@@ -753,32 +786,34 @@ const launchBrowser = async () => {
 };
 
 const withBrowserPage = async (url, pageHandler) => {
-  let browser;
+  return runWithBrowserLock(async () => {
+    let browser;
 
-  try {
-    browser = await launchBrowser();
-    if (!browser) {
-      console.error('Browser launch failed: Chromium not found');
+    try {
+      browser = await launchBrowser();
+      if (!browser) {
+        console.error('Browser launch failed: Chromium not found');
+        return null;
+      }
+
+      const page = await browser.newPage();
+      await page.setViewport(BROWSER_VIEWPORT);
+      await page.goto(url, {
+        waitUntil: 'networkidle2',
+        timeout: BROWSER_TIMEOUT_MS
+      });
+      await new Promise((resolve) => setTimeout(resolve, BROWSER_SETTLE_MS));
+
+      return await pageHandler(page);
+    } catch (error) {
+      console.error('Browser page error:', error);
       return null;
+    } finally {
+      if (browser) {
+        await browser.close().catch(() => {});
+      }
     }
-
-    const page = await browser.newPage();
-    await page.setViewport(BROWSER_VIEWPORT);
-    await page.goto(url, {
-      waitUntil: 'networkidle2',
-      timeout: BROWSER_TIMEOUT_MS
-    });
-    await new Promise((resolve) => setTimeout(resolve, BROWSER_SETTLE_MS));
-
-    return await pageHandler(page);
-  } catch (error) {
-    console.error('Browser page error:', error);
-    return null;
-  } finally {
-    if (browser) {
-      await browser.close().catch(() => {});
-    }
-  }
+  });
 };
 
 const ensureScreenshotDir = async () => {
@@ -846,7 +881,7 @@ const fetchMetadataWithBrowser = async (url) => {
 
     const metadata = await extractFromHtml(url, html);
 
-    if (!metadata.image) {
+    if (!metadata.image && !isAmazonUrl(url)) {
       console.log(`No image found in browser for ${url}, capturing screenshot`);
       metadata.image = await saveScreenshotFromPage(page);
     }
@@ -857,69 +892,92 @@ const fetchMetadataWithBrowser = async (url) => {
 
 // Amazon pages: single-file-cli for JS-rendered product HTML
 const renderWithBrowser = async (url) => {
-  try {
-    const timestamp = Date.now();
-    const outputFile = path.join(os.tmpdir(), `preview_${timestamp}.html`);
-    const chromiumPath = await findChromiumPath();
-    const chromiumFlags = getChromiumArgs();
-
-    const args = [
-      url,
-      outputFile,
-      '--browser-headless', 'true',
-      '--browser-wait-until', 'load',
-      '--browser-load-max-time', '10000',
-      '--browser-capture-max-time', '10000',
-      '--load-deferred-images', 'false',
-      '--remove-hidden-elements', 'false',
-      '--remove-unused-styles', 'false',
-      '--compress-html', 'false',
-      '--compress-css', 'false',
-      '--group-duplicate-images', 'false',
-      '--resolve-links', 'false',
-      '--insert-single-file-comment', 'false',
-      '--blocked-URL-pattern', '.*cookie.*',
-      '--blocked-URL-pattern', '.*consent.*',
-      '--blocked-URL-pattern', '.*gdpr.*',
-      '--blocked-URL-pattern', '.*privacy.*',
-      '--blocked-URL-pattern', '.*banner.*',
-      '--blocked-URL-pattern', '.*popup.*',
-      '--blocked-URL-pattern', '.*modal.*',
-      '--blocked-URL-pattern', '.*overlay.*'
-    ];
-
-    if (chromiumPath) {
-      args.push('--browser-executable-path', chromiumPath);
-    } else {
-      console.log('Chromium not found in standard paths, letting single-file auto-detect');
-    }
-
-    if (chromiumFlags.length) {
-      args.push('--browser-args', JSON.stringify(chromiumFlags));
-    }
-
-    const { stderr } = await execFileAsync(SINGLE_FILE_BIN, args, {
-      timeout: 15000,
-      maxBuffer: 50 * 1024 * 1024
-    });
-
-    if (stderr && !stderr.includes('Warning')) {
-      console.error('SingleFile stderr:', stderr);
-    }
-
-    const html = await fs.readFile(outputFile, 'utf8');
-
+  return runWithBrowserLock(async () => {
     try {
-      await fs.unlink(outputFile);
-    } catch (cleanupError) {
-      console.error('Failed to cleanup temporary file:', cleanupError);
-    }
+      const timestamp = Date.now();
+      const outputFile = path.join(os.tmpdir(), `preview_${timestamp}.html`);
+      const chromiumPath = await findChromiumPath();
+      const chromiumFlags = getChromiumArgs();
 
-    return html;
-  } catch (error) {
-    console.error('Browser rendering error:', error);
-    return null;
+      const args = [
+        url,
+        outputFile,
+        '--browser-headless', 'true',
+        '--browser-wait-until', 'load',
+        '--browser-load-max-time', '10000',
+        '--browser-capture-max-time', '10000',
+        '--load-deferred-images', 'false',
+        '--remove-hidden-elements', 'false',
+        '--remove-unused-styles', 'false',
+        '--compress-html', 'false',
+        '--compress-css', 'false',
+        '--group-duplicate-images', 'false',
+        '--resolve-links', 'false',
+        '--insert-single-file-comment', 'false',
+        '--blocked-URL-pattern', '.*cookie.*',
+        '--blocked-URL-pattern', '.*consent.*',
+        '--blocked-URL-pattern', '.*gdpr.*',
+        '--blocked-URL-pattern', '.*privacy.*',
+        '--blocked-URL-pattern', '.*banner.*',
+        '--blocked-URL-pattern', '.*popup.*',
+        '--blocked-URL-pattern', '.*modal.*',
+        '--blocked-URL-pattern', '.*overlay.*'
+      ];
+
+      if (chromiumPath) {
+        args.push('--browser-executable-path', chromiumPath);
+      } else {
+        console.log('Chromium not found in standard paths, letting single-file auto-detect');
+      }
+
+      if (chromiumFlags.length) {
+        args.push('--browser-args', JSON.stringify(chromiumFlags));
+      }
+
+      const { stderr } = await execFileAsync(SINGLE_FILE_BIN, args, {
+        timeout: 30000,
+        maxBuffer: 50 * 1024 * 1024
+      });
+
+      if (stderr && !stderr.includes('Warning')) {
+        console.error('SingleFile stderr:', stderr);
+      }
+
+      const html = await fs.readFile(outputFile, 'utf8');
+
+      try {
+        await fs.unlink(outputFile);
+      } catch (cleanupError) {
+        console.error('Failed to cleanup temporary file:', cleanupError);
+      }
+
+      return html;
+    } catch (error) {
+      console.error('Browser rendering error:', error);
+      return null;
+    }
+  });
+};
+
+const fetchAmazonMetadata = async (url) => {
+  let html = await renderWithBrowser(url);
+  let metadata = { ...EMPTY_METADATA };
+
+  if (html) {
+    metadata = mergeMetadata(metadata, await extractFromHtml(url, html), url);
   }
+
+  if (!metadata.image) {
+    if (!html) {
+      console.log(`Single-file failed for ${url}, trying puppeteer HTML extraction`);
+      html = await withBrowserPage(url, async (page) => page.content());
+    }
+    if (html) {
+      metadata = mergeMetadata(metadata, await extractFromHtml(url, html), url);
+    }
+  }
+
+  return metadata;
 };
 
 app.get('/health', (req, res) => {
@@ -962,20 +1020,18 @@ app.get('/preview', async (req, res) => {
 
     const isAmazon = isAmazonUrl(fetchUrl);
     const isMastodon = Boolean(parseMastodonUrl(fetchUrl));
-    let html = null;
 
     if (isMastodon) {
       bestMetadata = await fetchMastodonMetadata(fetchUrl) || { ...EMPTY_METADATA };
     } else if (isAmazon) {
-      console.log(`Using single-file browser for Amazon URL: ${fetchUrl}`);
-      html = await renderWithBrowser(fetchUrl);
-      if (html) {
-        bestMetadata = mergeMetadata(bestMetadata, await extractFromHtml(fetchUrl, html), fetchUrl);
-      }
+      bestMetadata = await fetchAmazonMetadata(fetchUrl);
+      applyUrlFallbacks(bestMetadata, fetchUrl);
+      return res.json(bestMetadata);
     }
 
-    let htmlValidationFailed = !html;
-    let lastHtml = html;
+    let html = null;
+    let htmlValidationFailed = true;
+    let lastHtml = null;
 
     // Mastodon already resolved via API; skip HTML/UA scraping for it.
     if (!isMastodon) {
@@ -1033,8 +1089,8 @@ app.get('/preview', async (req, res) => {
       }
     }
 
-    // Last resort for every URL type: viewport screenshot when no image was found
-    if (!bestMetadata.image) {
+    // Last resort: viewport screenshot when no image was found (never for Amazon)
+    if (!bestMetadata.image && !isAmazon) {
       console.log(`No image found for ${fetchUrl}, capturing screenshot fallback`);
       const screenshotUrl = await captureScreenshot(fetchUrl);
       if (screenshotUrl) {

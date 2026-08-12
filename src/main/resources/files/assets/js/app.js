@@ -361,7 +361,7 @@ function addBookmark(e) {
         confirmAddBookmark.classList.add('is-loading');
         confirmAddBookmark.disabled = true;
 
-        window.apiPost('/api/v1/items', {
+        window.apiPost('/api/v1/items?async=true', {
             url: url,
             category: category
         })

@@ -24,7 +24,7 @@ public final class LinkPreviewFetcher {
         if (StringUtils.isBlank(language)) { language = "en"; }
 
         var result = Http.get(getUrl() + "/preview?lang=" + language + "&url=" + URLEncoder.encode(url, StandardCharsets.UTF_8))
-                .withTimeout(Duration.ofSeconds(30))
+                .withTimeout(Duration.ofSeconds(90))
                 .send();
 
         LOG.info("Link preview fetch result: {}", result.body());
