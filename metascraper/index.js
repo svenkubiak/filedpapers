@@ -965,85 +965,76 @@ app.get('/preview', async (req, res) => {
     let html = null;
 
     if (isMastodon) {
-      const mastodonMetadata = await fetchMastodonMetadata(fetchUrl) || { ...EMPTY_METADATA };
-      applyUrlFallbacks(mastodonMetadata, fetchUrl);
-      return res.json(mastodonMetadata);
-    }
-
-    if (isAmazon) {
+      bestMetadata = await fetchMastodonMetadata(fetchUrl) || { ...EMPTY_METADATA };
+    } else if (isAmazon) {
       console.log(`Using single-file browser for Amazon URL: ${fetchUrl}`);
       html = await renderWithBrowser(fetchUrl);
       if (html) {
         bestMetadata = mergeMetadata(bestMetadata, await extractFromHtml(fetchUrl, html), fetchUrl);
-        applyUrlFallbacks(bestMetadata, fetchUrl);
-
-        if (bestMetadata.title || bestMetadata.image) {
-          return res.json(bestMetadata);
-        }
       }
     }
 
     let htmlValidationFailed = !html;
     let lastHtml = html;
 
-    for (const userAgent of getUserAgentsForUrl(fetchUrl)) {
-      try {
-        const axiosResponse = await axios.get(fetchUrl, {
-          headers: {
-            'User-Agent': userAgent,
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-            'Accept-Language': `${lang},en;q=0.8,*;q=0.5`,
-            'Accept-Encoding': 'gzip, deflate, br',
-            'Connection': 'keep-alive'
-          },
-          timeout: 15000,
-          maxRedirects: 5
-        });
-
-        const contentType = axiosResponse.headers['content-type'] || '';
-        const isHtmlContentType = contentType.includes('text/html') ||
-          contentType.includes('application/xhtml+xml');
-
-        const htmlData = axiosResponse.data;
-        const isHtmlContent = typeof htmlData === 'string' &&
-          (htmlData.trim().toLowerCase().startsWith('<!doctype html') ||
-            htmlData.trim().toLowerCase().startsWith('<html'));
-
-        if (!isHtmlContentType || !isHtmlContent) {
-          console.log(`Skipping non-HTML content from ${fetchUrl} (Content-Type: ${contentType})`);
-          continue;
-        }
-
-        htmlValidationFailed = false;
-        lastHtml = htmlData;
-        bestMetadata = mergeMetadata(bestMetadata, await extractFromHtml(fetchUrl, htmlData), fetchUrl);
-
+    // Mastodon already resolved via API; skip HTML/UA scraping for it.
+    if (!isMastodon) {
+      for (const userAgent of getUserAgentsForUrl(fetchUrl)) {
         if (hasAllRequiredMetadata(bestMetadata)) break;
-        if (isGoogleMapsUrl(fetchUrl) && getGoogleMapsImageScore(bestMetadata.image) >= 100) break;
-      } catch (error) {
-        // next User-Agent
+
+        try {
+          const axiosResponse = await axios.get(fetchUrl, {
+            headers: {
+              'User-Agent': userAgent,
+              'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+              'Accept-Language': `${lang},en;q=0.8,*;q=0.5`,
+              'Accept-Encoding': 'gzip, deflate, br',
+              'Connection': 'keep-alive'
+            },
+            timeout: 15000,
+            maxRedirects: 5
+          });
+
+          const contentType = axiosResponse.headers['content-type'] || '';
+          const isHtmlContentType = contentType.includes('text/html') ||
+            contentType.includes('application/xhtml+xml');
+
+          const htmlData = axiosResponse.data;
+          const isHtmlContent = typeof htmlData === 'string' &&
+            (htmlData.trim().toLowerCase().startsWith('<!doctype html') ||
+              htmlData.trim().toLowerCase().startsWith('<html'));
+
+          if (!isHtmlContentType || !isHtmlContent) {
+            console.log(`Skipping non-HTML content from ${fetchUrl} (Content-Type: ${contentType})`);
+            continue;
+          }
+
+          htmlValidationFailed = false;
+          lastHtml = htmlData;
+          bestMetadata = mergeMetadata(bestMetadata, await extractFromHtml(fetchUrl, htmlData), fetchUrl);
+
+          if (hasAllRequiredMetadata(bestMetadata)) break;
+          if (isGoogleMapsUrl(fetchUrl) && getGoogleMapsImageScore(bestMetadata.image) >= 100) break;
+        } catch (error) {
+          // next User-Agent
+        }
       }
-    }
 
-    enhanceMetadataForSite(bestMetadata, fetchUrl, lastHtml);
+      enhanceMetadataForSite(bestMetadata, fetchUrl, lastHtml);
 
-    // Cloudflare / blocked HTML → Chromium (not for Amazon)
-    if (htmlValidationFailed && !isAmazon) {
-      console.log(`HTML fetch failed for ${fetchUrl}, trying browser fallback`);
-      const browserMetadata = await fetchMetadataWithBrowser(fetchUrl);
+      // Cloudflare / blocked / empty HTML → Chromium metadata (+ screenshot inside if needed)
+      if (htmlValidationFailed && !bestMetadata.image) {
+        console.log(`HTML fetch failed for ${fetchUrl}, trying browser fallback`);
+        const browserMetadata = await fetchMetadataWithBrowser(fetchUrl);
 
-      if (browserMetadata) {
-        bestMetadata = mergeMetadata(bestMetadata, browserMetadata, fetchUrl);
-      } else {
-        console.log(`Browser fallback failed for ${fetchUrl}, trying screenshot only`);
-        const screenshotUrl = await captureScreenshot(fetchUrl);
-        if (screenshotUrl) {
-          bestMetadata.image = screenshotUrl;
+        if (browserMetadata) {
+          bestMetadata = mergeMetadata(bestMetadata, browserMetadata, fetchUrl);
         }
       }
     }
 
-    if (!bestMetadata.image && !htmlValidationFailed && !isAmazon && !isMastodon) {
+    // Last resort for every URL type: viewport screenshot when no image was found
+    if (!bestMetadata.image) {
       console.log(`No image found for ${fetchUrl}, capturing screenshot fallback`);
       const screenshotUrl = await captureScreenshot(fetchUrl);
       if (screenshotUrl) {
