@@ -15,7 +15,7 @@ public class ApplicationController {
     }
 
     public Response health() {
-        String status = datastore.isHealthy() ? "ok" : "error";
+        String status = datastore.isHealthy() ? "OK" : "error";
         return Response.ok().bodyText(status);
     }
 
