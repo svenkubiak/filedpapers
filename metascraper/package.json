@@ -15,9 +15,9 @@
     "metascraper-image": "^5.56.2",
     "metascraper-title": "^5.56.2",
     "metascraper-url": "^5.56.2",
-    "puppeteer-core": "^25.9.0",
+    "puppeteer-core": "^25.10.0",
     "sharp": "^0.35.4",
-    "single-file-cli": "^2.6.4"
+    "single-file-cli": "^2.9.0"
   },
   "overrides": {
     "qs": "6.16.0"
