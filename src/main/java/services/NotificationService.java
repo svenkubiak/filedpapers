@@ -19,7 +19,6 @@ import java.util.Objects;
 @Singleton
 public class NotificationService {
     private static final Logger LOG = LogManager.getLogger(NotificationService.class);
-    private final Messages messages;
     private final DataService dataService;
     private final String from;
     private final String url;
@@ -30,7 +29,6 @@ public class NotificationService {
                                @Named("smtp.from") String from,
                                @Named("application.url") String url) {
         this.dataService = Objects.requireNonNull(dataService, Required.DATA_SERVICE);
-        this.messages = Objects.requireNonNull(messages, Required.MESSAGES);
         this.from = Objects.requireNonNull(from, Required.FROM);
         this.url = Objects.requireNonNull(url, Required.URL);
     }
@@ -42,7 +40,7 @@ public class NotificationService {
         var user = dataService.findUser(username);
         if (user != null) {
             try {
-                messages.reload(Locale.of(user.getLanguage()));
+                var messages = new Messages(Locale.of(user.getLanguage()));
                 Map<String, Object> content = new HashMap<>();
                 content.put("token", token);
                 content.put("url", url);
@@ -67,7 +65,7 @@ public class NotificationService {
         var user = dataService.findUser(username);
         if (user != null) {
             try {
-                messages.reload(Locale.of(user.getLanguage()));
+                var messages = new Messages(Locale.of(user.getLanguage()));
                 Map<String, Object> content = new HashMap<>();
                 content.put("token", token);
                 content.put("url", url);
@@ -92,7 +90,7 @@ public class NotificationService {
         var user = dataService.findUser(username);
         if (user != null) {
             try {
-                messages.reload(Locale.of(user.getLanguage()));
+                var messages = new Messages(Locale.of(user.getLanguage()));
                 Map<String, Object> content = new HashMap<>();
                 content.put("messages", messages);
                 content.put("message", message);
