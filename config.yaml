@@ -6,6 +6,8 @@ default:
     url: env{}
     secret: env{}
     registration: env{}
+    parameter:
+      strict: true
   connector:
     http:
       host: 0.0.0.0
