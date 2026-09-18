@@ -1,4 +1,4 @@
-FROM amazoncorretto:26-headless
+FROM amazoncorretto:25-headless
 
 RUN yum install -y shadow-utils \
     && yum clean all \
