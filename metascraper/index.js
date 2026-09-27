@@ -1,5 +1,6 @@
 const express = require('express');
-const axios = require('axios');
+const { safeAxios, isAllowedUrl } = require('./ssrf-guard');
+const { startGuardedProxy } = require('./browser-proxy');
 const sharp = require('sharp');
 const puppeteer = require('puppeteer-core');
 const metascraperFactory = require('metascraper');
@@ -46,6 +47,9 @@ const BROWSER_SETTLE_MS = 1000;
 const SCREENSHOT_DIR = path.join(os.tmpdir(), 'metascraper-screenshots');
 const SCREENSHOT_TTL_MS = 60 * 60 * 1000;
 const SINGLE_FILE_BIN = path.join(__dirname, 'node_modules', '.bin', 'single-file');
+
+// Port of the guarded forward proxy, set before the http server starts accepting.
+let browserProxyPort = null;
 
 // Only one Chromium/single-file job at a time — prevents OOM when multiple previews queue up.
 let browserJobQueue = Promise.resolve();
@@ -142,7 +146,18 @@ const findChromiumPath = async () => {
 
 const getChromiumArgs = () => {
   const flags = process.env.CHROMIUM_FLAGS || '--no-sandbox --disable-setuid-sandbox --disable-dev-shm-usage --disable-gpu';
-  return flags.split(/\s+/).filter(Boolean);
+  const args = flags.split(/\s+/).filter(Boolean);
+
+  if (browserProxyPort) {
+    // Everything the browser requests, the main document and every subresource,
+    // goes through the guarded proxy. "<-loopback>" cancels Chromium's built in
+    // exception for loopback addresses, which would otherwise let a page reach
+    // services on 127.0.0.1 without passing the proxy at all.
+    args.push(`--proxy-server=http://127.0.0.1:${browserProxyPort}`);
+    args.push('--proxy-bypass-list=<-loopback>');
+  }
+
+  return args;
 };
 
 const cleanText = (text) => {
@@ -164,7 +179,7 @@ const getImageDimensions = async (imageUrl, options = {}) => {
   const maxAspectRatio = options.maxAspectRatio ?? MAX_ASPECT_RATIO;
 
   try {
-    const response = await axios.get(imageUrl, {
+    const response = await safeAxios.get(imageUrl, {
       responseType: 'arraybuffer',
       timeout: 5000,
       maxContentLength: 10 * 1024 * 1024
@@ -225,7 +240,7 @@ const isAmazonUrl = (url) => {
 
 const resolveFinalUrl = async (url) => {
   try {
-    const response = await axios.get(url, {
+    const response = await safeAxios.get(url, {
       maxRedirects: 10,
       timeout: 15000,
       headers: {
@@ -625,7 +640,7 @@ const fetchImageFromLinkedUrl = async (linkUrl) => {
   if (!linkUrl) return null;
 
   try {
-    const response = await axios.get(linkUrl, {
+    const response = await safeAxios.get(linkUrl, {
       headers: {
         'User-Agent': USER_AGENTS[1],
         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -714,7 +729,7 @@ const fetchMastodonMetadata = async (url) => {
   if (!parsed) return null;
 
   try {
-    const response = await axios.get(parsed.apiUrl, {
+    const response = await safeAxios.get(parsed.apiUrl, {
       headers: {
         'User-Agent': USER_AGENTS[1],
         'Accept': 'application/json'
@@ -1005,6 +1020,10 @@ app.get('/preview', async (req, res) => {
   const url = req.query.url;
   const lang = req.query.lang || 'en-US';
   if (!url) return res.status(400).json({ error: 'Missing ?url=' });
+  if (!isAllowedUrl(url)) {
+    console.warn('Rejected preview for disallowed url');
+    return res.status(400).json({ error: 'Disallowed url' });
+  }
 
   try {
     let bestMetadata = { ...EMPTY_METADATA };
@@ -1012,7 +1031,7 @@ app.get('/preview', async (req, res) => {
     let fetchUrl = url;
     if (isAmazonUrl(url) && isAmazonShortUrl(url)) {
       const resolvedUrl = await resolveFinalUrl(url);
-      if (resolvedUrl && resolvedUrl !== url) {
+      if (resolvedUrl && resolvedUrl !== url && isAllowedUrl(resolvedUrl)) {
         console.log(`Resolved Amazon short URL: ${url} -> ${resolvedUrl}`);
         fetchUrl = resolvedUrl;
       }
@@ -1039,7 +1058,7 @@ app.get('/preview', async (req, res) => {
         if (hasAllRequiredMetadata(bestMetadata)) break;
 
         try {
-          const axiosResponse = await axios.get(fetchUrl, {
+          const axiosResponse = await safeAxios.get(fetchUrl, {
             headers: {
               'User-Agent': userAgent,
               'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
@@ -1106,6 +1125,18 @@ app.get('/preview', async (req, res) => {
   }
 });
 
-app.listen(PORT, () => {
-  console.log(`Filedpapers-Metascraper up and running.`);
-});
+// The proxy has to be up before the first browser launch, so it gates startup.
+// Without it Chromium would reach the network unguarded, which is exactly the
+// hole this is meant to close - so a failure here must not be survivable.
+startGuardedProxy()
+  .then(({ port }) => {
+    browserProxyPort = port;
+
+    app.listen(PORT, () => {
+      console.log(`Filedpapers-Metascraper up and running.`);
+    });
+  })
+  .catch((error) => {
+    console.error('Failed to start the guarded browser proxy, refusing to start:', error);
+    process.exit(1);
+  });

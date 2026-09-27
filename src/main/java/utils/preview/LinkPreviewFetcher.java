@@ -54,7 +54,7 @@ public final class LinkPreviewFetcher {
     }
 
     private static String resolveImageUrl(String image) {
-        if (StringUtils.isNotBlank(image) && image.startsWith("/screenshots/")) {
+        if (StringUtils.isNotBlank(image) && image.startsWith(Const.SCREENSHOTS_PATH)) {
             return getUrl() + image;
         }
 

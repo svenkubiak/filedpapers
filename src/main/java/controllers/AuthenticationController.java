@@ -20,6 +20,7 @@ import models.enums.Role;
 import models.enums.Type;
 import services.DataService;
 import services.NotificationService;
+import utils.PasswordHashing;
 import utils.Utils;
 
 import java.util.Objects;
@@ -77,7 +78,9 @@ public class AuthenticationController {
             Boolean rememberme = form.getBoolean("rememberme").orElse(Boolean.FALSE);
 
             var user = dataService.findUser(username);
-            if (user != null && authentication.isValidLogin(user.getUid(), password, user.getSalt(), user.getPassword())) {
+            if (user != null && PasswordHashing.gated(
+                    () -> authentication.isValidLogin(user.getUid(), password, user.getSalt(), user.getPassword()),
+                    Boolean.FALSE)) {
                 authentication.login(user.getUid());
                 authentication.rememberMe(rememberme);
                 authentication.twoFactorAuthentication(user.isMfa());
@@ -106,12 +109,13 @@ public class AuthenticationController {
 
             var user = dataService.findUserByUid(userUid);
             if (user != null) {
-                if (TotpUtils.verifyTotp(user.getMfaSecret(), mfa)) {
+                if (authentication.isValidSecondFactor(user.getUid(), user.getMfaSecret(), mfa)) {
                     authentication.twoFactorAuthentication(false);
                     authentication.update();
 
                     return Response.redirect("/dashboard");
-                } else if (CommonUtils.matchArgon2(mfa, user.getSalt(), user.getMfaFallback())) {
+                } else if (Utils.isValidMfaFallback(mfa) && PasswordHashing.gated(
+                        () -> CommonUtils.matchArgon2(mfa, user.getSalt(), user.getMfaFallback()), Boolean.FALSE)) {
                     authentication.twoFactorAuthentication(false);
                     authentication.update();
 
@@ -217,10 +221,21 @@ public class AuthenticationController {
             String username = form.get("username");
             String password = form.get("password");
 
-            var user = dataService.findUser(username);
-            if (user == null) {
-                user = new User(username);
-                user.setPassword(CommonUtils.hashArgon2(password, user.getSalt()));
+            var existing = dataService.findUser(username);
+            if (existing == null) {
+                var user = new User(username);
+
+                String hash = PasswordHashing.gated(() -> CommonUtils.hashArgon2(password, user.getSalt()), null);
+                if (hash == null) {
+                    // No hashing slot was free. Abort instead of persisting a user
+                    // without a usable password.
+                    flash.setError(messages.get("toast.error"));
+                    form.keep();
+
+                    return Response.redirect("/auth/signup");
+                }
+
+                user.setPassword(hash);
                 dataService.save(user);
                 dataService.save(new Category(Const.INBOX, user.getUid(), Role.INBOX));
                 dataService.save(new Category(Const.TRASH, user.getUid(), Role.TRASH));

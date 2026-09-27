@@ -3,6 +3,7 @@ package filters;
 import com.nimbusds.jwt.JWTClaimsSet;
 import constants.Const;
 import constants.Required;
+import io.mangoo.constants.ClaimKey;
 import io.mangoo.constants.Header;
 import io.mangoo.constants.Key;
 import io.mangoo.exceptions.MangooJwtException;
@@ -17,7 +18,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import services.AuthenticationService;
 import services.DataService;
+import utils.Utils;
 
+import java.text.ParseException;
 import java.util.Objects;
 
 public class ApiAccessFilter implements PerRequestFilter {
@@ -55,6 +58,15 @@ public class ApiAccessFilter implements PerRequestFilter {
         return StringUtils.isNotBlank(request.getHeader(Header.AUTHORIZATION));
     }
 
+    private boolean isTwoFactorPending(JWTClaimsSet jwtClaimsSet) {
+        try {
+            return Boolean.parseBoolean(jwtClaimsSet.getClaimAsString(ClaimKey.TWO_FACTOR));
+        } catch (ParseException e) {
+            LOG.error("Failed to read two factor claim from authentication cookie", e);
+            return true;
+        }
+    }
+
     private Response authorize(String authorization, Request request, Response response, boolean cookie) {
         try {
             JWTClaimsSet jwtClaimsSet;
@@ -69,12 +81,26 @@ public class ApiAccessFilter implements PerRequestFilter {
                     return Response.unauthorized().end();
                 }
 
+                // The authentication cookie is issued before the second factor is
+                // verified, so a pending second factor has to block api access the
+                // same way it blocks routes bound with withAuthentication().
+                if (cookie && isTwoFactorPending(jwtClaimsSet)) {
+                    return Response.unauthorized().end();
+                }
+
                 if (!cookie && authenticationService.isTokenBlacklisted(jwtClaimsSet.getJWTID())) {
                     return Response.unauthorized().end();
                 }
 
                 String userUid = jwtClaimsSet.getSubject();
-                if (dataService.userExists(userUid)) {
+                if (!Utils.isValidRandom(userUid)) {
+                    return Response.unauthorized().end();
+                }
+
+                // The user has to be loaded anyway to check the token against the
+                // last revocation, so this costs no extra round trip.
+                var user = dataService.findUserByUid(userUid);
+                if (user != null && AuthenticationService.isSessionValid(user, jwtClaimsSet)) {
                     request.addAttribute(Const.USER_UID, userUid);
                     return response;
                 }

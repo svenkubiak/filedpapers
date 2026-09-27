@@ -19,11 +19,15 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.bson.Document;
 import org.bson.types.ObjectId;
+import utils.SsrfGuard;
 import utils.Utils;
+import utils.preview.LinkPreviewFetcher;
 
 import java.io.IOException;
+import java.net.URI;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 import static com.mongodb.client.model.Filters.and;
 import static com.mongodb.client.model.Filters.eq;
@@ -33,6 +37,7 @@ public class MediaService {
     private static final Logger LOG = LogManager.getLogger(MediaService.class);
     private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36";
     private static final String BUCKET_NAME = "filedpapers";
+    private static final Pattern SCREENSHOT_PATTERN = Pattern.compile(Const.SCREENSHOTS_PATH + "[a-zA-Z0-9_-]+\\.webp");
     private static final int MAX_SIZE = 16 * 1024 * 1024; //16MB max size for GridFS
     private final Datastore datastore;
     private final Cache cache;
@@ -143,6 +148,11 @@ public class MediaService {
         Objects.requireNonNull(url, Required.URL);
         Objects.requireNonNull(userUid, Required.USER_UID);
 
+        if (!isScreenshotUrl(url) && !SsrfGuard.isPubliclyRoutable(url)) {
+            LOG.warn("Refused to fetch media from non-public url");
+            return Optional.empty();
+        }
+
         String uid = null;
         var result = Http.get(url)
                 .withHeader("User-Agent", USER_AGENT)
@@ -156,6 +166,29 @@ public class MediaService {
         }
 
         return Optional.ofNullable(uid);
+    }
+
+    /**
+     * Screenshots are served by the metascraper sidecar which is not publicly
+     * routable by design, so the sidecar itself is the only exempted target.
+     * The exemption is limited to the screenshot route; matching on the origin
+     * and the full path keeps a crafted image url from reaching any other
+     * sidecar endpoint.
+     */
+    private boolean isScreenshotUrl(String url) {
+        try {
+            var uri = new URI(url);
+            var sidecar = new URI(LinkPreviewFetcher.getUrl());
+
+            return Objects.equals(uri.getScheme(), sidecar.getScheme())
+                    && Objects.equals(uri.getHost(), sidecar.getHost())
+                    && uri.getPort() == sidecar.getPort()
+                    && uri.getQuery() == null
+                    && uri.getPath() != null
+                    && SCREENSHOT_PATTERN.matcher(uri.getPath()).matches();
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     public void clean(String mediaUid, String userUid) {

@@ -58,7 +58,7 @@ public final class IOUtils {
                 }
                 if (bookmark.getDataCover() != null) {
                     buffer.append(" DATA-COVER=\"")
-                            .append(bookmark.getDataCover())
+                            .append(escapeHtml(bookmark.getDataCover()))
                             .append("\"");
                 }
                 buffer.append(">")
@@ -70,7 +70,7 @@ public final class IOUtils {
                 buffer.append(indentation).append("</DL><p>\n");
             } else {
                 buffer.append("<A HREF=\"")
-                        .append(bookmark.getUrl())
+                        .append(escapeHtml(bookmark.getUrl()))
                         .append("\"");
 
                 if (bookmark.getAddDate() != null) {
@@ -85,7 +85,7 @@ public final class IOUtils {
                 }
                 if (bookmark.getDataCover() != null) {
                     buffer.append(" DATA-COVER=\"")
-                            .append(bookmark.getDataCover())
+                            .append(escapeHtml(bookmark.getDataCover()))
                             .append("\"");
                 }
                 buffer.append(">")
@@ -114,11 +114,11 @@ public final class IOUtils {
             throw new SecurityException("Invalid HTML content");
         }
 
-        // 3. Check for potentially dangerous content while preserving bookmark structure
-        if (containsDangerousContent(input)) {
-            throw new SecurityException("Content contains potentially dangerous elements");
-        }
-
+        // 3. Parse first. A string blocklist on raw html can not hold: the parser
+        // decodes entities and strips control characters afterwards, so patterns
+        // like "&#106;avascript:" or "java&Tab;script:" pass the check and turn
+        // dangerous only after parsing. The scheme of every extracted url is
+        // validated instead, see Utils.isSafeLinkUrl.
         Document doc = Jsoup.parse(input, StandardCharsets.UTF_8.name());
 
         // 4. Limit the number of elements to prevent DoS
@@ -151,22 +151,6 @@ public final class IOUtils {
         }
 
         return Strings.EMPTY;
-    }
-
-    private static boolean containsDangerousContent(String input) {
-        String lowerInput = input.toLowerCase();
-
-        return lowerInput.contains("<script") ||
-                lowerInput.contains("javascript:") ||
-                lowerInput.contains("vbscript:") ||
-                lowerInput.contains("onload=") ||
-                lowerInput.contains("onerror=") ||
-                lowerInput.contains("onclick=") ||
-                lowerInput.contains("onmouseover=") ||
-                lowerInput.contains("onfocus=") ||
-                lowerInput.contains("onblur=") ||
-                lowerInput.contains("onchange=") ||
-                lowerInput.contains("onsubmit=");
     }
 
     private static void validateBookmarkStructure(Document doc) {

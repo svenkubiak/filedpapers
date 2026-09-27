@@ -29,13 +29,19 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.util.Strings;
 import org.bson.Document;
 import org.bson.conversions.Bson;
+import org.jsoup.Jsoup;
+import org.jsoup.safety.Safelist;
+import utils.PasswordHashing;
 import utils.Result;
+import utils.SsrfGuard;
 import utils.Utils;
 import utils.preview.LinkPreview;
 import utils.preview.LinkPreviewFetcher;
 
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
@@ -53,6 +59,19 @@ import static constants.Const.PLACEHOLDER_IMAGE;
 public class DataService {
     private static final Logger LOG = LogManager.getLogger(DataService.class);
     private static final String FAILED_TO_FETCH_LINK_PREVIEW = "Failed to fetch link preview";
+
+    /**
+     * Relaxed plus inline styles, structural elements and data uris, so a page
+     * snapshot keeps as much of its appearance as possible. Scripts, event
+     * handlers, iframes, objects, embeds, forms and meta refreshes are dropped,
+     * because an allowlist only keeps what is listed here.
+     */
+    static final Safelist ARCHIVE_SAFELIST = Safelist.relaxed()
+            .addTags("section", "article", "header", "footer", "nav", "main", "aside", "figure", "figcaption", "hr")
+            .addAttributes(":all", "style", "class", "id", "title", "dir", "lang")
+            .addProtocols("img", "src", "data", "http", "https")
+            .preserveRelativeLinks(false);
+
     private final Datastore datastore;
     private final MediaService mediaService;
     private final String applicationUrl;
@@ -112,17 +131,14 @@ public class DataService {
                 and(eq(Const.USER_UID, userUid), eq(Const.CATEGORY_UID, categoryUid)));
     }
 
-    public boolean userExists(String userUid) {
-        Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
-        return datastore.find(User.class, eq(Const.UID, userUid)) != null;
-    }
-
     public Optional<String> authenticateUser(String username, String password, Authentication authentication) {
         Objects.requireNonNull(username, Required.USERNAME);
         Objects.requireNonNull(password, Required.PASSWORD);
 
         User user = datastore.find(User.class, eq(Const.USERNAME, username));
-        if (user != null && authentication.isValidLogin(user.getUid(), password, user.getSalt(), user.getPassword())) {
+        if (user != null && PasswordHashing.gated(
+                () -> authentication.isValidLogin(user.getUid(), password, user.getSalt(), user.getPassword()),
+                Boolean.FALSE)) {
             return Optional.of(user.getUid());
         }
 
@@ -145,7 +161,7 @@ public class DataService {
         for (Item item: items) {
             output.add(Map.of(
                     Const.UID, item.getUid(),
-                    "url", item.getUrl(),
+                    "url", safeUrl(item.getUrl()),
                     "image", getImage(item),
                     "title", item.getTitle(),
                     "description", StringUtils.isNotBlank(item.getDescription()) ? item.getDescription() : Strings.EMPTY,
@@ -158,10 +174,19 @@ public class DataService {
         return Optional.of(output);
     }
 
+    /**
+     * Last line before a url reaches an href attribute in the dashboard or a
+     * client. The input side rejects unusable schemes, but records that were
+     * stored before those checks existed are only covered here.
+     */
+    private String safeUrl(String url) {
+        return Utils.isSafeLinkUrl(url) ? url : Const.BLANK_URL;
+    }
+
     private String getImage(Item item) {
         if (StringUtils.isNotBlank(item.getMediaUid()) && mediaService.exists(item.getMediaUid())) {
             return applicationUrl + "/media/image/" + item.getMediaUid();
-        } else if (StringUtils.isNotBlank(item.getImage())) {
+        } else if (Utils.isSafeLinkUrl(item.getImage())) {
             return item.getImage();
         }
 
@@ -275,7 +300,7 @@ public class DataService {
 
     public Result.Of addItem(String userUid, String url, String categoryUid) {
         Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
-        Utils.checkCondition(Utils.isValidURL(url), Invalid.URL);
+        Utils.checkCondition(SsrfGuard.isPubliclyRoutable(url), Invalid.URL);
         var user = findUserByUid(userUid);
 
         if (user == null) {
@@ -401,7 +426,8 @@ public class DataService {
         Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
 
         var user = findUserByUid(userUid);
-        if (user != null && user.getPassword().equals(CommonUtils.hashArgon2(password, user.getSalt()))) {
+        if (user != null && PasswordHashing.gated(
+                () -> user.getPassword().equals(CommonUtils.hashArgon2(password, user.getSalt())), Boolean.FALSE)) {
             List<Item> items = datastore.findAll(Item.class, eq(Const.USER_UID, userUid), Sorts.ascending(Const.USER_UID));
             items.stream()
                     .filter(item -> StringUtils.isNotBlank(item.getMediaUid()))
@@ -424,12 +450,48 @@ public class DataService {
         return user != null && user.isMfa();
     }
 
-    public boolean isValidMfa(String userUid, String otp) {
+    public boolean isValidMfa(String userUid, String otp, Authentication authentication) {
         Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
-        Utils.checkCondition(Utils.isValidOtp(otp), Invalid.OTP);
+        Utils.checkCondition(Utils.isValidOtp(otp) || Utils.isValidMfaFallback(otp), Invalid.OTP);
+        Objects.requireNonNull(authentication, Required.AUTHENTICATION);
 
         var user = findUserByUid(userUid);
-        return user != null && user.isMfa() && ( TotpUtils.verifyTotp(user.getMfaSecret(), otp) || CommonUtils.matchArgon2(otp, user.getSalt(), user.getMfaFallback()));
+        if (user == null || !user.isMfa()) {
+            return false;
+        }
+
+        // Check the lock before doing any work. Without this a locked account
+        // could still be used to trigger the expensive fallback comparison below
+        // on every request.
+        if (authentication.userHasSecondFactorLock(user.getUid())) {
+            return false;
+        }
+
+        if (Utils.isValidOtp(otp)) {
+            return authentication.isValidSecondFactor(user.getUid(), user.getMfaSecret(), otp);
+        }
+
+        return isValidMfaFallback(user, otp);
+    }
+
+    /**
+     * Redeems a fallback code. Like the web flow, a successful redemption is
+     * single use: it turns mfa off and rotates both the secret and the code, so
+     * the same value can not be replayed.
+     */
+    private boolean isValidMfaFallback(User user, String fallback) {
+        boolean matches = PasswordHashing.gated(
+                () -> CommonUtils.matchArgon2(fallback, user.getSalt(), user.getMfaFallback()),
+                Boolean.FALSE);
+
+        if (matches) {
+            user.setMfa(false);
+            user.setMfaFallback(Utils.randomString());
+            user.setMfaSecret(TotpUtils.createSecret());
+            save(user);
+        }
+
+        return matches;
     }
 
     public String enableMfa(String userUid) {
@@ -438,8 +500,14 @@ public class DataService {
         String fallback = null;
         var user = findUserByUid(userUid);
         if (!user.isMfa()) {
-            fallback = Utils.randomString();
-            user.setMfaFallback(CommonUtils.hashArgon2(fallback, user.getSalt()));
+            String code = Utils.randomString();
+            String hash = PasswordHashing.gated(() -> CommonUtils.hashArgon2(code, user.getSalt()), null);
+            if (hash == null) {
+                return null;
+            }
+
+            fallback = code;
+            user.setMfaFallback(hash);
             user.setMfa(true);
             save(user);
         }
@@ -459,7 +527,15 @@ public class DataService {
 
         var user = findUserByUid(userUid);
         if (user != null) {
-            user.setPassword(CommonUtils.hashArgon2(password, user.getSalt()));
+            String hash = PasswordHashing.gated(() -> CommonUtils.hashArgon2(password, user.getSalt()), null);
+            if (hash == null) {
+                return;
+            }
+
+            user.setPassword(hash);
+            // A password reset is a response to a suspected compromise, so every
+            // session that existed before it has to end.
+            user.setSessionsValidFrom(Instant.now().getEpochSecond());
             save(user);
         }
     }
@@ -499,12 +575,16 @@ public class DataService {
         return false;
     }
 
-    public boolean updatePepper(String userUid) {
+    /**
+     * Invalidates every access token, refresh token and authentication cookie
+     * that was issued for this user up to now.
+     */
+    public boolean revokeSessions(String userUid) {
         Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
 
         var user = findUserByUid(userUid);
         if (user != null) {
-            user.setPepper(Utils.randomString());
+            user.setSessionsValidFrom(Instant.now().getEpochSecond());
             return save(user) != null;
         }
 
@@ -518,6 +598,11 @@ public class DataService {
 
         datastore.findAll(Item.class, eq("userUid", userUid), Sorts.ascending("timestamp"))
                 .forEach(item -> {
+                    if (!SsrfGuard.isPubliclyRoutable(item.getUrl())) {
+                        LOG.warn("Skipping resync of item {} with non-public url", item.getUid());
+                        return;
+                    }
+
                     LinkPreview linkPreview;
                     try {
                         linkPreview = LinkPreviewFetcher.fetch(item.getUrl(), user.getLanguage());
@@ -552,6 +637,16 @@ public class DataService {
         datastore.query(Collections.USERS).updateMany(
                 exists("refreshTokenKey"),
                 unset("refreshTokenKey"));
+
+        //Remove pepper, replaced by sessionsValidFrom
+        datastore.query(Collections.USERS).updateMany(
+                exists("pepper"),
+                unset("pepper"));
+
+        //Add sessionsValidFrom if not exists
+        datastore.query(Collections.USERS).updateMany(
+                not(exists("sessionsValidFrom")),
+                set("sessionsValidFrom", 0L));
 
         //Add language if not exists
         datastore.query(Collections.USERS).updateMany(
@@ -654,6 +749,22 @@ public class DataService {
         }
     }
 
+    /**
+     * Strips everything executable from an archived page before it is stored.
+     *
+     * The content security policy on the archive route is the control that makes
+     * the snapshot safe to serve; this is the second line, so that no executable
+     * markup is persisted in the first place and a lost or stripped header can
+     * not turn stored data into a stored xss. Input and output are base64, so
+     * the storage format stays unchanged.
+     */
+    private String sanitizeArchive(String base64Html) {
+        String html = new String(CommonUtils.decodeFromBase64(base64Html), StandardCharsets.UTF_8);
+        String sanitized = Jsoup.clean(html, ARCHIVE_SAFELIST);
+
+        return Base64.getEncoder().encodeToString(sanitized.getBytes(StandardCharsets.UTF_8));
+    }
+
     public Result.Of archive(String uid, String userUid) {
         Objects.requireNonNull(uid, Required.UID);
 
@@ -661,14 +772,18 @@ public class DataService {
         if (item != null) {
             LOG.info("Archiving media with url {}", item.getUrl());
 
-            var result = Http.get(LinkPreviewFetcher.getUrl() + "/archive?url=" + item.getUrl())
+            if (!SsrfGuard.isPubliclyRoutable(item.getUrl())) {
+                return Result.Failure.user(Invalid.URL);
+            }
+
+            var result = Http.get(LinkPreviewFetcher.getUrl() + "/archive?url=" + URLEncoder.encode(item.getUrl(), StandardCharsets.UTF_8))
                     .withTimeout(Duration.ofSeconds(120))
                     .send();
 
             if (result.isValid()) {
                 Map<String, String> json = JsonUtils.toFlatMap(result.body());
                 if (!json.isEmpty() && json.get("success").equals("true")) {
-                    String archiveUid = mediaService.store(json.get("archive").getBytes(StandardCharsets.UTF_8), item.getUserUid());
+                    String archiveUid = mediaService.store(sanitizeArchive(json.get("archive")).getBytes(StandardCharsets.UTF_8), item.getUserUid());
                     item.setArchived(true);
                     item.setArchiveUid(archiveUid);
                     save(item);

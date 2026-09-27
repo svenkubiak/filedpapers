@@ -10,7 +10,7 @@ import jakarta.inject.Inject;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.math.NumberUtils;
+import utils.Utils;
 import org.apache.logging.log4j.util.Strings;
 import services.AuthenticationService;
 import services.DataService;
@@ -53,11 +53,13 @@ public class UserControllerV1 {
                 }).orElseGet(Response::unauthorized);
     }
 
-    public Response mfa(@NotNull @NotEmpty Map<String, String> credentials) {
+    public Response mfa(@NotNull @NotEmpty Map<String, String> credentials, Authentication authentication) {
         String challengeToken = Optional.ofNullable(credentials.get(Const.CHALLENGE_TOKEN)).orElse(Strings.EMPTY);
         String otp = Optional.ofNullable(credentials.get(Const.OTP)).orElse(Strings.EMPTY);
 
-        if (StringUtils.isAnyBlank(challengeToken, otp) || !NumberUtils.isCreatable(otp)) {
+        // Either a six digit otp or a fallback recovery code. The fallback used to
+        // be rejected here, which made it redeemable in the browser only.
+        if (StringUtils.isBlank(challengeToken) || !(Utils.isValidOtp(otp) || Utils.isValidMfaFallback(otp))) {
             return Response.forbidden();
         }
 
@@ -68,7 +70,7 @@ public class UserControllerV1 {
             }
 
             String userUid = jwtClaimsSet.getSubject();
-            if (dataService.isValidMfa(userUid, otp)) {
+            if (dataService.isValidMfa(userUid, otp, authentication)) {
                 authenticationService.blacklistToken(jwtClaimsSet.getJWTID());
                 return Response.ok().bodyJson(authenticationService.getRefreshAndAccessToken(userUid));
             }
@@ -96,6 +98,10 @@ public class UserControllerV1 {
             }
 
             String userUid = jwtClaimsSet.getSubject();
+            if (!AuthenticationService.isSessionValid(dataService.findUserByUid(userUid), jwtClaimsSet)) {
+                return Response.unauthorized();
+            }
+
             authenticationService.blacklistToken(jwtClaimsSet.getClaimAsString(Const.ATID));
             authenticationService.blacklistRefreshToken(jwtClaimsSet.getJWTID());
 

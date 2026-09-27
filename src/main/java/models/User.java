@@ -9,6 +9,7 @@ import io.mangoo.persistence.Entity;
 import utils.Utils;
 
 import java.io.Serializable;
+import java.time.Instant;
 import java.util.Objects;
 
 @Collection(name = Collections.USERS)
@@ -23,7 +24,15 @@ public class User extends Entity implements Serializable  {
     private String password;
 
     private String salt;
-    private String pepper;
+
+    /**
+     * Epoch seconds. Every access token, refresh token and authentication cookie
+     * issued before this point is rejected, which is what makes a revocation
+     * effective across all devices. Stored as epoch seconds to keep the
+     * comparison against the iat claim free of time zone ambiguity.
+     */
+    private long sessionsValidFrom;
+
     private String mfaSecret;
     private String mfaFallback;
     private String language;
@@ -34,7 +43,7 @@ public class User extends Entity implements Serializable  {
         this.username = Objects.requireNonNull(username, Required.USERNAME);
         this.uid = Utils.randomString();
         this.salt = Utils.randomString();
-        this.pepper = Utils.randomString();
+        this.sessionsValidFrom = Instant.now().getEpochSecond();
         this.mfaSecret = Utils.randomString();
         this.language = Const.DEFAULT_LANGUAGE;
     }
@@ -114,11 +123,11 @@ public class User extends Entity implements Serializable  {
         this.language = language;
     }
 
-    public String getPepper() {
-        return pepper;
+    public long getSessionsValidFrom() {
+        return sessionsValidFrom;
     }
 
-    public void setPepper(String pepper) {
-        this.pepper = pepper;
+    public void setSessionsValidFrom(long sessionsValidFrom) {
+        this.sessionsValidFrom = sessionsValidFrom;
     }
 }

@@ -15,7 +15,7 @@ import io.mangoo.utils.JwtUtils;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
 import models.Token;
-import org.apache.commons.lang3.StringUtils;
+import models.User;
 import org.apache.logging.log4j.util.Strings;
 import utils.Utils;
 
@@ -82,7 +82,7 @@ public class AuthenticationService {
                 .withJwtID(atid)
                 .withSecret(config.getString(API_ACCESS_TOKEN_SECRET).getBytes(StandardCharsets.UTF_8))
                 .withKey(config.getString(API_ACCESS_TOKEN_KEY).getBytes(StandardCharsets.UTF_8))
-                .withClaims(Map.of(Const.NONCE, Utils.randomString(), Const.PEPPER, getPepper(userUid)))
+                .withClaims(Map.of(Const.NONCE, Utils.randomString()))
                 .withSubject(userUid)
                 .withTtlSeconds(config.getInt(API_ACCESS_TOKEN_EXPIRES) * 60L)
                 .withIssuer(config.getApplicationName())
@@ -94,7 +94,7 @@ public class AuthenticationService {
                 .withJwtID(CommonUtils.randomString(32))
                 .withSecret(config.getString(API_REFRESH_TOKEN_SECRET).getBytes(StandardCharsets.UTF_8))
                 .withKey(config.getString(API_REFRESH_TOKEN_KEY).getBytes(StandardCharsets.UTF_8))
-                .withClaims(Map.of(Const.NONCE, Utils.randomString(), Const.PEPPER, getPepper(userUid), Const.ATID, atid))
+                .withClaims(Map.of(Const.NONCE, Utils.randomString(), Const.ATID, atid))
                 .withSubject(userUid)
                 .withTtlSeconds(config.getInt(API_REFRESH_TOKEN_EXPIRES) * 60L)
                 .withIssuer(config.getApplicationName())
@@ -105,21 +105,27 @@ public class AuthenticationService {
         return Map.of(Const.ACCESS_TOKEN, accessToken, Const.REFRESH_TOKEN, refreshToken);
     }
 
-    private String getPepper(String userUid) {
-        Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
-
-        String pepper = Strings.EMPTY;
-        var user = dataService.findUserByUid(userUid);
-        if (user != null) {
-            pepper = user.getPepper();
-            if (StringUtils.isBlank(pepper)) {
-                pepper = Utils.randomString();
-                user.setPepper(pepper);
-                dataService.save(user);
-            }
+    /**
+     * Checks whether a token or authentication cookie was issued after the last
+     * revocation for the given user. This is the single point that makes
+     * "logout all devices", a password change and a password reset effective
+     * for access tokens, refresh tokens and dashboard sessions alike.
+     *
+     * @param user The user the token was issued for, may be null
+     * @param jwtClaimsSet The claims of the parsed token or cookie
+     * @return true if the token is still considered valid
+     */
+    public static boolean isSessionValid(User user, JWTClaimsSet jwtClaimsSet) {
+        if (user == null || jwtClaimsSet == null) {
+            return false;
         }
 
-        return pepper;
+        var issuedAt = jwtClaimsSet.getIssueTime();
+        if (issuedAt == null) {
+            return false;
+        }
+
+        return issuedAt.toInstant().getEpochSecond() >= user.getSessionsValidFrom();
     }
 
     private JWTClaimsSet parseJwt(String value, byte[] key, byte[] secret, String audience, int expires) throws MangooJwtException {

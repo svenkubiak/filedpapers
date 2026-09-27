@@ -26,6 +26,7 @@
                         <input type="submit" class="button is-link is-fullwidth" value="${i18n("io.import.button")}">
                     </div>
                 </div>
+                <@csrfform/>
             </form>
             <form action="/dashboard/io/exporter" method="post" class="profile-section">
                 <h2 class="section-title">${i18n("io.export.title")}</h2>
@@ -34,6 +35,7 @@
                         <input type="submit" class="button is-link is-fullwidth" value="${i18n("io.export.button")}">
                     </div>
                 </div>
+                <@csrfform/>
             </form>
         </div>
     </div>

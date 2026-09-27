@@ -3,6 +3,7 @@ package constants;
 public final class Required {
     public static final String ACTION = "action can not be null";
     public static final String APPLICATION_URL = "applicationUrl can not be null";
+    public static final String AUTHENTICATION = "authentication can not be null";
     public static final String AUTHENTICATION_SERVICE = "authenticationService can not be null";
     public static final String CACHE = "cache can not be null";
     public static final String CATEGORIES = "categories can not be null";

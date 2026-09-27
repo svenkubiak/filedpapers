@@ -21,10 +21,11 @@ public final class Const {
     public static final String NAME = "name";
     public static final String NONCE = "nonce";
     public static final String OTP = "otp";
-    public static final String PEPPER = "pepper";
     public static final String PLACEHOLDER_IMAGE = "/assets/images/placeholder.svg";
     public static final String REFRESH_TOKEN = "refreshToken";
+    public static final String BLANK_URL = "#";
     public static final String ROLE = "role";
+    public static final String SCREENSHOTS_PATH = "/screenshots/";
     public static final String TOAST_ERROR = "toasterror";
     public static final String TOAST_SUCCESS = "toastsuccess";
     public static final String TRASH = "Trash";

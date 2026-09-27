@@ -4,6 +4,7 @@ import constants.Const;
 import constants.Required;
 import io.mangoo.annotations.FilterWith;
 import io.mangoo.core.Config;
+import filters.SessionRevocationFilter;
 import io.mangoo.filters.CsrfFilter;
 import io.mangoo.i18n.Messages;
 import io.mangoo.routing.Response;
@@ -22,11 +23,13 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.util.Strings;
 import services.DataService;
 import services.NotificationService;
+import utils.PasswordHashing;
 import utils.Utils;
 import utils.io.IOUtils;
 import utils.io.Leaf;
 
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.*;
@@ -35,6 +38,7 @@ import java.util.stream.IntStream;
 import static constants.Const.GENERAL_ERROR;
 import static constants.Const.TOAST_ERROR;
 
+@FilterWith(SessionRevocationFilter.class)
 public class DashboardController {
     private static final int MAX_FILE_SIZE_BYTES = 10485760; // 10MB
     private final DataService dataService;
@@ -147,7 +151,7 @@ public class DashboardController {
                     .collect(java.util.stream.Collectors.joining());
 
             var user = dataService.findUserByUid(userUid);
-            if (TotpUtils.verifyTotp(user.getMfaSecret(), otp)) {
+            if (authentication.isValidSecondFactor(user.getUid(), user.getMfaSecret(), otp)) {
                 String fallback = dataService.enableMfa(userUid);
                 if (StringUtils.isNotBlank(fallback)) {
                     flash.put(Const.TOAST_SUCCESS, messages.get("toast.mfa.enabled"));
@@ -169,7 +173,11 @@ public class DashboardController {
     public Response doLogoutDevices(Authentication authentication) {
         String userUid = authentication.getSubject();
 
-        if (dataService.updatePepper(userUid)) {
+        if (dataService.revokeSessions(userUid)) {
+            // The revocation covers the current cookie as well, so a fresh one is
+            // issued to keep the device the user is acting on signed in.
+            authentication.update();
+
             return Response.ok();
         } else {
             return Response.badRequest();
@@ -243,6 +251,7 @@ public class DashboardController {
         return Response.redirect("/dashboard/profile");
     }
 
+    @FilterWith(CsrfFilter.class)
     public Response importer(Form form, Authentication authentication, Flash flash) {
         String userUid = authentication.getSubject();
         form.expectFile("importfile");
@@ -265,13 +274,19 @@ public class DashboardController {
                         }
 
                         for (Leaf child : leaf.getChildren()) {
-                            if (!child.isFolder()) {
+                            // A bookmark file is untrusted input. Entries with an
+                            // unusable scheme are skipped rather than failing the
+                            // whole import, so one odd entry does not cost the user
+                            // the rest of their collection.
+                            if (!child.isFolder() && Utils.isSafeLinkUrl(child.getUrl())) {
+                                String cover = Utils.isSafeLinkUrl(child.getDataCover()) ? child.getDataCover() : null;
+
                                 var item = Item.create()
                                         .withTitle(child.getTitle())
                                         .withUrl(child.getUrl())
                                         .withCategoryUid(category.getUid())
                                         .withUserUid(userUid)
-                                        .withImage(child.getDataCover());
+                                        .withImage(cover);
 
                                 item.setTimestamp(child.getAddDate().atZone(ZoneId.systemDefault()).toLocalDateTime());
 
@@ -307,6 +322,7 @@ public class DashboardController {
         return Response.redirect("/dashboard/profile");
     }
 
+    @FilterWith(CsrfFilter.class)
     public Response exporter(Authentication authentication) {
         String userUid = authentication.getSubject();
         List<Map<String, Object>> categories = dataService.findCategories(userUid).orElse(List.of());
@@ -365,7 +381,8 @@ public class DashboardController {
             String password = form.get("password");
 
             var user = dataService.findUserByUid(userUid);
-            if (user.getPassword().equals(CommonUtils.hashArgon2(password, user.getSalt()))) {
+            if (PasswordHashing.gated(
+                    () -> user.getPassword().equals(CommonUtils.hashArgon2(password, user.getSalt())), Boolean.FALSE)) {
                 user.setUsername(username);
                 user.setConfirmed(false);
                 dataService.save(user);
@@ -403,9 +420,23 @@ public class DashboardController {
             String newPassword = form.get("new-password");
 
             var user = dataService.findUserByUid(userUid);
-            if (user.getPassword().equals(CommonUtils.hashArgon2(password, user.getSalt()))) {
-                user.setPassword(CommonUtils.hashArgon2(newPassword, user.getSalt()));
+            // Both hashes share one slot; acquiring twice in a row could deadlock
+            // the pool while this thread already holds a permit.
+            String rehashed = PasswordHashing.gated(() -> {
+                if (!user.getPassword().equals(CommonUtils.hashArgon2(password, user.getSalt()))) {
+                    return null;
+                }
+
+                return CommonUtils.hashArgon2(newPassword, user.getSalt());
+            }, null);
+
+            if (rehashed != null) {
+                user.setPassword(rehashed);
+                // A password change ends every session that was established with
+                // the old password; the current device is re-issued below.
+                user.setSessionsValidFrom(Instant.now().getEpochSecond());
                 dataService.save(user);
+                authentication.update();
 
                 notificationService.accountChanged(user.getUsername(), messages.get("email.account.changes.password"));
                 flash.put(Const.TOAST_SUCCESS, messages.get("toast.password.success"));

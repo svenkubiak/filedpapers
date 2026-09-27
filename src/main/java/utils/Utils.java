@@ -10,6 +10,7 @@ import io.undertow.server.handlers.CookieImpl;
 import io.undertow.server.handlers.CookieSameSiteMode;
 import models.User;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.util.Strings;
 
 import java.net.URI;
 import java.time.Instant;
@@ -28,8 +29,40 @@ public final class Utils {
             Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE
     );
     private static final Pattern MFA_PATTERN = Pattern.compile("\\d{6}");
+    // randomString() produces 32 characters of base64url
+    private static final Pattern MFA_FALLBACK_PATTERN = Pattern.compile("[A-Za-z0-9_-]{32}");
+    private static final Pattern CONTROL_CHARS = Pattern.compile("[\\x00-\\x20]");
+    private static final Set<String> ALLOWED_LINK_SCHEMES = Set.of("http", "https");
 
     private Utils() {
+    }
+
+    /**
+     * Checks whether a url is safe to store and to render into an href attribute.
+     *
+     * Deliberately performs no name resolution: this is about the scheme, not
+     * about the network target, and it runs once per bookmark on import. Use
+     * {@link SsrfGuard#isPubliclyRoutable(String)} where the server itself is
+     * going to request the url.
+     *
+     * @param url the url to check
+     * @return true if the url carries an allowed scheme
+     */
+    public static boolean isSafeLinkUrl(String url) {
+        if (StringUtils.isBlank(url)) {
+            return false;
+        }
+
+        try {
+            // Browsers ignore control characters and whitespace inside a scheme,
+            // so "java&Tab;script:" has to be judged as "javascript:".
+            var uri = new URI(CONTROL_CHARS.matcher(url).replaceAll(Strings.EMPTY));
+            String scheme = uri.getScheme();
+
+            return scheme != null && ALLOWED_LINK_SCHEMES.contains(scheme.toLowerCase(Locale.ROOT));
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     public static boolean isValidRandom(String value) {
@@ -53,17 +86,20 @@ public final class Utils {
         });
     }
 
-    public static boolean isValidURL(String url) {
-        try {
-            var uri = new URI(url);
-            return uri.getScheme() != null && uri.getHost() != null;
-        } catch (Exception e) {
-            return false;
-        }
-    }
-
     public static boolean isValidOtp(String mfa) {
         return StringUtils.isNotBlank(mfa) && MFA_PATTERN.matcher(mfa).matches();
+    }
+
+    /**
+     * Checks whether a value has the shape of an mfa fallback code, which is a
+     * 32 character string as produced by {@link #randomString()}.
+     *
+     * Used to decide whether the expensive comparison against the stored
+     * fallback hash is worth performing at all: a six digit otp can never match
+     * a 32 character code, so hashing it would be guaranteed waste.
+     */
+    public static boolean isValidMfaFallback(String value) {
+        return StringUtils.isNotBlank(value) && MFA_FALLBACK_PATTERN.matcher(value).matches();
     }
 
     public static boolean isValidName(String name) {
