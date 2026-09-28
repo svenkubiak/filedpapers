@@ -816,7 +816,7 @@ public class DataService {
                             in(Const.CATEGORY_UID, trashUids),
                             lt(
                                     "trashed",
-                                    LocalDateTime.now().minusDays(1)
+                                    LocalDateTime.now().minusMinutes(30)
                             )
                     )
             );
