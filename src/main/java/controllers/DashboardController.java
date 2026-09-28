@@ -2,9 +2,9 @@ package controllers;
 
 import constants.Const;
 import constants.Required;
+import filters.SessionRevocationFilter;
 import io.mangoo.annotations.FilterWith;
 import io.mangoo.core.Config;
-import filters.SessionRevocationFilter;
 import io.mangoo.filters.CsrfFilter;
 import io.mangoo.i18n.Messages;
 import io.mangoo.routing.Response;
@@ -23,7 +23,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.util.Strings;
 import services.DataService;
 import services.NotificationService;
-import utils.PasswordHashing;
 import utils.Utils;
 import utils.io.IOUtils;
 import utils.io.Leaf;
@@ -381,8 +380,7 @@ public class DashboardController {
             String password = form.get("password");
 
             var user = dataService.findUserByUid(userUid);
-            if (PasswordHashing.gated(
-                    () -> user.getPassword().equals(CommonUtils.hashArgon2(password, user.getSalt())), Boolean.FALSE)) {
+            if (user.getPassword().equals(CommonUtils.hashArgon2(password, user.getSalt()))) {
                 user.setUsername(username);
                 user.setConfirmed(false);
                 dataService.save(user);
@@ -420,18 +418,8 @@ public class DashboardController {
             String newPassword = form.get("new-password");
 
             var user = dataService.findUserByUid(userUid);
-            // Both hashes share one slot; acquiring twice in a row could deadlock
-            // the pool while this thread already holds a permit.
-            String rehashed = PasswordHashing.gated(() -> {
-                if (!user.getPassword().equals(CommonUtils.hashArgon2(password, user.getSalt()))) {
-                    return null;
-                }
-
-                return CommonUtils.hashArgon2(newPassword, user.getSalt());
-            }, null);
-
-            if (rehashed != null) {
-                user.setPassword(rehashed);
+            if (user.getPassword().equals(CommonUtils.hashArgon2(password, user.getSalt()))) {
+                user.setPassword(CommonUtils.hashArgon2(newPassword, user.getSalt()));
                 // A password change ends every session that was established with
                 // the old password; the current device is re-issued below.
                 user.setSessionsValidFrom(Instant.now().getEpochSecond());

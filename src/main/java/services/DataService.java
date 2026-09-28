@@ -31,7 +31,6 @@ import org.bson.Document;
 import org.bson.conversions.Bson;
 import org.jsoup.Jsoup;
 import org.jsoup.safety.Safelist;
-import utils.PasswordHashing;
 import utils.Result;
 import utils.SsrfGuard;
 import utils.Utils;
@@ -135,9 +134,7 @@ public class DataService {
         Objects.requireNonNull(password, Required.PASSWORD);
 
         User user = datastore.find(User.class, eq(Const.USERNAME, username));
-        if (user != null && PasswordHashing.gated(
-                () -> authentication.isValidLogin(user.getUid(), password, user.getSalt(), user.getPassword()),
-                Boolean.FALSE)) {
+        if (user != null && authentication.isValidLogin(user.getUid(), password, user.getSalt(), user.getPassword())) {
             return Optional.of(user.getUid());
         }
 
@@ -428,8 +425,7 @@ public class DataService {
         Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
 
         var user = findUserByUid(userUid);
-        if (user != null && PasswordHashing.gated(
-                () -> user.getPassword().equals(CommonUtils.hashArgon2(password, user.getSalt())), Boolean.FALSE)) {
+        if (user != null && user.getPassword().equals(CommonUtils.hashArgon2(password, user.getSalt()))) {
             List<Item> items = datastore.findAll(Item.class, eq(Const.USER_UID, userUid), Sorts.ascending(Const.USER_UID));
             items.stream()
                     .filter(item -> StringUtils.isNotBlank(item.getMediaUid()))
@@ -482,9 +478,7 @@ public class DataService {
      * the same value can not be replayed.
      */
     private boolean isValidMfaFallback(User user, String fallback) {
-        boolean matches = PasswordHashing.gated(
-                () -> CommonUtils.matchArgon2(fallback, user.getSalt(), user.getMfaFallback()),
-                Boolean.FALSE);
+        boolean matches = CommonUtils.matchArgon2(fallback, user.getSalt(), user.getMfaFallback());
 
         if (matches) {
             user.setMfa(false);
@@ -503,13 +497,8 @@ public class DataService {
         var user = findUserByUid(userUid);
         if (!user.isMfa()) {
             String code = Utils.randomString();
-            String hash = PasswordHashing.gated(() -> CommonUtils.hashArgon2(code, user.getSalt()), null);
-            if (hash == null) {
-                return null;
-            }
-
             fallback = code;
-            user.setMfaFallback(hash);
+            user.setMfaFallback(CommonUtils.hashArgon2(code, user.getSalt()));
             user.setMfa(true);
             save(user);
         }
@@ -529,12 +518,7 @@ public class DataService {
 
         var user = findUserByUid(userUid);
         if (user != null) {
-            String hash = PasswordHashing.gated(() -> CommonUtils.hashArgon2(password, user.getSalt()), null);
-            if (hash == null) {
-                return;
-            }
-
-            user.setPassword(hash);
+            user.setPassword(CommonUtils.hashArgon2(password, user.getSalt()));
             // A password reset is a response to a suspected compromise, so every
             // session that existed before it has to end.
             user.setSessionsValidFrom(Instant.now().getEpochSecond());
@@ -815,7 +799,7 @@ public class DataService {
     @SuppressWarnings("unchecked")
     public void cleanTrash() {
         List<Category> trashCategories = new ArrayList<>();
-        datastore.query(Collections.CATEGORIES).find(eq(Const.NAME, "trash")).into(trashCategories);
+        datastore.query(Collections.CATEGORIES).find(eq(Const.NAME, Const.TRASH)).into(trashCategories);
 
         List<String> trashUids = new ArrayList<>();
         for (Category trashCategory : trashCategories) {

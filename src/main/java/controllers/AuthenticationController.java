@@ -10,7 +10,6 @@ import io.mangoo.i18n.Messages;
 import io.mangoo.routing.Response;
 import io.mangoo.routing.bindings.*;
 import io.mangoo.utils.CommonUtils;
-import io.mangoo.utils.TotpUtils;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import models.Action;
@@ -20,7 +19,6 @@ import models.enums.Role;
 import models.enums.Type;
 import services.DataService;
 import services.NotificationService;
-import utils.PasswordHashing;
 import utils.Utils;
 
 import java.util.Objects;
@@ -78,9 +76,7 @@ public class AuthenticationController {
             Boolean rememberme = form.getBoolean("rememberme").orElse(Boolean.FALSE);
 
             var user = dataService.findUser(username);
-            if (user != null && PasswordHashing.gated(
-                    () -> authentication.isValidLogin(user.getUid(), password, user.getSalt(), user.getPassword()),
-                    Boolean.FALSE)) {
+            if (user != null && authentication.isValidLogin(user.getUid(), password, user.getSalt(), user.getPassword())) {
                 authentication.login(user.getUid());
                 authentication.rememberMe(rememberme);
                 authentication.twoFactorAuthentication(user.isMfa());
@@ -107,26 +103,24 @@ public class AuthenticationController {
             String userUid = authentication.getSubject();
             String mfa = form.get("mfa");
 
-            var user = dataService.findUserByUid(userUid);
-            if (user != null) {
-                if (authentication.isValidSecondFactor(user.getUid(), user.getMfaSecret(), mfa)) {
-                    authentication.twoFactorAuthentication(false);
-                    authentication.update();
+            // Redeeming a fallback code turns mfa off and rotates both the secret
+            // and the code, so the shape of the input has to be read before
+            // isValidMfa consumes it.
+            boolean fallback = Utils.isValidMfaFallback(mfa);
 
-                    return Response.redirect("/dashboard");
-                } else if (Utils.isValidMfaFallback(mfa) && PasswordHashing.gated(
-                        () -> CommonUtils.matchArgon2(mfa, user.getSalt(), user.getMfaFallback()), Boolean.FALSE)) {
-                    authentication.twoFactorAuthentication(false);
-                    authentication.update();
+            // isValidMfa rejects anything that is neither an otp nor a fallback
+            // code by throwing, so the shape is checked here and a malformed
+            // input ends up in the flash error below like any other bad attempt.
+            if (Utils.isValidRandom(userUid) && (Utils.isValidOtp(mfa) || fallback)
+                    && dataService.isValidMfa(userUid, mfa, authentication)) {
+                authentication.twoFactorAuthentication(false);
+                authentication.update();
 
-                    user.setMfa(false);
-                    user.setMfaFallback(Utils.randomString());
-                    user.setMfaSecret(TotpUtils.createSecret());
-                    dataService.save(user);
-
+                if (fallback) {
                     flash.setWarning(messages.get("dashboard.banner.mfa"));
-                    return Response.redirect("/dashboard");
                 }
+
+                return Response.redirect("/dashboard");
             }
         }
 
@@ -225,17 +219,7 @@ public class AuthenticationController {
             if (existing == null) {
                 var user = new User(username);
 
-                String hash = PasswordHashing.gated(() -> CommonUtils.hashArgon2(password, user.getSalt()), null);
-                if (hash == null) {
-                    // No hashing slot was free. Abort instead of persisting a user
-                    // without a usable password.
-                    flash.setError(messages.get("toast.error"));
-                    form.keep();
-
-                    return Response.redirect("/auth/signup");
-                }
-
-                user.setPassword(hash);
+                user.setPassword(CommonUtils.hashArgon2(password, user.getSalt()));
                 dataService.save(user);
                 dataService.save(new Category(Const.INBOX, user.getUid(), Role.INBOX));
                 dataService.save(new Category(Const.TRASH, user.getUid(), Role.TRASH));
