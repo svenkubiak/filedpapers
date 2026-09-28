@@ -51,15 +51,13 @@ import java.util.regex.Pattern;
 import static com.mongodb.client.model.Aggregates.*;
 import static com.mongodb.client.model.Filters.*;
 import static com.mongodb.client.model.Projections.include;
+import static com.mongodb.client.model.Updates.*;
 import static com.mongodb.client.model.Updates.set;
 import static com.mongodb.client.model.Updates.unset;
 import static constants.Const.PLACEHOLDER_IMAGE;
 
 @Singleton
 public class DataService {
-    private static final Logger LOG = LogManager.getLogger(DataService.class);
-    private static final String FAILED_TO_FETCH_LINK_PREVIEW = "Failed to fetch link preview";
-
     /**
      * Relaxed plus inline styles, structural elements and data uris, so a page
      * snapshot keeps as much of its appearance as possible. Scripts, event
@@ -71,7 +69,8 @@ public class DataService {
             .addAttributes(":all", "style", "class", "id", "title", "dir", "lang")
             .addProtocols("img", "src", "data", "http", "https")
             .preserveRelativeLinks(false);
-
+    private static final Logger LOG = LogManager.getLogger(DataService.class);
+    private static final String FAILED_TO_FETCH_LINK_PREVIEW = "Failed to fetch link preview";
     private final Datastore datastore;
     private final MediaService mediaService;
     private final String applicationUrl;
@@ -145,7 +144,6 @@ public class DataService {
         return Optional.empty();
     }
 
-    @SuppressWarnings("unchecked")
     public Optional<List<Map<String, Object>>> findItems(String userUid, String categoryUid) {
         Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
         Utils.checkCondition(Utils.isValidRandom(categoryUid), Invalid.CATEGORY_UID);
@@ -200,14 +198,18 @@ public class DataService {
         Category trash = findTrash(userUid);
         var updateResult = datastore.query(Collections.ITEMS).updateOne(
                 and(
-                    eq(Const.USER_UID, userUid),
-                    eq(Const.UID, itemUid)),
-                        set(Const.CATEGORY_UID, trash.getUid()));
+                        eq(Const.USER_UID, userUid),
+                        eq(Const.UID, itemUid)
+                ),
+                combine(
+                        set(Const.CATEGORY_UID, trash.getUid()),
+                        set("trashed", LocalDateTime.now())
+                )
+        );
 
         return updateResult.getModifiedCount() == 1 ? Result.Success.empty() : Result.Failure.server("Failed to delete item");
     }
 
-    @SuppressWarnings("unchecked")
     public Result.Of emptyTrash(String userUid) {
         Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
 
@@ -808,5 +810,31 @@ public class DataService {
 
     public boolean tokenExists(String id) {
         return datastore.query(Token.class).find(eq ("uid", id)).first() != null;
+    }
+
+    @SuppressWarnings("unchecked")
+    public void cleanTrash() {
+        List<Category> trashCategories = new ArrayList<>();
+        datastore.query(Collections.CATEGORIES).find(eq(Const.NAME, "trash")).into(trashCategories);
+
+        List<String> trashUids = new ArrayList<>();
+        for (Category trashCategory : trashCategories) {
+            trashUids.add(trashCategory.getUid());
+        }
+
+        if (trashUids.isEmpty()) {
+            return;
+        }
+
+        datastore.query(Collections.ITEMS)
+            .deleteMany(
+                    and(
+                            in(Const.CATEGORY_UID, trashUids),
+                            lt(
+                                    "trashed",
+                                    LocalDateTime.now().minusDays(1)
+                            )
+                    )
+            );
     }
 }

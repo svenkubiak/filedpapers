@@ -14,16 +14,22 @@ import java.util.Objects;
 @Collection(name = Collections.ITEMS)
 public class Item extends Entity implements Serializable {
     boolean archived;
+
     @Indexed
     private String uid;
+
     @Indexed
     private String userUid;
+
     @Indexed
     private String categoryUid;
+
     @Indexed
     private LocalDateTime timestamp;
+
     @Indexed(unique = true)
     private String mediaUid;
+
     @Indexed
     private String archiveUid;
     private String url;
@@ -31,6 +37,7 @@ public class Item extends Entity implements Serializable {
     private String title;
     private String description;
     private String domain;
+    private LocalDateTime trashed;
 
     public Item() {
         this.uid = Utils.randomString();
@@ -172,5 +179,13 @@ public class Item extends Entity implements Serializable {
 
     public void setArchived(boolean archived) {
         this.archived = archived;
+    }
+
+    public LocalDateTime getTrashed() {
+        return trashed;
+    }
+
+    public void setTrashed(LocalDateTime trashed) {
+        this.trashed = trashed;
     }
 }

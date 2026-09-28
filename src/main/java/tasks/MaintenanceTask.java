@@ -22,6 +22,7 @@ public class MaintenanceTask {
     public void execute() {
         LOG.info("Started maintenance task");
         dataService.cleanActions();
+        dataService.cleanTrash();
         LOG.info("Finished maintenance task");
     }
 }
