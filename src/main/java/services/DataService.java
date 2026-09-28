@@ -43,6 +43,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
@@ -799,9 +800,13 @@ public class DataService {
     @SuppressWarnings("unchecked")
     public void cleanTrash() {
         List<Category> trashCategories = new ArrayList<>();
-        datastore.query(Collections.CATEGORIES).find(eq(Const.NAME, Const.TRASH)).into(trashCategories);
+
+        datastore.query(Collections.CATEGORIES)
+                .find(eq(Const.NAME, Const.TRASH))
+                .into(trashCategories);
 
         List<String> trashUids = new ArrayList<>();
+
         for (Category trashCategory : trashCategories) {
             trashUids.add(trashCategory.getUid());
         }
@@ -810,15 +815,16 @@ public class DataService {
             return;
         }
 
-        datastore.query(Collections.ITEMS)
-            .deleteMany(
-                    and(
-                            in(Const.CATEGORY_UID, trashUids),
-                            lt(
-                                    "trashed",
-                                    LocalDateTime.now().minusMinutes(30)
-                            )
-                    )
-            );
+        Date threshold = Date.from(
+                Instant.now().minus(30, ChronoUnit.MINUTES)
+        );
+
+       datastore.query(Collections.ITEMS)
+                .deleteMany(
+                        and(
+                                in(Const.CATEGORY_UID, trashUids),
+                                lt("trashed", threshold)
+                        )
+                );
     }
 }
