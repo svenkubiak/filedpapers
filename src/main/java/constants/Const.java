@@ -29,6 +29,7 @@ public final class Const {
     public static final String TOAST_ERROR = "toasterror";
     public static final String TOAST_SUCCESS = "toastsuccess";
     public static final String TRASH = "Trash";
+    public static final String TRASHED = "trashed";
     public static final String UID = "uid";
     public static final String USERNAME = "username";
     public static final String USER_UID = "userUid";

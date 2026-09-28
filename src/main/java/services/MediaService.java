@@ -118,7 +118,7 @@ public class MediaService {
 
     public void delete(String uid, String userUid) {
         Objects.requireNonNull(uid, Required.MEDIA_UID);
-        Objects.requireNonNull(uid, Required.USER_UID);
+        Objects.requireNonNull(userUid, Required.USER_UID);
 
         var gridFSFile = bucket
                 .find(and(eq(Const.METADATA_UID, uid), eq(Const.METADATA_USER_UID, userUid)))

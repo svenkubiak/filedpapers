@@ -43,7 +43,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.time.temporal.ChronoUnit;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
@@ -71,6 +70,7 @@ public class DataService {
             .preserveRelativeLinks(false);
     private static final Logger LOG = LogManager.getLogger(DataService.class);
     private static final String FAILED_TO_FETCH_LINK_PREVIEW = "Failed to fetch link preview";
+    private static final Duration TRASH_RETENTION = Duration.ofMinutes(30);
     private final Datastore datastore;
     private final MediaService mediaService;
     private final String applicationUrl;
@@ -201,7 +201,7 @@ public class DataService {
                 ),
                 combine(
                         set(Const.CATEGORY_UID, trash.getUid()),
-                        set("trashed", LocalDateTime.now())
+                        set(Const.TRASHED, LocalDateTime.now())
                 )
         );
 
@@ -212,27 +212,20 @@ public class DataService {
         Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
 
         Category trash = findTrash(userUid);
-        List<String> mediaUidsToDelete = new ArrayList<>();
-        datastore.query(Item.class)
-                .find(and(
-                        eq(Const.USER_UID, userUid),
-                        eq(Const.CATEGORY_UID, trash.getUid()),
-                        ne(Const.MEDIA_UID, null),
-                        ne(Const.MEDIA_UID, Strings.EMPTY)))
-                .projection(include(Const.MEDIA_UID, Const.ARCHIVE_UID))
-                .forEach(doc -> {
-                    if (doc instanceof Item item) {
-                        mediaUidsToDelete.add(item.getMediaUid());
-                    }
-                });
+        Bson trashed = and(
+                eq(Const.USER_UID, userUid),
+                eq(Const.CATEGORY_UID, trash.getUid()));
 
-        var deleteResult = datastore.query(Item.class)
-                .deleteMany(and(
-                        eq(Const.USER_UID, userUid),
-                        eq(Const.CATEGORY_UID, trash.getUid())));
+        List<Item> items = new ArrayList<>();
+        datastore.query(Item.class)
+                .find(trashed)
+                .projection(include(Const.USER_UID, Const.MEDIA_UID, Const.ARCHIVE_UID))
+                .into(items);
+
+        var deleteResult = datastore.query(Item.class).deleteMany(trashed);
 
         if (deleteResult.wasAcknowledged()) {
-            mediaUidsToDelete.forEach(mediaUid -> mediaService.delete(mediaUid, userUid));
+            items.forEach(this::deleteMedia);
         }
 
         return deleteResult.wasAcknowledged() ? Result.Success.empty() : Result.Failure.server("Failed to empty trash");
@@ -286,11 +279,16 @@ public class DataService {
         var targetCategory = findCategory(categoryUid, userUid);
 
         if (!sourceCategory.getUid().equals(targetCategory.getUid())) {
+            //Keep the trashed timestamp in sync, as it drives the automatic trash cleanup
+            Bson update = targetCategory.getRole() == Role.TRASH
+                    ? combine(set(Const.CATEGORY_UID, categoryUid), set(Const.TRASHED, LocalDateTime.now()))
+                    : combine(set(Const.CATEGORY_UID, categoryUid), unset(Const.TRASHED));
+
             var updateResult = datastore.query(Collections.ITEMS).updateOne(
                     and(
                             eq(Const.USER_UID, userUid),
                             eq(Const.UID, itemUid)),
-                    set(Const.CATEGORY_UID, categoryUid));
+                    update);
 
             return updateResult.wasAcknowledged() ? Result.Success.empty() : Result.Failure.server("Failed to move item");
         } else {
@@ -428,9 +426,7 @@ public class DataService {
         var user = findUserByUid(userUid);
         if (user != null && user.getPassword().equals(CommonUtils.hashArgon2(password, user.getSalt()))) {
             List<Item> items = datastore.findAll(Item.class, eq(Const.USER_UID, userUid), Sorts.ascending(Const.USER_UID));
-            items.stream()
-                    .filter(item -> StringUtils.isNotBlank(item.getMediaUid()))
-                    .forEach(item -> mediaService.delete(item.getMediaUid(), userUid));
+            items.forEach(this::deleteMedia);
 
             DeleteResult deleteCategories = datastore.query(Category.class).deleteMany(eq(Const.USER_UID, userUid));
             DeleteResult deleteItems = datastore.query(Item.class).deleteMany(eq(Const.USER_UID, userUid));
@@ -646,12 +642,12 @@ public class DataService {
                 set("archived", Boolean.FALSE));
 
         //Add new role type to INBOX
-        datastore.query(Collections.CATEGORIES).updateOne(
+        datastore.query(Collections.CATEGORIES).updateMany(
                 and(eq("name", "Inbox"), exists("role", false)),
                 set("role", "INBOX"));
 
         //Add new role type to TRASH
-        datastore.query(Collections.CATEGORIES).updateOne(
+        datastore.query(Collections.CATEGORIES).updateMany(
                 and(eq("name", "Trash"), exists("role", false)),
                 set("role", "TRASH"));
 
@@ -663,7 +659,7 @@ public class DataService {
 
         //Updated items which have null value mediaUids
         List<Item> items = new ArrayList<>();
-        datastore.query(Collections.ITEMS)
+        datastore.query(Item.class)
                 .find(or(eq(Const.MEDIA_UID, null), eq(Const.MEDIA_UID, Strings.EMPTY)))
                 .into(items);
 
@@ -673,6 +669,25 @@ public class DataService {
                     set(Const.MEDIA_UID, Utils.randomString())
             );
         }
+
+        //Add trashed timestamp to items that were moved to trash before it was tracked
+        List<String> trashUids = new ArrayList<>();
+        datastore.query(Category.class)
+                .find(eq(Const.ROLE, Role.TRASH))
+                .forEach(category -> trashUids.add(category.getUid()));
+
+        if (!trashUids.isEmpty()) {
+            datastore.query(Collections.ITEMS).updateMany(
+                    and(in(Const.CATEGORY_UID, trashUids), not(exists(Const.TRASHED))),
+                    set(Const.TRASHED, LocalDateTime.now())
+            );
+        }
+
+        //Remove stale trashed timestamps from items that live outside of the trash
+        datastore.query(Collections.ITEMS).updateMany(
+                and(nin(Const.CATEGORY_UID, trashUids), exists(Const.TRASHED)),
+                unset(Const.TRASHED)
+        );
 
         Thread.ofVirtual().start(() -> {
             //Remove stored media with null uid valus
@@ -797,34 +812,54 @@ public class DataService {
         return datastore.query(Token.class).find(eq ("uid", id)).first() != null;
     }
 
-    @SuppressWarnings("unchecked")
     public void cleanTrash() {
-        List<Category> trashCategories = new ArrayList<>();
-
-        datastore.query(Collections.CATEGORIES)
-                .find(eq(Const.NAME, Const.TRASH))
-                .into(trashCategories);
-
         List<String> trashUids = new ArrayList<>();
-
-        for (Category trashCategory : trashCategories) {
-            trashUids.add(trashCategory.getUid());
-        }
+        datastore.query(Category.class)
+                .find(eq(Const.ROLE, Role.TRASH))
+                .forEach(category -> trashUids.add(category.getUid()));
 
         if (trashUids.isEmpty()) {
             return;
         }
 
-        Date threshold = Date.from(
-                Instant.now().minus(30, ChronoUnit.MINUTES)
+        Bson expired = and(
+                in(Const.CATEGORY_UID, trashUids),
+                lt(Const.TRASHED, LocalDateTime.now().minus(TRASH_RETENTION))
         );
 
-       datastore.query(Collections.ITEMS)
-                .deleteMany(
-                        and(
-                                in(Const.CATEGORY_UID, trashUids),
-                                lt("trashed", threshold)
-                        )
-                );
+        List<Item> items = new ArrayList<>();
+        datastore.query(Item.class)
+                .find(expired)
+                .projection(include(Const.USER_UID, Const.MEDIA_UID, Const.ARCHIVE_UID))
+                .into(items);
+
+        if (items.isEmpty()) {
+            return;
+        }
+
+        var deleteResult = datastore.query(Item.class).deleteMany(expired);
+
+        if (deleteResult.wasAcknowledged()) {
+            items.forEach(this::deleteMedia);
+            LOG.info("Removed {} expired item(s) from trash", deleteResult.getDeletedCount());
+        } else {
+            LOG.error("Failed to remove expired items from trash");
+        }
+    }
+
+    /**
+     * Removes the stored media and the stored archive of an item from GridFS. Both
+     * are stored as media, so both have to be removed when an item is deleted.
+     *
+     * @param item The item whose media should be removed
+     */
+    private void deleteMedia(Item item) {
+        if (StringUtils.isNotBlank(item.getMediaUid())) {
+            mediaService.delete(item.getMediaUid(), item.getUserUid());
+        }
+
+        if (StringUtils.isNotBlank(item.getArchiveUid())) {
+            mediaService.delete(item.getArchiveUid(), item.getUserUid());
+        }
     }
 }
