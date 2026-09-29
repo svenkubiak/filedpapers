@@ -50,7 +50,7 @@ public class DataServiceTrashTests {
     @Test
     void testCleanTrashRemovesExpiredItem() {
         //given
-        String itemUid = saveItem(trashUid, LocalDateTime.now().minusHours(2));
+        String itemUid = saveItem(trashUid, LocalDateTime.now().minusHours(73));
 
         //when
         dataService.cleanTrash();

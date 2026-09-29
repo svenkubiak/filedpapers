@@ -12,6 +12,8 @@ import constants.Const;
 import constants.Invalid;
 import constants.Required;
 import de.svenkubiak.http.Http;
+import io.mangoo.core.Application;
+import io.mangoo.core.Config;
 import io.mangoo.persistence.interfaces.Datastore;
 import io.mangoo.routing.bindings.Authentication;
 import io.mangoo.utils.CommonUtils;
@@ -70,7 +72,6 @@ public class DataService {
             .preserveRelativeLinks(false);
     private static final Logger LOG = LogManager.getLogger(DataService.class);
     private static final String FAILED_TO_FETCH_LINK_PREVIEW = "Failed to fetch link preview";
-    private static final Duration TRASH_RETENTION = Duration.ofMinutes(30);
     private final Datastore datastore;
     private final MediaService mediaService;
     private final String applicationUrl;
@@ -822,9 +823,13 @@ public class DataService {
             return;
         }
 
+        int trashRetention = Application
+                .getInstance(Config.class)
+                .getInt("application.trash.retention", 72);
+
         Bson expired = and(
                 in(Const.CATEGORY_UID, trashUids),
-                lt(Const.TRASHED, LocalDateTime.now().minus(TRASH_RETENTION))
+                lt(Const.TRASHED, LocalDateTime.now().minusHours(trashRetention))
         );
 
         List<Item> items = new ArrayList<>();
