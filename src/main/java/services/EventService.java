@@ -13,6 +13,7 @@ import utils.Utils;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -40,8 +41,12 @@ public class EventService {
     private static final Duration TICKET_TTL = Duration.ofSeconds(30);
     private static final int MAX_TICKETS = 10_000;
 
+    // Undertow has no api for an sse comment - send() always writes a data frame -
+    // so the keep alive travels as an event the dashboard knows to drop.
+    public static final String PING = "{\"event\":\"stream.ping\"}";
+
     private final Map<String, Ticket> tickets = new ConcurrentHashMap<>();
-    private final Set<String> connectedUsers = ConcurrentHashMap.newKeySet();
+    private final Map<String, Set<ServerSentEventConnection>> connections = new ConcurrentHashMap<>();
     private final ServerSentEventManager eventManager;
 
     private record Ticket(String userUid, Instant expiresAt) {
@@ -109,21 +114,52 @@ public class EventService {
         return Optional.of(value.userUid());
     }
 
+    /**
+     * Takes note of one connection of a user. The connections are held per user
+     * and not just as a set of users, because a user regularly has more than one:
+     * a second tab, and the connection a reload leaves behind until the socket is
+     * actually torn down.
+     *
+     * @param userUid the user the connection belongs to
+     * @param connection the connection to send to from now on
+     */
     public void register(String userUid, ServerSentEventConnection connection) {
         Objects.requireNonNull(connection, Required.CONNECTION);
         Utils.checkCondition(Utils.isValidRandom(userUid), constants.Invalid.USER_UID);
 
         eventManager.addConnection(userUid, connection);
-        connectedUsers.add(userUid);
+        connections.compute(userUid, (uid, values) -> {
+            Set<ServerSentEventConnection> open = values == null ? ConcurrentHashMap.newKeySet() : values;
+            open.add(connection);
+
+            return open;
+        });
     }
 
+    /**
+     * Drops one connection of a user, and the user only with its last one.
+     *
+     * The close task of a connection can run long after the client gave up on it
+     * - a proxy that resets the stream towards the browser does not necessarily
+     * tear down its own connection to us at the same moment. Removing the user
+     * here would take the reconnect that has meanwhile registered down with it,
+     * and that connection would then sit there without events and without a
+     * heartbeat until the next idle timeout.
+     *
+     * @param userUid the user the connection belongs to
+     * @param connection the connection that is gone
+     */
     public void unregister(String userUid, ServerSentEventConnection connection) {
         if (userUid == null || connection == null) {
             return;
         }
 
         eventManager.removeConnection(userUid, connection);
-        connectedUsers.remove(userUid);
+        connections.computeIfPresent(userUid, (uid, values) -> {
+            values.remove(connection);
+
+            return values.isEmpty() ? null : values;
+        });
     }
 
     /**
@@ -195,7 +231,7 @@ public class EventService {
     }
 
     private void send(String userUid, Map<String, Object> payload) {
-        if (!connectedUsers.contains(userUid)) {
+        if (!connections.containsKey(userUid)) {
             return;
         }
 
@@ -210,15 +246,38 @@ public class EventService {
      * Keeps the connections alive. Proxies in front of the application close an
      * idle connection after a minute or so, and a dashboard that sits there
      * without changes is idle by definition.
+     *
+     * Addresses every connection on its own instead of going through the manager:
+     * one that is no longer open is dropped right here, so an entry whose close
+     * task never arrived cannot outlive the socket it stands for.
      */
     public void heartbeat() {
-        connectedUsers.forEach(userUid -> {
-            try {
-                eventManager.send(userUid, ": ping");
-            } catch (RuntimeException e) {
-                LOG.debug("Heartbeat for user '{}' failed", userUid, e);
+        List<Map.Entry<String, ServerSentEventConnection>> stale = new ArrayList<>();
+
+        connections.forEach((userUid, values) -> values.forEach(connection -> {
+            if (connection.isOpen()) {
+                try {
+                    connection.send(PING);
+                } catch (RuntimeException e) {
+                    LOG.debug("Heartbeat for user '{}' failed", userUid, e);
+                }
+            } else {
+                stale.add(Map.entry(userUid, connection));
             }
-        });
+        }));
+
+        stale.forEach(entry -> unregister(entry.getKey(), entry.getValue()));
+    }
+
+    /**
+     * How many connections of a user are currently held. Package private: a test
+     * has to be able to see the bookkeeping, nothing in the application does.
+     *
+     * @param userUid the user to count the connections of
+     * @return the number of connections held for that user
+     */
+    int connectionCount(String userUid) {
+        return connections.getOrDefault(userUid, Set.of()).size();
     }
 
     public void purgeExpiredTickets() {

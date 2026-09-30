@@ -788,7 +788,9 @@ function wireKeyboard() {
    ========================================================================== */
 const stream = {
     source: null,
+    retry: null,
     attempts: 0,
+    connecting: false,
     closing: false
 };
 
@@ -901,6 +903,11 @@ function onStreamMessage(event) {
         return;
     }
 
+    // The stream carries its own housekeeping: an acknowledgement on connect and
+    // a keep alive every few seconds. Neither can be an sse comment, so both
+    // arrive as events and are dropped here.
+    if (typeof payload.event === 'string' && payload.event.startsWith('stream.')) return;
+
     if (payload.event === 'items.moved') {
         onItemsMoved(payload);
         return;
@@ -928,12 +935,21 @@ function onStreamMessage(event) {
     }
 }
 
-function connectStream() {
-    if (stream.closing || stream.attempts >= MAX_STREAM_ATTEMPTS) return;
+// Only the pages that show bookmarks have anything to update
+function streamWanted() {
+    return !!($id('shelf') || $('#nav .navitem'));
+}
 
+function connectStream() {
+    if (stream.closing || stream.connecting || stream.source) return;
+    if (!streamWanted() || stream.attempts >= MAX_STREAM_ATTEMPTS) return;
+
+    stream.connecting = true;
     window.apiPost('/api/v1/events/ticket', {})
         .then(response => response.json())
         .then(data => {
+            stream.connecting = false;
+            if (stream.closing) return;
             if (!data.ticket) throw new Error('no ticket');
 
             const source = new EventSource('/api/v1/events?ticket=' + encodeURIComponent(data.ticket));
@@ -951,7 +967,10 @@ function connectStream() {
                 retryStream();
             });
         })
-        .catch(retryStream);
+        .catch(() => {
+            stream.connecting = false;
+            retryStream();
+        });
 }
 
 function retryStream() {
@@ -963,7 +982,33 @@ function retryStream() {
         return;
     }
 
-    setTimeout(connectStream, Math.min(2000 * 2 ** (stream.attempts - 1), 30000));
+    stream.retry = setTimeout(() => {
+        stream.retry = null;
+        connectStream();
+    }, Math.min(2000 * 2 ** (stream.attempts - 1), 30000));
+}
+
+/*
+ * Comes back to a stream that is gone. Two cases end up here: a page restored
+ * from the back forward cache, which was closed on the way out, and a machine
+ * that was asleep or offline long enough to burn through every retry. Both
+ * leave the page alive but deaf, and neither recovers on its own.
+ */
+function rearmStream() {
+    if (document.visibilityState === 'hidden' || navigator.onLine === false) return;
+
+    stream.closing = false;
+    if (stream.source || stream.connecting) return;
+
+    // A pending retry is on a backoff of up to half a minute, and whatever woke
+    // us up is a better reason to try again than waiting that out.
+    if (stream.retry) {
+        clearTimeout(stream.retry);
+        stream.retry = null;
+    }
+
+    stream.attempts = 0;
+    connectStream();
 }
 
 // Leaving the page tears the connection down anyway; saying so avoids a last
@@ -971,7 +1016,12 @@ function retryStream() {
 window.addEventListener('pagehide', () => {
     stream.closing = true;
     stream.source?.close();
+    stream.source = null;
 });
+
+window.addEventListener('pageshow', rearmStream);
+window.addEventListener('online', rearmStream);
+document.addEventListener('visibilitychange', rearmStream);
 
 /* ==========================================================================
    WIRING
@@ -1040,6 +1090,4 @@ on(document, 'click', (e) => {
 
 on(window, 'load', flushStoredToasts);
 
-if (document.getElementById('shelf') || $('#nav .navitem')) {
-    connectStream();
-}
+connectStream();

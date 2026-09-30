@@ -10,7 +10,7 @@ import java.util.Objects;
 /**
  * Keeps the event streams open. A dashboard without changes sends nothing for
  * minutes, and a proxy in front of the application treats that as an idle
- * connection and closes it - so a comment goes out well within the usual
+ * connection and closes it - so a keep alive goes out well within the usual
  * sixty second timeout.
  */
 public class HeartbeatTask {

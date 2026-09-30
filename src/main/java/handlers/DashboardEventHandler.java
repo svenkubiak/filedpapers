@@ -25,6 +25,11 @@ import java.util.Optional;
 @Singleton
 public class DashboardEventHandler implements ServerSentEventConnectionCallback {
     private static final Logger LOG = LogManager.getLogger(DashboardEventHandler.class);
+
+    // Undertow writes a data frame for anything that is sent, so this cannot be
+    // an sse comment - the dashboard drops every stream.* event instead.
+    private static final String OPEN = "{\"event\":\"stream.open\"}";
+
     private final EventService eventService;
 
     @Inject
@@ -52,7 +57,7 @@ public class DashboardEventHandler implements ServerSentEventConnectionCallback 
             // which is not the key it was added with here, so the clean up has to
             // name that key itself.
             connection.addCloseTask(closed -> eventService.unregister(uid, closed));
-            connection.send(": ok");
+            connection.send(OPEN);
         });
     }
 
