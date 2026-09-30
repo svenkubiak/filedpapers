@@ -7,6 +7,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import utils.Utils;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -95,8 +96,9 @@ public class EventServiceTests {
     @Test
     void testSendingToSomebodyWithoutAConnectionDoesNothing() {
         //a user whose dashboard is closed must not blow up the caller
-        eventService().itemAdded(Utils.randomString(), Utils.randomString());
-        eventService().itemsChanged(Utils.randomString());
+        eventService().itemAdded(Utils.randomString(), Utils.randomString(), Utils.randomString());
+        eventService().itemsMoved(Utils.randomString(), List.of(Utils.randomString()), Utils.randomString(), Utils.randomString());
+        eventService().trashEmptied(Utils.randomString(), Utils.randomString());
         eventService().heartbeat();
     }
 }

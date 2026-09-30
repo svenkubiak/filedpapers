@@ -149,31 +149,58 @@ public class DataService {
                         eq(Const.USER_UID, userUid),
                         eq(Const.CATEGORY_UID, categoryUid))).into(items);
 
-        int trashRetention = Utils.getTrashRetention();
-
         List<Map<String, Object>> output = new ArrayList<>();
         for (Item item: items) {
-            Map<String, Object> entry = new HashMap<>(Map.of(
-                    Const.UID, item.getUid(),
-                    "url", safeUrl(item.getUrl()),
-                    "image", getImage(item),
-                    "title", item.getTitle(),
-                    "description", StringUtils.isNotBlank(item.getDescription()) ? item.getDescription() : Strings.EMPTY,
-                    "domain", StringUtils.isNotBlank(item.getDomain()) ? item.getDomain() : Strings.EMPTY,
-                    "sort", item.getTimestamp().toEpochSecond(ZoneOffset.UTC),
-                    "archived", item.isArchived(),
-                    "added", DateUtils.getPrettyTime(item.getTimestamp()))); // FIX ME: Remove in later API version
-
-            // Only a trashed item has a deletion date, and the client cannot work
-            // it out on its own - the retention is a server side setting.
-            if (item.getTrashed() != null) {
-                entry.put("deleteAt", item.getTrashed().plusHours(trashRetention).toEpochSecond(ZoneOffset.UTC));
-            }
-
-            output.add(entry);
+            output.add(toMap(item));
         }
 
         return Optional.of(output);
+    }
+
+    /**
+     * Finds a single item in the same shape {@link #findItems(String, String)}
+     * returns it, so a template can render one tile without the whole list.
+     *
+     * @param itemUid the item
+     * @param userUid the owner
+     * @return the item, or empty if it does not exist or belongs to somebody else
+     */
+    public Optional<Map<String, Object>> findItemForDisplay(String itemUid, String userUid) {
+        Utils.checkCondition(Utils.isValidRandom(itemUid), Invalid.ITEM_UID);
+        Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
+
+        Item item = datastore.find(Item.class, and(eq(Const.USER_UID, userUid), eq(Const.UID, itemUid)));
+        if (item == null) {
+            return Optional.empty();
+        }
+
+        // Not part of what the api returns for a list - the tile needs it to know
+        // where a drag would move the bookmark away from.
+        Map<String, Object> entry = toMap(item);
+        entry.put(Const.CATEGORY_UID, item.getCategoryUid());
+
+        return Optional.of(entry);
+    }
+
+    private Map<String, Object> toMap(Item item) {
+        Map<String, Object> entry = new HashMap<>(Map.of(
+                Const.UID, item.getUid(),
+                "url", safeUrl(item.getUrl()),
+                "image", getImage(item),
+                "title", item.getTitle(),
+                "description", StringUtils.isNotBlank(item.getDescription()) ? item.getDescription() : Strings.EMPTY,
+                "domain", StringUtils.isNotBlank(item.getDomain()) ? item.getDomain() : Strings.EMPTY,
+                "sort", item.getTimestamp().toEpochSecond(ZoneOffset.UTC),
+                "archived", item.isArchived(),
+                "added", DateUtils.getPrettyTime(item.getTimestamp()))); // FIX ME: Remove in later API version
+
+        // Only a trashed item has a deletion date, and the client cannot work it
+        // out on its own - the retention is a server side setting.
+        if (item.getTrashed() != null) {
+            entry.put("deleteAt", item.getTrashed().plusHours(Utils.getTrashRetention()).toEpochSecond(ZoneOffset.UTC));
+        }
+
+        return entry;
     }
 
     /**
@@ -200,6 +227,8 @@ public class DataService {
         Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
 
         Category trash = findTrash(userUid);
+        // Read before the update, or the category it came from is already gone
+        String source = sourceCategory(List.of(itemUid), userUid);
         var updateResult = datastore.query(Collections.ITEMS).updateOne(
                 and(
                         eq(Const.USER_UID, userUid),
@@ -212,7 +241,7 @@ public class DataService {
         );
 
         if (updateResult.getModifiedCount() == 1) {
-            eventService.itemsChanged(userUid);
+            eventService.itemsMoved(userUid, List.of(itemUid), source, trash.getUid());
             return Result.Success.empty();
         }
 
@@ -240,7 +269,7 @@ public class DataService {
         }
 
         if (deleteResult.wasAcknowledged()) {
-            eventService.itemsChanged(userUid);
+            eventService.trashEmptied(userUid, trash.getUid());
             return Result.Success.empty();
         }
 
@@ -307,7 +336,7 @@ public class DataService {
                     update);
 
             if (updateResult.wasAcknowledged()) {
-                eventService.itemsChanged(userUid);
+                eventService.itemsMoved(userUid, List.of(itemUid), sourceCategory.getUid(), categoryUid);
                 return Result.Success.empty();
             }
 
@@ -340,6 +369,8 @@ public class DataService {
                 ? combine(set(Const.CATEGORY_UID, categoryUid), set(Const.TRASHED, LocalDateTime.now()))
                 : combine(set(Const.CATEGORY_UID, categoryUid), unset(Const.TRASHED));
 
+        String source = sourceCategory(uids, userUid);
+
         var updateResult = datastore.query(Collections.ITEMS).updateMany(
                 and(
                         eq(Const.USER_UID, userUid),
@@ -348,7 +379,7 @@ public class DataService {
                 update);
 
         if (updateResult.wasAcknowledged()) {
-            eventService.itemsChanged(userUid);
+            eventService.itemsMoved(userUid, uids, source, categoryUid);
             return Result.Success.empty();
         }
 
@@ -364,6 +395,8 @@ public class DataService {
         List<String> uids = validUids(itemUids);
 
         Category trash = findTrash(userUid);
+        String source = sourceCategory(uids, userUid);
+
         var updateResult = datastore.query(Collections.ITEMS).updateMany(
                 and(
                         eq(Const.USER_UID, userUid),
@@ -376,11 +409,30 @@ public class DataService {
         );
 
         if (updateResult.wasAcknowledged()) {
-            eventService.itemsChanged(userUid);
+            eventService.itemsMoved(userUid, uids, source, trash.getUid());
             return Result.Success.empty();
         }
 
         return Result.Failure.server("Failed to delete items");
+    }
+
+    /**
+     * The category a set of items currently sits in, if they all sit in the same
+     * one. A selection in the dashboard always comes from a single view, so this
+     * is the normal case - an api client moving items from all over gets null,
+     * and the clients then only drop the tiles they can find.
+     */
+    private String sourceCategory(List<String> itemUids, String userUid) {
+        List<Item> items = new ArrayList<>();
+        datastore.query(Item.class)
+                .find(and(eq(Const.USER_UID, userUid), in(Const.UID, itemUids)))
+                .projection(include(Const.CATEGORY_UID))
+                .into(items);
+
+        return items.stream()
+                .map(Item::getCategoryUid)
+                .distinct()
+                .count() == 1 ? items.getFirst().getCategoryUid() : null;
     }
 
     private List<String> validUids(List<String> itemUids) {
@@ -491,7 +543,7 @@ public class DataService {
             String itemResult = save(item);
 
             if (StringUtils.isNoneBlank(categoryResult, itemResult)) {
-                eventService.itemAdded(userUid, category.getUid());
+                eventService.itemAdded(userUid, category.getUid(), item.getUid());
                 return Result.Success.empty();
             }
 

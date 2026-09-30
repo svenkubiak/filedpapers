@@ -49,6 +49,7 @@ public class Bootstrap implements MangooBootstrap {
         Bind.controller(DashboardController.class).withAuthentication().withRoutes(
                 On.get().to("/dashboard").respondeWith("dashboard"),
                 On.get().to("/dashboard/{categoryUid}").respondeWith("dashboard"),
+                On.get().to("/dashboard/item/{uid}").respondeWith("item"),
                 On.get().to("/dashboard/profile").respondeWith("profile"),
                 On.get().to("/dashboard/about").respondeWith("about"),
                 On.get().to("/dashboard/resync").respondeWith("resync"),

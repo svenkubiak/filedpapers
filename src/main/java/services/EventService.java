@@ -13,6 +13,8 @@ import utils.Utils;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -125,37 +127,71 @@ public class EventService {
     }
 
     /**
-     * Tells the dashboards of a user that a category gained an item. The payload
-     * carries the category rather than the item itself: the dashboard renders
-     * server side, so it reloads the view it is showing and leaves the others
-     * alone.
+     * Tells the dashboards of a user that a category gained an item.
+     *
+     * The payload names the item instead of carrying it: the dashboard fetches
+     * the rendered tile from the item endpoint, which keeps the markup in one
+     * place instead of a second copy in javascript.
      *
      * @param userUid the owner of the item
      * @param categoryUid the category the item landed in
+     * @param itemUid the item that was added
      */
-    public void itemAdded(String userUid, String categoryUid) {
-        if (!Utils.isValidRandom(userUid) || !Utils.isValidRandom(categoryUid)) {
+    public void itemAdded(String userUid, String categoryUid, String itemUid) {
+        if (!Utils.isValidRandom(userUid) || !Utils.isValidRandom(categoryUid) || !Utils.isValidRandom(itemUid)) {
             return;
         }
 
         send(userUid, Map.of(
                 "event", "item.added",
-                Const.CATEGORY_UID, categoryUid));
+                Const.CATEGORY_UID, categoryUid,
+                Const.UID, itemUid));
     }
 
     /**
-     * Tells the dashboards of a user that its list is out of date without saying
-     * which one - a move, a delete or an emptied trash can touch two categories
-     * at once, and working out which view is affected is not worth the payload.
+     * Tells the dashboards of a user that bookmarks changed category. Deleting
+     * is a move into the trash here, so it travels on this event too.
      *
      * @param userUid the owner of the items
+     * @param itemUids the items that moved
+     * @param from the category they came from, or null if they came from several
+     * @param to the category they landed in
      */
-    public void itemsChanged(String userUid) {
-        if (!Utils.isValidRandom(userUid)) {
+    public void itemsMoved(String userUid, List<String> itemUids, String from, String to) {
+        if (!Utils.isValidRandom(userUid) || itemUids == null || itemUids.isEmpty() || !Utils.isValidRandom(to)) {
             return;
         }
 
-        send(userUid, Map.of("event", "items.changed"));
+        Map<String, Object> payload = new HashMap<>(Map.of(
+                "event", "items.moved",
+                "uids", itemUids,
+                "to", to));
+
+        // A selection always comes from one view, but an api client can move
+        // items that sit in different categories - then the dashboards can only
+        // drop the tiles they find and leave the counters to the next load.
+        if (Utils.isValidRandom(from)) {
+            payload.put("from", from);
+        }
+
+        send(userUid, payload);
+    }
+
+    /**
+     * Tells the dashboards of a user that the trash is empty. Unlike a move,
+     * this one is final - the items are gone, not filed elsewhere.
+     *
+     * @param userUid the owner of the items
+     * @param trashUid the trash category
+     */
+    public void trashEmptied(String userUid, String trashUid) {
+        if (!Utils.isValidRandom(userUid) || !Utils.isValidRandom(trashUid)) {
+            return;
+        }
+
+        send(userUid, Map.of(
+                "event", "trash.emptied",
+                Const.CATEGORY_UID, trashUid));
     }
 
     private void send(String userUid, Map<String, Object> payload) {

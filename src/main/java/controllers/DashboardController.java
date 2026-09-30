@@ -16,8 +16,10 @@ import io.mangoo.utils.CommonUtils;
 import io.mangoo.utils.TotpUtils;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
+import jakarta.validation.constraints.NotEmpty;
 import models.Action;
 import models.Item;
+import models.enums.Role;
 import models.enums.Type;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.util.Strings;
@@ -82,6 +84,35 @@ public class DashboardController {
                 .render("version", Utils.getVersion())
                 .render("assetVersion", Utils.getAssetVersion())
                 .render("trashRetention", Utils.getTrashRetentionLabel());
+    }
+
+    /**
+     * Renders a single bookmark tile, without the page around it.
+     *
+     * The dashboard asks for this when an event says a bookmark arrived while it
+     * was open: inserting one tile keeps the scroll position, an open selection
+     * and the preview images that are already loaded, where a full reload would
+     * throw all of that away. The markup comes from the same macro the list
+     * uses, so there is no second version of it in javascript.
+     */
+    public Response item(Authentication authentication, @NotEmpty String uid) {
+        String userUid = authentication.getSubject();
+
+        try {
+            return dataService.findItemForDisplay(uid, userUid)
+                    .map(item -> {
+                        String categoryUid = String.valueOf(item.get(Const.CATEGORY_UID));
+                        var category = dataService.findCategory(categoryUid, userUid);
+
+                        return Response.ok()
+                                .render("item", Utils.convertItems(List.of(item)).getFirst())
+                                .render("categoryUid", categoryUid)
+                                .render("isTrash", category != null && category.getRole() == Role.TRASH);
+                    })
+                    .orElse(Response.notFound());
+        } catch (IllegalArgumentException e) {
+            return Response.badRequest();
+        }
     }
 
     public Response profile(Authentication authentication, Flash flash, String mfa) {

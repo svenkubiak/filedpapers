@@ -185,7 +185,9 @@
      data-search-action-add='${i18n("js.search.action.add")}'
      data-search-action-category='${i18n("js.search.action.category")}'
      data-search-action-theme='${i18n("js.search.action.theme")}'
-     data-items-copied-success='${i18n("js.items.copied")}'>
+     data-items-copied-success='${i18n("js.items.copied")}'
+     data-bookmark='${i18n("dashboard.bookmark")}'
+     data-bookmarks='${i18n("dashboard.bookmarks")}'>
 </div>
 <div id="x-csrf-token" class="is-hidden" data-csrf-token='<@csrftoken/>'></div>
 

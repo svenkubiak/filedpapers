@@ -424,8 +424,10 @@ function wireDragAndDrop() {
     // Where the drag started, so a drop onto that same category can be ignored
     let dragSource = null;
 
-    onAll('.item', 'dragstart', (e) => {
-        const item = e.currentTarget;
+    on(document, 'dragstart', (e) => {
+        const item = e.target.closest('.item');
+        if (!item) return;
+
         const uids = isPicking() && item.classList.contains('is-picked') ? pickedUids() : [item.dataset.uid];
 
         dragSource = item.dataset.category;
@@ -443,7 +445,7 @@ function wireDragAndDrop() {
         setTimeout(() => ghost.remove(), 0);
     });
 
-    onAll('.item', 'dragend', (e) => e.currentTarget.classList.remove('is-lifting'));
+    on(document, 'dragend', (e) => e.target.closest('.item')?.classList.remove('is-lifting'));
 
     const carriesItems = (e) => Array.from(e.dataTransfer.types || []).includes(MIME);
 
@@ -807,12 +809,88 @@ function reloadWhenIdle() {
     window.location.reload();
 }
 
-function bumpCategoryCount(categoryUid) {
+function adjustCategoryCount(categoryUid, delta) {
     const counter = $(`#nav .navitem[data-uid="${categoryUid}"] .navitem__n`);
     if (!counter) return;
 
     const count = parseInt(counter.textContent, 10);
-    if (!Number.isNaN(count)) counter.textContent = String(count + 1);
+    if (!Number.isNaN(count)) counter.textContent = String(Math.max(0, count + delta));
+}
+
+function setCategoryCount(categoryUid, value) {
+    const counter = $(`#nav .navitem[data-uid="${categoryUid}"] .navitem__n`);
+    if (counter) counter.textContent = String(value);
+}
+
+/*
+ * Puts a bookmark that arrived elsewhere at the top of the list, without
+ * rebuilding the page. The markup comes from the server - the same macro the
+ * list is rendered with - so there is no second copy of the tile in here.
+ */
+function insertTile(uid, countsTowardsCategory = true) {
+    const shelf = $id('shelf');
+
+    // An empty category shows a placeholder instead of a grid, and a tile has
+    // nowhere to go in it. The same goes for a tile that is somehow here
+    // already, which a reconnect can cause.
+    if (!shelf || shelf.querySelector(`.item[data-uid="${uid}"]`)) {
+        if (!shelf) reloadWhenIdle();
+        return;
+    }
+
+    fetch(`/dashboard/item/${encodeURIComponent(uid)}`, { headers: { 'Accept': 'text/html' } })
+        .then(response => response.ok ? response.text() : Promise.reject(new Error('HTTP ' + response.status)))
+        .then(html => {
+            shelf.insertAdjacentHTML('afterbegin', html.trim());
+            updateItemCount();
+            if (countsTowardsCategory) adjustCategoryCount(currentCategoryUid(), 1);
+        })
+        .catch(() => reloadWhenIdle());
+}
+
+// Keeps the line under the page title honest after a tile was inserted
+function updateItemCount() {
+    const counter = $('.page-head__meta span');
+    const shelf = $id('shelf');
+    if (!counter || !shelf) return;
+
+    const count = shelf.querySelectorAll('.item').length;
+    counter.textContent = count + ' ' + (count === 1 ? i18n.bookmark : i18n.bookmarks);
+}
+
+/*
+ * Bookmarks changed category somewhere else: drop the tiles that are on this
+ * page, pull in the ones that now belong here, and correct both counters.
+ */
+function onItemsMoved(payload) {
+    const uids = Array.isArray(payload.uids) ? payload.uids : [];
+    const current = currentCategoryUid();
+    const shelf = $id('shelf');
+
+    let removed = 0;
+    uids.forEach(uid => {
+        const tile = shelf?.querySelector(`.item[data-uid="${uid}"]`);
+        if (tile) {
+            tile.remove();
+            removed += 1;
+        }
+    });
+
+    if (payload.from) adjustCategoryCount(payload.from, -uids.length);
+    adjustCategoryCount(payload.to, uids.length);
+
+    // The last tile is gone, so the page has to show the placeholder instead
+    if (shelf && removed > 0 && !shelf.querySelector('.item')) {
+        reloadWhenIdle();
+        return;
+    }
+
+    if (removed > 0) updateItemCount();
+
+    // They landed in the view that is open, so they have to show up here
+    if (payload.to === current) {
+        uids.forEach(uid => insertTile(uid, false));
+    }
 }
 
 function onStreamMessage(event) {
@@ -823,18 +901,29 @@ function onStreamMessage(event) {
         return;
     }
 
-    if (payload.event === 'items.changed') {
-        reloadWhenIdle();
+    if (payload.event === 'items.moved') {
+        onItemsMoved(payload);
+        return;
+    }
+
+    if (payload.event === 'trash.emptied') {
+        // Everything in that view is gone, and an empty category shows a
+        // placeholder instead of a grid - that is a different page.
+        if (payload.categoryUid === currentCategoryUid()) {
+            reloadWhenIdle();
+        } else {
+            setCategoryCount(payload.categoryUid, 0);
+        }
         return;
     }
 
     if (payload.event === 'item.added') {
-        // The page only has to be rebuilt if the new bookmark belongs on it;
-        // otherwise the sidebar counter is the whole of the change.
+        // Only the view the bookmark belongs to changes; for the others the
+        // sidebar counter is the whole of it.
         if (payload.categoryUid === currentCategoryUid()) {
-            reloadWhenIdle();
+            insertTile(payload.uid);
         } else {
-            bumpCategoryCount(payload.categoryUid);
+            adjustCategoryCount(payload.categoryUid, 1);
         }
     }
 }
@@ -930,16 +1019,23 @@ onAll('.category-trash', 'click', (e) => {
 
 onAll('.empty-trash', 'click', () => openDialog($id('empty-trash-confirm-modal')));
 
-onAll('.item-trash', 'click', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    trashItem(e.currentTarget.closest('.item'));
-});
+// Delegated, not bound per tile: a tile that arrives over the event stream is
+// inserted into the page afterwards and has to work the same way.
+on(document, 'click', (e) => {
+    const trash = e.target.closest('.item-trash');
+    if (trash) {
+        e.preventDefault();
+        e.stopPropagation();
+        trashItem(trash.closest('.item'));
+        return;
+    }
 
-onAll('.item-archive', 'click', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    archiveItem(e.currentTarget.dataset.uid);
+    const archive = e.target.closest('.item-archive');
+    if (archive) {
+        e.preventDefault();
+        e.stopPropagation();
+        archiveItem(archive.dataset.uid);
+    }
 });
 
 on(window, 'load', flushStoredToasts);

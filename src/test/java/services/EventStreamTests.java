@@ -85,16 +85,18 @@ public class EventStreamTests {
         EventService eventService = Application.getInstance(EventService.class);
         String userUid = userWithInbox();
         String categoryUid = Utils.randomString();
+        String itemUid = Utils.randomString();
 
         List<String> lines = listen(eventService.createTicket(userUid));
         await().atMost(TIMEOUT).until(() -> lines.stream().anyMatch(line -> line.contains("ok")));
 
         //when a bookmark is added somewhere else
-        eventService.itemAdded(userUid, categoryUid);
+        eventService.itemAdded(userUid, categoryUid, itemUid);
 
-        //then it arrives, and it names the category it landed in
+        //then it arrives, and it names both the category and the item, so the
+        //dashboard can fetch that one tile instead of reloading
         await().atMost(TIMEOUT).until(() -> lines.stream().anyMatch(line -> line.contains("item.added")));
-        assertThat(String.join("\n", lines)).contains(categoryUid);
+        assertThat(String.join("\n", lines)).contains(categoryUid).contains(itemUid);
     }
 
     @Test
@@ -108,12 +110,12 @@ public class EventStreamTests {
         await().atMost(TIMEOUT).until(() -> lines.stream().anyMatch(line -> line.contains("ok")));
 
         //when the other user gets a bookmark
-        eventService.itemAdded(other, Utils.randomString());
-        eventService.itemsChanged(other);
+        eventService.itemAdded(other, Utils.randomString(), Utils.randomString());
+        eventService.itemsMoved(other, List.of(Utils.randomString()), Utils.randomString(), Utils.randomString());
 
         //then nothing of it shows up here
         Thread.sleep(1000);
-        assertThat(String.join("\n", lines)).doesNotContain("item.added", "items.changed");
+        assertThat(String.join("\n", lines)).doesNotContain("item.added", "items.moved");
     }
 
     @Test
@@ -153,5 +155,65 @@ public class EventStreamTests {
 
         //then
         assertThat(response.body()).doesNotContain("ok");
+    }
+
+    @Test
+    void testAMoveNamesTheItemsAndBothCategories() throws Exception {
+        //given a dashboard that is listening
+        EventService eventService = Application.getInstance(EventService.class);
+        String userUid = userWithInbox();
+        String from = Utils.randomString();
+        String to = Utils.randomString();
+        String first = Utils.randomString();
+        String second = Utils.randomString();
+
+        List<String> lines = listen(eventService.createTicket(userUid));
+        await().atMost(TIMEOUT).until(() -> lines.stream().anyMatch(line -> line.contains("ok")));
+
+        //when two bookmarks are moved elsewhere
+        eventService.itemsMoved(userUid, List.of(first, second), from, to);
+
+        //then the payload says what moved and where, so the dashboard can drop
+        //the tiles and correct both counters instead of reloading
+        await().atMost(TIMEOUT).until(() -> lines.stream().anyMatch(line -> line.contains("items.moved")));
+
+        String received = String.join("\n", lines);
+        assertThat(received).contains(first).contains(second).contains(from).contains(to);
+    }
+
+    @Test
+    void testAMoveFromSeveralCategoriesOmitsTheSource() throws Exception {
+        //given
+        EventService eventService = Application.getInstance(EventService.class);
+        String userUid = userWithInbox();
+        String to = Utils.randomString();
+
+        List<String> lines = listen(eventService.createTicket(userUid));
+        await().atMost(TIMEOUT).until(() -> lines.stream().anyMatch(line -> line.contains("ok")));
+
+        //when the source is not a single category
+        eventService.itemsMoved(userUid, List.of(Utils.randomString()), null, to);
+
+        //then the event still arrives, just without a source to count down
+        await().atMost(TIMEOUT).until(() -> lines.stream().anyMatch(line -> line.contains("items.moved")));
+        assertThat(String.join("\n", lines)).doesNotContain("\"from\"");
+    }
+
+    @Test
+    void testAnEmptiedTrashNamesTheCategory() throws Exception {
+        //given
+        EventService eventService = Application.getInstance(EventService.class);
+        String userUid = userWithInbox();
+        String trashUid = Utils.randomString();
+
+        List<String> lines = listen(eventService.createTicket(userUid));
+        await().atMost(TIMEOUT).until(() -> lines.stream().anyMatch(line -> line.contains("ok")));
+
+        //when
+        eventService.trashEmptied(userUid, trashUid);
+
+        //then
+        await().atMost(TIMEOUT).until(() -> lines.stream().anyMatch(line -> line.contains("trash.emptied")));
+        assertThat(String.join("\n", lines)).contains(trashUid);
     }
 }

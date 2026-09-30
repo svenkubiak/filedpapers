@@ -16,6 +16,7 @@ import io.undertow.util.StatusCodes;
 import models.Category;
 import models.Item;
 import models.User;
+import utils.Utils;
 import models.enums.Role;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -41,6 +42,7 @@ public class DashboardRenderTests {
     private static HttpCookie authentication;
     private static HttpCookie session;
     private static String trashUid;
+    private static String itemUid;
 
     @BeforeAll
     public static void init() {
@@ -83,14 +85,16 @@ public class DashboardRenderTests {
                 .withDomain("example.com")
                 .withDescription("description"));
 
-        datastore.save(Item.create()
+        Item inboxItem = Item.create()
                 .withUserUid(user.getUid())
                 .withCategoryUid(inbox.getUid())
                 .withUrl("https://example.com/a-rather-long-article-title")
                 .withImage("https://example.com/preview.png")
                 .withTitle("A bookmark with a title long enough to wrap onto a second line")
                 .withDomain("example.com")
-                .withDescription("description"));
+                .withDescription("description");
+        datastore.save(inboxItem);
+        itemUid = inboxItem.getUid();
 
         signIn();
     }
@@ -260,5 +264,61 @@ public class DashboardRenderTests {
         //then it still renders, it just cannot say when it goes
         assertThat(response.getContent(), containsString("A bookmark without a trashed date"));
         assertThat(response.getStatusCode(), equalTo(StatusCodes.OK));
+    }
+
+    @Test
+    public void testTheItemFragmentIsJustTheTile() {
+        //when the dashboard asks for a single bookmark it heard about
+        TestResponse response = get("/dashboard/item/" + itemUid);
+
+        //then it gets the tile and nothing around it - no layout, no sidebar
+        assertThat(response.getStatusCode(), equalTo(StatusCodes.OK));
+        assertThat(response.getContent(), containsString("<article class=\"item\" draggable=\"true\""));
+        assertThat(response.getContent(), containsString("A bookmark with a title long enough"));
+        assertThat(response.getContent(), not(containsString("<html")));
+        assertThat(response.getContent(), not(containsString("class=\"sidebar\"")));
+    }
+
+    @Test
+    public void testTheItemFragmentLooksLikeTheOneInTheList() {
+        //the list and the fragment come from the same macro, so a tile has to
+        //carry the same hooks either way - the javascript relies on them
+        String fromList = get("/dashboard").getContent();
+        String fragment = get("/dashboard/item/" + itemUid).getContent();
+
+        for (String hook : List.of("item__link", "item-move", "item-archive", "item-trash", "item__pick")) {
+            assertThat(hook, fromList, containsString(hook));
+            assertThat(hook, fragment, containsString(hook));
+        }
+    }
+
+    @Test
+    public void testAnItemOfSomebodyElseIsNotRendered() {
+        //given an item that belongs to another user
+        Datastore datastore = Application.getInstance(Datastore.class);
+        User other = new User("stranger@bar.com");
+        datastore.save(other);
+
+        Item foreign = Item.create()
+                .withUserUid(other.getUid())
+                .withCategoryUid(Utils.randomString())
+                .withUrl("https://example.com/secret")
+                .withImage("https://example.com/preview.png")
+                .withTitle("Not yours")
+                .withDomain("example.com")
+                .withDescription("description");
+        datastore.save(foreign);
+
+        //when
+        TestResponse response = get("/dashboard/item/" + foreign.getUid());
+
+        //then
+        assertThat(response.getStatusCode(), equalTo(StatusCodes.NOT_FOUND));
+        assertThat(response.getContent(), not(containsString("Not yours")));
+    }
+
+    @Test
+    public void testAnUnknownItemIsNotFound() {
+        assertThat(get("/dashboard/item/" + Utils.randomString()).getStatusCode(), equalTo(StatusCodes.NOT_FOUND));
     }
 }
