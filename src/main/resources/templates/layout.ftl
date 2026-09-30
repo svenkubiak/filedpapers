@@ -79,7 +79,7 @@
             <#list categories as category>
                 <#assign slug = category.name?lower_case>
                 <#if slug == "trash">
-                    <div class="navlabel"><span>${i18n("layout.nav.keep")}</span></div>
+                    <div class="navsep"></div>
                     <a class="navitem<#if categoryUid?? && categoryUid == category.uid> is-active</#if>"
                        href="/dashboard/${category.uid}" data-uid="${category.uid}" data-category="trash">
                         <@icons.icon "trash"/>

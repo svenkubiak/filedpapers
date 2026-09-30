@@ -77,6 +77,11 @@ public class AuthenticationController {
 
             var user = dataService.findUser(username);
             if (user != null && authentication.isValidLogin(user.getUid(), password, user.getSalt(), user.getPassword())) {
+                if (CommonUtils.needsRehash(user.getPassword())) {
+                    user.setPassword(CommonUtils.hashArgon2(password, user.getSalt()));
+                    dataService.save(user);
+                }
+
                 authentication.login(user.getUid());
                 authentication.rememberMe(rememberme);
                 authentication.twoFactorAuthentication(user.isMfa());
