@@ -45,7 +45,7 @@ public class DashboardEventHandler implements ServerSentEventConnectionCallback 
                 return;
             }
 
-            String uid = userUid.get();
+            String uid = userUid.orElseThrow();
             eventService.register(uid, connection);
 
             // The framework listener removes a connection under its request uri,
