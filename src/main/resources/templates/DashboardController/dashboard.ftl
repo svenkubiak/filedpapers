@@ -80,23 +80,26 @@
                         </div>
                     </#if>
                     <div class="item__scrim"></div>
-                    <span class="checkbox item__pick" aria-checked="false"><@icons.icon "check"/></span>
-                    <div class="item__acts">
-                        <button class="act act--grab item-move" type="button" tabindex="-1"
-                                data-tip="${i18n("dashboard.card.drag.tooltip")}">
-                            <@icons.icon "move"/>
+                </div>
+                <#-- Deliberately a sibling of the frame, not a child: in the compact
+                     view these sit at the end of the row, and inside the frame they
+                     would be clipped by its overflow and painted over by the link. -->
+                <span class="checkbox item__pick" aria-checked="false"><@icons.icon "check"/></span>
+                <div class="item__acts">
+                    <button class="act act--grab item-move" type="button" tabindex="-1"
+                            data-tip="${i18n("dashboard.card.drag.tooltip")}">
+                        <@icons.icon "move"/>
+                    </button>
+                    <#if !isTrash>
+                        <button class="act item-archive" type="button" data-uid="${item.uid}"
+                                data-tip="${i18n("dashboard.card.archive.tooltip")}">
+                            <@icons.icon "archive"/>
                         </button>
-                        <#if !isTrash>
-                            <button class="act item-archive" type="button" data-uid="${item.uid}"
-                                    data-tip="${i18n("dashboard.card.archive.tooltip")}">
-                                <@icons.icon "archive"/>
-                            </button>
-                            <button class="act act--danger item-trash" type="button"
-                                    data-tip="${i18n("dashboard.card.delete.tooltip")}">
-                                <@icons.icon "trash"/>
-                            </button>
-                        </#if>
-                    </div>
+                        <button class="act act--danger item-trash" type="button"
+                                data-tip="${i18n("dashboard.card.delete.tooltip")}">
+                            <@icons.icon "trash"/>
+                        </button>
+                    </#if>
                 </div>
                 <div class="item__text">
                     <h3 class="item__title">

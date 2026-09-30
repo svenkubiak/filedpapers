@@ -702,8 +702,15 @@ body.picking .tray { display: flex; }
 }
 .shelf--list .item__by { margin-top: 3px; }
 .shelf--list .item__acts {
-  position: static; flex: none; opacity: 0; transform: none;
-  background: none; backdrop-filter: none;
+  /* relative, not static: the stretched link of the tile is positioned and
+     would otherwise paint over these buttons - z-index does nothing on a
+     statically positioned element, and the click ended up opening the bookmark
+     instead of archiving or trashing it */
+  position: relative; top: auto; right: auto; flex: none;
+  /* they sit before the text in the markup, where the grid needs them; in a row
+     they belong at the end */
+  order: 1;
+  opacity: 0; transform: none; background: none; backdrop-filter: none;
 }
 .shelf--list .item:hover .item__acts { opacity: 1; }
 .shelf--list .act {
@@ -711,7 +718,7 @@ body.picking .tray { display: flex; }
 }
 .shelf--list .act:hover { background: var(--sunken); color: var(--accent); transform: none; }
 .shelf--list .act--danger:hover { color: var(--rust); }
-.shelf--list .item__pick { position: static; order: -1; }
+.shelf--list .item__pick { position: relative; top: auto; left: auto; order: -1; }
 body.picking .shelf--list .item__acts { display: none; }
 
 /* =============================================================================
