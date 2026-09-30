@@ -221,34 +221,6 @@ public class DashboardMoveTests {
     }
 
     @Test
-    public void testTheTokenSurvivesThePollTheDashboardRuns() {
-        //given the page was rendered, and the poll loop has fired once - it runs
-        //every three seconds for as long as the dashboard is open
-        String token = tokenFromDashboard();
-
-        TestResponse poll = TestRequest.post("/api/v1/categories/poll")
-                .withCookie(authentication)
-                .withCookie(session)
-                .withHeader("x-csrf-token", token)
-                .withContentType("application/json")
-                .withStringBody(JsonUtils.toJson(Map.of("count", "1", "category", inboxUid)))
-                .execute();
-        assertThat(poll.getStatusCode(), anyOf(equalTo(200), equalTo(304)));
-
-        //when the user drops a bookmark on another category afterwards
-        TestResponse response = TestRequest.put("/api/v1/items")
-                .withCookie(authentication)
-                .withCookie(session)
-                .withHeader("x-csrf-token", token)
-                .withContentType("application/json")
-                .withStringBody(JsonUtils.toJson(Map.of("uid", itemUid, "category", targetUid)))
-                .execute();
-
-        //then
-        assertThat(response.getStatusCode(), equalTo(200));
-    }
-
-    @Test
     public void testAMoveWithoutTheCsrfTokenIsRejected() {
         //when the header is missing, the cookie alone must not be enough
         TestResponse response = TestRequest.put("/api/v1/items")

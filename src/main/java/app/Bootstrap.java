@@ -6,6 +6,8 @@ import controllers.AuthenticationController;
 import controllers.DashboardController;
 import controllers.MediaController;
 import controllers.api.CategoriesControllerV1;
+import controllers.api.EventsControllerV1;
+import handlers.DashboardEventHandler;
 import controllers.api.ItemsControllerV1;
 import controllers.api.UserControllerV1;
 import de.svenkubiak.http.Http;
@@ -92,10 +94,17 @@ public class Bootstrap implements MangooBootstrap {
         Bind.controller(CategoriesControllerV1.class).withRoutes(
                 On.get().to("/api/v1/categories").respondeWith("list"),
                 On.put().to("/api/v1/categories").respondeWith("edit"),
-                On.post().to("/api/v1/categories/poll").respondeWith("poll"),
                 On.post().to("/api/v1/categories").respondeWith("add"),
                 On.delete().to("/api/v1/categories/{uid}").respondeWith("delete")
         );
+
+        Bind.controller(EventsControllerV1.class).withRoutes(
+                On.post().to("/api/v1/events/ticket").respondeWith("ticket")
+        );
+
+        // No filters run on an sse route, so DashboardEventHandler authenticates
+        // the connection itself with the ticket from the endpoint above.
+        Bind.serverSentEvent().to("/api/v1/events").withHandler(DashboardEventHandler.class);
 
         Bind.controller(UserControllerV1.class).withRoutes(
                 On.post().to("/api/v1/users/login").respondeWith("login"),

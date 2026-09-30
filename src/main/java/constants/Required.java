@@ -10,11 +10,14 @@ public final class Required {
     public static final String CATEGORY_NAME = "name can not be null";
     public static final String CATEGORY_UID = "categoryUid can not be null";
     public static final String CONFIG = "config can not be null";
+    public static final String CONNECTION = "connection can not be null";
     public static final String COOKIE_NAME = "cookieName can not be null";
     public static final String CREATED_AT = "createdAt can not be null";
     public static final String DATA = "data can not be null";
     public static final String DATA_SERVICE = "dataService can not be null";
     public static final String DATASTORE = "database can not be null";
+    public static final String EVENT_MANAGER = "eventManager can not be null";
+    public static final String EVENT_SERVICE = "eventService can not be null";
     public static final String FROM = "from can not be null";
     public static final String ID = "id can not be null";
     public static final String IMAGE = "image can not be null";

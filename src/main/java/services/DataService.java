@@ -75,12 +75,17 @@ public class DataService {
     private static final int MIN_SEARCH_LENGTH = 2;
     private final Datastore datastore;
     private final MediaService mediaService;
+    private final EventService eventService;
     private final String applicationUrl;
 
     @Inject
-    public DataService(Datastore datastore, MediaService mediaService, @Named("application.url") String applicationUrl) {
+    public DataService(Datastore datastore,
+                       MediaService mediaService,
+                       EventService eventService,
+                       @Named("application.url") String applicationUrl) {
         this.datastore = Objects.requireNonNull(datastore, Required.DATASTORE);
         this.mediaService = Objects.requireNonNull(mediaService, Required.MEDIA_SERVICE);
+        this.eventService = Objects.requireNonNull(eventService, Required.EVENT_SERVICE);
         this.applicationUrl = Objects.requireNonNull(applicationUrl, Required.APPLICATION_URL);
     }
 
@@ -119,17 +124,6 @@ public class DataService {
             }
             return output.isEmpty() ? Optional.empty() : Optional.of(output);
         }
-    }
-
-    public long countItems(String userUid, String categoryUid) {
-        Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
-
-        if (StringUtils.isBlank(categoryUid) || ("null").equals(categoryUid)) {
-            categoryUid = findInbox(userUid).getUid();
-        }
-
-        return datastore.countAll(Item.class,
-                and(eq(Const.USER_UID, userUid), eq(Const.CATEGORY_UID, categoryUid)));
     }
 
     public Optional<String> authenticateUser(String username, String password, Authentication authentication) {
@@ -217,7 +211,12 @@ public class DataService {
                 )
         );
 
-        return updateResult.getModifiedCount() == 1 ? Result.Success.empty() : Result.Failure.server("Failed to delete item");
+        if (updateResult.getModifiedCount() == 1) {
+            eventService.itemsChanged(userUid);
+            return Result.Success.empty();
+        }
+
+        return Result.Failure.server("Failed to delete item");
     }
 
     public Result.Of emptyTrash(String userUid) {
@@ -240,7 +239,12 @@ public class DataService {
             items.forEach(this::deleteMedia);
         }
 
-        return deleteResult.wasAcknowledged() ? Result.Success.empty() : Result.Failure.server("Failed to empty trash");
+        if (deleteResult.wasAcknowledged()) {
+            eventService.itemsChanged(userUid);
+            return Result.Success.empty();
+        }
+
+        return Result.Failure.server("Failed to empty trash");
     }
 
     private Category findTrash(String userUid) {
@@ -302,7 +306,12 @@ public class DataService {
                             eq(Const.UID, itemUid)),
                     update);
 
-            return updateResult.wasAcknowledged() ? Result.Success.empty() : Result.Failure.server("Failed to move item");
+            if (updateResult.wasAcknowledged()) {
+                eventService.itemsChanged(userUid);
+                return Result.Success.empty();
+            }
+
+            return Result.Failure.server("Failed to move item");
         } else {
             // Dropping a bookmark on the category it already sits in asks for a
             // state it is already in. Reporting that as a server error made the
@@ -338,7 +347,12 @@ public class DataService {
                         ne(Const.CATEGORY_UID, categoryUid)),
                 update);
 
-        return updateResult.wasAcknowledged() ? Result.Success.empty() : Result.Failure.server("Failed to move items");
+        if (updateResult.wasAcknowledged()) {
+            eventService.itemsChanged(userUid);
+            return Result.Success.empty();
+        }
+
+        return Result.Failure.server("Failed to move items");
     }
 
     /**
@@ -361,7 +375,12 @@ public class DataService {
                 )
         );
 
-        return updateResult.wasAcknowledged() ? Result.Success.empty() : Result.Failure.server("Failed to delete items");
+        if (updateResult.wasAcknowledged()) {
+            eventService.itemsChanged(userUid);
+            return Result.Success.empty();
+        }
+
+        return Result.Failure.server("Failed to delete items");
     }
 
     private List<String> validUids(List<String> itemUids) {
@@ -471,7 +490,12 @@ public class DataService {
 
             String itemResult = save(item);
 
-            return StringUtils.isNoneBlank(categoryResult, itemResult) ? Result.Success.empty() : Result.Failure.server("Failed to save bookmark");
+            if (StringUtils.isNoneBlank(categoryResult, itemResult)) {
+                eventService.itemAdded(userUid, category.getUid());
+                return Result.Success.empty();
+            }
+
+            return Result.Failure.server("Failed to save bookmark");
         } else {
             return Result.Failure.user("category does not exist");
         }

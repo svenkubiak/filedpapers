@@ -187,7 +187,6 @@
      data-search-action-theme='${i18n("js.search.action.theme")}'
      data-items-copied-success='${i18n("js.items.copied")}'>
 </div>
-<div id="poll-js" class="is-hidden" data-poll="<#if poll??>true<#else>false</#if>"></div>
 <div id="x-csrf-token" class="is-hidden" data-csrf-token='<@csrftoken/>'></div>
 
 <script src="/assets/js/api.js?v=${assetVersion}"></script>

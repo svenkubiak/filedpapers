@@ -81,8 +81,7 @@ public class DashboardController {
                 .render("username", dataService.findUserByUid(userUid).getUsername())
                 .render("version", Utils.getVersion())
                 .render("assetVersion", Utils.getAssetVersion())
-                .render("trashRetention", Utils.getTrashRetentionLabel())
-                .render("poll", Boolean.TRUE);
+                .render("trashRetention", Utils.getTrashRetentionLabel());
     }
 
     public Response profile(Authentication authentication, Flash flash, String mfa) {

@@ -22,7 +22,6 @@ const TOAST_SUCCESS = 'toast-success';
 const TOAST_ERROR = 'toast-error';
 
 const i18n = $id('i18n-js').dataset;
-const poll = $id('poll-js')?.dataset ?? null;
 
 let categoryToRename = null;
 let categoryToDelete = null;
@@ -779,32 +778,111 @@ function wireKeyboard() {
 }
 
 /* ==========================================================================
-   POLLING — another client added something, so the list is stale
+   LIVE UPDATES
+   A bookmark can arrive from the ios app or the browser extension while this
+   page sits open. The server pushes those over an event stream; the stream
+   itself runs on a route without filters, so it authenticates with a single
+   use ticket fetched from an endpoint that does have them.
    ========================================================================== */
-async function polling() {
-    try {
-        const count = $$('.item').length;
-        const match = window.location.pathname.match(/\/dashboard\/(.+)/);
+const stream = {
+    source: null,
+    attempts: 0,
+    closing: false
+};
 
-        const response = await window.apiPostNoThrow('/api/v1/categories/poll', {
-            count: count.toString(),
-            category: match ? match[1] : null
-        });
+const MAX_STREAM_ATTEMPTS = 6;
 
-        if (response.status !== 200 && response.status !== 304) return;
-
-        // Reloading under an open dialog or an active selection would throw
-        // away what the user is in the middle of; try again later instead.
-        if (response.status === 200) {
-            if (!$('.veil.is-open') && !isPicking()) {
-                window.location.reload();
-                return;
-            }
-        }
-
-        setTimeout(polling, 3000);
-    } catch (error) { /* offline, try again on the next page load */ }
+function currentCategoryUid() {
+    return $('#nav .navitem.is-active')?.dataset.uid ?? null;
 }
+
+// Reloading under an open dialog or an active selection throws away what the
+// user is in the middle of, so it waits for them to finish.
+function reloadWhenIdle() {
+    if ($('.veil.is-open') || isPicking()) {
+        setTimeout(reloadWhenIdle, 2000);
+        return;
+    }
+
+    window.location.reload();
+}
+
+function bumpCategoryCount(categoryUid) {
+    const counter = $(`#nav .navitem[data-uid="${categoryUid}"] .navitem__n`);
+    if (!counter) return;
+
+    const count = parseInt(counter.textContent, 10);
+    if (!Number.isNaN(count)) counter.textContent = String(count + 1);
+}
+
+function onStreamMessage(event) {
+    let payload;
+    try {
+        payload = JSON.parse(event.data);
+    } catch (e) {
+        return;
+    }
+
+    if (payload.event === 'items.changed') {
+        reloadWhenIdle();
+        return;
+    }
+
+    if (payload.event === 'item.added') {
+        // The page only has to be rebuilt if the new bookmark belongs on it;
+        // otherwise the sidebar counter is the whole of the change.
+        if (payload.categoryUid === currentCategoryUid()) {
+            reloadWhenIdle();
+        } else {
+            bumpCategoryCount(payload.categoryUid);
+        }
+    }
+}
+
+function connectStream() {
+    if (stream.closing || stream.attempts >= MAX_STREAM_ATTEMPTS) return;
+
+    window.apiPost('/api/v1/events/ticket', {})
+        .then(response => response.json())
+        .then(data => {
+            if (!data.ticket) throw new Error('no ticket');
+
+            const source = new EventSource('/api/v1/events?ticket=' + encodeURIComponent(data.ticket));
+            stream.source = source;
+
+            source.addEventListener('open', () => { stream.attempts = 0; });
+            source.addEventListener('message', onStreamMessage);
+
+            // A ticket is spent once it has been used, so the reconnect that
+            // EventSource does on its own would be rejected - close it and come
+            // back with a new ticket instead.
+            source.addEventListener('error', () => {
+                source.close();
+                stream.source = null;
+                retryStream();
+            });
+        })
+        .catch(retryStream);
+}
+
+function retryStream() {
+    if (stream.closing) return;
+
+    stream.attempts += 1;
+    if (stream.attempts >= MAX_STREAM_ATTEMPTS) {
+        console.warn('Filed Papers: giving up on the event stream after ' + stream.attempts + ' attempts');
+        return;
+    }
+
+    setTimeout(connectStream, Math.min(2000 * 2 ** (stream.attempts - 1), 30000));
+}
+
+// Leaving the page tears the connection down anyway; saying so avoids a last
+// reconnect attempt while the document is already going away.
+window.addEventListener('pagehide', () => {
+    stream.closing = true;
+    stream.source?.close();
+});
 
 /* ==========================================================================
    WIRING
@@ -866,6 +944,6 @@ onAll('.item-archive', 'click', (e) => {
 
 on(window, 'load', flushStoredToasts);
 
-if (poll != null && poll.poll === 'true') {
-    polling();
+if (document.getElementById('shelf') || $('#nav .navitem')) {
+    connectStream();
 }

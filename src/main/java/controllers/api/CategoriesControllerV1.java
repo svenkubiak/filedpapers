@@ -9,10 +9,8 @@ import io.mangoo.routing.bindings.Request;
 import jakarta.inject.Inject;
 import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
-import org.apache.commons.lang3.StringUtils;
 import services.DataService;
 import utils.ResultHandler;
-import utils.Utils;
 
 import java.util.Map;
 import java.util.Objects;
@@ -37,38 +35,6 @@ public class CategoriesControllerV1 {
         } catch (IllegalArgumentException e) {
             return Response.badRequest().bodyJsonError(e.getMessage());
         }
-    }
-
-    public Response poll(Request request, Map<String, String> data) {
-        String userUid = request.getAttribute(Const.USER_UID);
-
-        if (!data.isEmpty() && StringUtils.isNotBlank(data.get(Const.COUNT))) {
-            var count = Long.parseLong(data.get(Const.COUNT));
-            long items;
-
-            String categoryUid = data.get("category");
-            if (StringUtils.isBlank(categoryUid) || !Utils.isValidRandom(categoryUid)) {
-                categoryUid = dataService.findInbox(userUid).getUid();
-            }
-
-            if (dataService.findCategory(categoryUid, userUid) != null) {
-                try {
-                    items = dataService.countItems(userUid, categoryUid);
-                } catch (IllegalArgumentException e) {
-                    return Response.badRequest().bodyJsonError(e.getMessage());
-                }
-
-                if (items >= 0 && items != count) {
-                    return Response.ok();
-                } else if (items < 0) {
-                    return Response.internalServerError().bodyJson(Const.GENERAL_ERROR);
-                }
-            } else {
-                return Response.badRequest().bodyJsonError("Invalid category");
-            }
-        }
-
-        return Response.notModified();
     }
 
     public Response add(Request request, @NotNull @NotEmpty Map<String, String> data) {
