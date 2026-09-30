@@ -2,6 +2,7 @@ package utils;
 
 import constants.Const;
 import constants.Required;
+import io.mangoo.core.Application;
 import io.mangoo.core.Config;
 import io.mangoo.utils.CommonUtils;
 import io.mangoo.utils.DateUtils;
@@ -20,6 +21,8 @@ import java.util.*;
 import java.util.regex.Pattern;
 
 public final class Utils {
+    private static final int HOURS_PER_DAY = 24;
+    private static final String ASSET_VERSION = assetVersion();
     private static final Pattern RANDOM_PATTERN = Pattern.compile(
             "^[a-z0-9-_]+$",
             Pattern.CASE_INSENSITIVE
@@ -139,14 +142,22 @@ public final class Utils {
             Map<String, Object> map = HashMap.newHashMap((int)((item.size() + 1) / 0.75f) + 1);
             map.putAll(item);
 
-            var instant = Instant.ofEpochSecond(((long) item.get("sort")));
-            var localDateTime = LocalDateTime.ofInstant(instant, ZoneOffset.UTC);
+            map.put("sort", toLocalDateTime(item.get("sort")));
 
-            map.put("sort", localDateTime);
+            // Present on trashed items only, and the template formats it the
+            // same way it formats the date an item was added.
+            if (item.get("deleteAt") != null) {
+                map.put("deleteAt", toLocalDateTime(item.get("deleteAt")));
+            }
+
             list.add(map);
         }
 
         return list;
+    }
+
+    private static LocalDateTime toLocalDateTime(Object epochSecond) {
+        return LocalDateTime.ofInstant(Instant.ofEpochSecond((long) epochSecond), ZoneOffset.UTC);
     }
 
     public static String getVersion() {
@@ -156,6 +167,23 @@ public final class Utils {
         }
 
         return version;
+    }
+
+    /**
+     * Cache busting suffix for the stylesheets and scripts. A released build is
+     * pinned to its version; a development build uses the start time instead,
+     * because the version does not change between two runs and the browser
+     * would happily keep serving the assets of the previous one.
+     */
+    public static String getAssetVersion() {
+        return ASSET_VERSION;
+    }
+
+    private static String assetVersion() {
+        String version = getVersion();
+        return ("Unknown").equals(version) || version.contains("SNAPSHOT")
+                ? String.valueOf(System.currentTimeMillis())
+                : version;
     }
 
     public static void checkCondition(boolean condition, String message) {
@@ -190,5 +218,28 @@ public final class Utils {
 
     public static String randomString() {
         return CommonUtils.randomString(32);
+    }
+
+    public static int getTrashRetention() {
+        return Application
+                .getInstance(Config.class)
+                .getInt("application.trash.retention", 72);
+    }
+
+    /**
+     * The trash retention, split into the number and the unit key a template
+     * translates. Configured in hours, but a whole number of days reads better
+     * than "72 hours" - and the dashboard used to claim a hard coded 30 days
+     * regardless of what was configured.
+     */
+    public static Map<String, String> getTrashRetentionLabel() {
+        int hours = getTrashRetention();
+
+        if (hours >= HOURS_PER_DAY && hours % HOURS_PER_DAY == 0) {
+            int days = hours / HOURS_PER_DAY;
+            return Map.of("value", String.valueOf(days), "unit", days == 1 ? "day" : "days");
+        }
+
+        return Map.of("value", String.valueOf(hours), "unit", hours == 1 ? "hour" : "hours");
     }
 }

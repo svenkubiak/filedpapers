@@ -4,6 +4,9 @@ import io.mangoo.test.TestRunner;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 
+import java.util.List;
+import java.util.Map;
+
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 
@@ -56,5 +59,32 @@ public class UtilsTests {
 
         //then
         assertThat(valid, equalTo(false));
+    }
+
+    @Test
+    public void testTrashRetentionLabelUsesDaysForWholeDays() {
+        //given the configured retention, which defaults to 72 hours
+        int hours = Utils.getTrashRetention();
+
+        //when
+        Map<String, String> label = Utils.getTrashRetentionLabel();
+
+        //then a whole number of days is shown as days, anything else as hours
+        if (hours >= 24 && hours % 24 == 0) {
+            assertThat(label.get("value"), equalTo(String.valueOf(hours / 24)));
+            assertThat(label.get("unit"), equalTo(hours / 24 == 1 ? "day" : "days"));
+        } else {
+            assertThat(label.get("value"), equalTo(String.valueOf(hours)));
+            assertThat(label.get("unit"), equalTo(hours == 1 ? "hour" : "hours"));
+        }
+    }
+
+    @Test
+    public void testTrashRetentionLabelNamesAnExistingTranslationKey() {
+        //the template builds the key as dashboard.trash.unit.<unit>, so the
+        //unit has to be one of the four that exist
+        String unit = Utils.getTrashRetentionLabel().get("unit");
+
+        assertThat(List.of("hour", "hours", "day", "days").contains(unit), equalTo(true));
     }
 }

@@ -1,80 +1,74 @@
-:root {
-    --primary-color: #3273dc;
-    --secondary-color: #666;
-    --background-color: #ebeef2;
-    --light-gray: #999;
-    --white: #ffffff;
-    --box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    --radius-large: 12px; /* Adjust as per your variable */
-    --font-size-small: 0.9rem;
-    --font-size-large: 1.75rem;
-    --spacing-small: 0.5rem;
-    --spacing-medium: 1.5rem;
-    --spacing-large: 2rem;
+/*
+ * Filed Papers — sign in, sign up, password reset and the error pages.
+ *
+ * Loaded after app.css, whose tokens and components (.btn, .input, .field,
+ * .note) it reuses; everything here is the centred single card those pages sit
+ * in, and nothing else.
+ */
+
+.auth {
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  padding: 28px 20px;
+  background: var(--paper);
 }
 
-.auth-container {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background-color: var(--background-color);
+.auth__card {
+  width: 100%;
+  max-width: 400px;
 }
 
-.auth-box {
-    width: 100%;
-    max-width: 430px;
-    padding: var(--spacing-large);
-    background: var(--white);
-    border-radius: var(--radius-large);
-    box-shadow: var(--box-shadow);
+.auth__brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 26px;
+}
+.auth__mark {
+  width: 34px; height: 34px; flex: none;
+  display: grid; place-items: center;
+  border-radius: var(--r); color: var(--solid-fg); background: var(--solid-bg);
+}
+.auth__mark svg { width: 19px; height: 19px; }
+.auth__wordmark { font-family: var(--serif); font-size: 22px; letter-spacing: -.02em; }
+.auth__dot { color: var(--accent); }
+
+.auth__title {
+  font-family: var(--serif); font-size: 25px; letter-spacing: -.02em;
+  text-align: center;
+}
+.auth__subtitle {
+  font-size: 14px; color: var(--ink-muted);
+  text-align: center; margin-top: 6px;
 }
 
-.auth-logo {
-    width: 150px;
-    height: 150px;
-    margin: 0 auto var(--spacing-large);
-    color: var(--primary-color);
-    display: flex;
-    align-items: center;
-    justify-content: center;
+.auth__form {
+  display: flex; flex-direction: column; gap: 20px;
+  margin-top: 28px;
 }
 
-.auth-title {
-    font-size: var(--font-size-large);
-    font-weight: 600;
-    text-align: center;
-    margin-bottom: var(--spacing-small);
+.auth__row {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  font-size: 14px;
 }
 
-.auth-subtitle {
-    color: var(--secondary-color);
-    text-align: center;
-    margin-bottom: var(--spacing-large);
+.auth__check {
+  display: flex; align-items: center; gap: 9px;
+  cursor: pointer; user-select: none;
 }
+.auth__check input { position: absolute; opacity: 0; width: 0; height: 0; }
+.auth__check input:focus-visible + .checkbox { outline: 2px solid var(--accent); outline-offset: 2px; }
+.auth__check input:checked + .checkbox { background: var(--solid-bg); border-color: var(--solid-bg); }
+.auth__check input:checked + .checkbox svg { opacity: 1; }
 
-.auth-links {
-    text-align: center;
-    margin-top: var(--spacing-medium);
-    font-size: var(--font-size-small);
+.auth__links {
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  margin-top: 24px; font-size: 14px; color: var(--ink-muted);
 }
+.auth__links a { color: var(--accent); }
+.auth__links a:hover { text-decoration: underline; text-underline-offset: 2px; }
 
-.auth-links a {
-    color: var(--primary-color);
-    text-decoration: none;
-    transition: color 0.3s ease;
-}
-
-.auth-links span {
-    color: var(--light-gray);
-    margin: 0 var(--spacing-small);
-}
-
-@keyframes spinAround {
-    from {
-        transform: rotate(0deg);
-    }
-    to {
-        transform: rotate(360deg);
-    }
-}
+/* the one-time code on the second factor page */
+.auth .otp { justify-content: center; }

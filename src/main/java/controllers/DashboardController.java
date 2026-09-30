@@ -78,6 +78,10 @@ public class DashboardController {
                 .render("categories", categories.orElseThrow())
                 .render("categoryUid", category.getUid())
                 .render("items", Utils.convertItems(items.orElseThrow()))
+                .render("username", dataService.findUserByUid(userUid).getUsername())
+                .render("version", Utils.getVersion())
+                .render("assetVersion", Utils.getAssetVersion())
+                .render("trashRetention", Utils.getTrashRetentionLabel())
                 .render("poll", Boolean.TRUE);
     }
 
@@ -131,6 +135,8 @@ public class DashboardController {
                 .render("language", Utils.language(user))
                 .render("qrCode", qrCode)
                 .render("active", "profile")
+                .render("version", Utils.getVersion())
+                .render("assetVersion", Utils.getAssetVersion())
                 .render("categories", categories.orElseThrow());
     }
 
@@ -218,6 +224,9 @@ public class DashboardController {
 
         return Response.ok()
                 .render("active", "io")
+                .render("username", dataService.findUserByUid(userUid).getUsername())
+                .render("version", Utils.getVersion())
+                .render("assetVersion", Utils.getAssetVersion())
                 .render("categories", categories.orElseThrow());
     }
 
@@ -229,7 +238,9 @@ public class DashboardController {
 
         return Response.ok()
                 .render("active", "about")
+                .render("username", dataService.findUserByUid(userUid).getUsername())
                 .render("version", Utils.getVersion())
+                .render("assetVersion", Utils.getAssetVersion())
                 .render("categories", categories.orElseThrow());
     }
 

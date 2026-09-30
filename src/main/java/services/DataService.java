@@ -12,8 +12,6 @@ import constants.Const;
 import constants.Invalid;
 import constants.Required;
 import de.svenkubiak.http.Http;
-import io.mangoo.core.Application;
-import io.mangoo.core.Config;
 import io.mangoo.persistence.interfaces.Datastore;
 import io.mangoo.routing.bindings.Authentication;
 import io.mangoo.utils.CommonUtils;
@@ -72,6 +70,9 @@ public class DataService {
             .preserveRelativeLinks(false);
     private static final Logger LOG = LogManager.getLogger(DataService.class);
     private static final String FAILED_TO_FETCH_LINK_PREVIEW = "Failed to fetch link preview";
+    private static final int MAX_BULK_ITEMS = 200;
+    private static final int MAX_SEARCH_RESULTS = 50;
+    private static final int MIN_SEARCH_LENGTH = 2;
     private final Datastore datastore;
     private final MediaService mediaService;
     private final String applicationUrl;
@@ -154,9 +155,11 @@ public class DataService {
                         eq(Const.USER_UID, userUid),
                         eq(Const.CATEGORY_UID, categoryUid))).into(items);
 
+        int trashRetention = Utils.getTrashRetention();
+
         List<Map<String, Object>> output = new ArrayList<>();
         for (Item item: items) {
-            output.add(Map.of(
+            Map<String, Object> entry = new HashMap<>(Map.of(
                     Const.UID, item.getUid(),
                     "url", safeUrl(item.getUrl()),
                     "image", getImage(item),
@@ -166,6 +169,14 @@ public class DataService {
                     "sort", item.getTimestamp().toEpochSecond(ZoneOffset.UTC),
                     "archived", item.isArchived(),
                     "added", DateUtils.getPrettyTime(item.getTimestamp()))); // FIX ME: Remove in later API version
+
+            // Only a trashed item has a deletion date, and the client cannot work
+            // it out on its own - the retention is a server side setting.
+            if (item.getTrashed() != null) {
+                entry.put("deleteAt", item.getTrashed().plusHours(trashRetention).toEpochSecond(ZoneOffset.UTC));
+            }
+
+            output.add(entry);
         }
 
         return Optional.of(output);
@@ -293,8 +304,124 @@ public class DataService {
 
             return updateResult.wasAcknowledged() ? Result.Success.empty() : Result.Failure.server("Failed to move item");
         } else {
-            return Result.Failure.server("Can not move an item into the same category");
+            // Dropping a bookmark on the category it already sits in asks for a
+            // state it is already in. Reporting that as a server error made the
+            // dashboard show an error toast for a gesture that did no harm -
+            // and the bulk move, which filters those items out, never did.
+            return Result.Success.empty();
         }
+    }
+
+    /**
+     * Moves several items in one update. The trashed timestamp has to follow the
+     * target category the same way a single move does, because it drives the
+     * automatic trash cleanup.
+     */
+    public Result.Of moveItems(List<String> itemUids, String userUid, String categoryUid) {
+        Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
+        Utils.checkCondition(Utils.isValidRandom(categoryUid), Invalid.CATEGORY_UID);
+        List<String> uids = validUids(itemUids);
+
+        var targetCategory = findCategory(categoryUid, userUid);
+        if (targetCategory == null) {
+            return Result.Failure.user("Invalid category");
+        }
+
+        Bson update = targetCategory.getRole() == Role.TRASH
+                ? combine(set(Const.CATEGORY_UID, categoryUid), set(Const.TRASHED, LocalDateTime.now()))
+                : combine(set(Const.CATEGORY_UID, categoryUid), unset(Const.TRASHED));
+
+        var updateResult = datastore.query(Collections.ITEMS).updateMany(
+                and(
+                        eq(Const.USER_UID, userUid),
+                        in(Const.UID, uids),
+                        ne(Const.CATEGORY_UID, categoryUid)),
+                update);
+
+        return updateResult.wasAcknowledged() ? Result.Success.empty() : Result.Failure.server("Failed to move items");
+    }
+
+    /**
+     * Moves several items into the trash. Deleting in Filed Papers never removes
+     * anything right away - {@link #cleanTrash()} does that later.
+     */
+    public Result.Of deleteItems(List<String> itemUids, String userUid) {
+        Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
+        List<String> uids = validUids(itemUids);
+
+        Category trash = findTrash(userUid);
+        var updateResult = datastore.query(Collections.ITEMS).updateMany(
+                and(
+                        eq(Const.USER_UID, userUid),
+                        in(Const.UID, uids),
+                        ne(Const.CATEGORY_UID, trash.getUid())),
+                combine(
+                        set(Const.CATEGORY_UID, trash.getUid()),
+                        set(Const.TRASHED, LocalDateTime.now())
+                )
+        );
+
+        return updateResult.wasAcknowledged() ? Result.Success.empty() : Result.Failure.server("Failed to delete items");
+    }
+
+    private List<String> validUids(List<String> itemUids) {
+        Utils.checkCondition(itemUids != null && !itemUids.isEmpty(), Invalid.ITEM_UID);
+        Utils.checkCondition(itemUids.size() <= MAX_BULK_ITEMS, "Too many items in a single request");
+
+        List<String> uids = itemUids.stream().filter(Utils::isValidRandom).toList();
+        Utils.checkCondition(uids.size() == itemUids.size(), Invalid.ITEM_UID);
+
+        return uids;
+    }
+
+    /**
+     * Free text search across every category of a user except the trash, so the
+     * command palette can find a bookmark without knowing where it was filed.
+     * The term is quoted before it becomes a regular expression - a user
+     * searching for "c++" must not send a pattern to the database.
+     */
+    public Optional<List<Map<String, Object>>> searchItems(String userUid, String query, int limit) {
+        Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
+
+        String term = StringUtils.trimToEmpty(query);
+        if (term.length() < MIN_SEARCH_LENGTH) {
+            return Optional.of(List.of());
+        }
+
+        var pattern = Pattern.compile(Pattern.quote(term), Pattern.CASE_INSENSITIVE);
+        Category trash = findTrash(userUid);
+
+        Map<String, String> categoryNames = new HashMap<>();
+        List<Category> categories = new ArrayList<>();
+        datastore.query(Category.class).find(eq(Const.USER_UID, userUid)).into(categories);
+        categories.forEach(category -> categoryNames.put(category.getUid(), category.getName()));
+
+        List<Item> items = new ArrayList<>();
+        datastore.query(Item.class)
+                .find(and(
+                        eq(Const.USER_UID, userUid),
+                        ne(Const.CATEGORY_UID, trash.getUid()),
+                        or(
+                                regex("title", pattern),
+                                regex("domain", pattern),
+                                regex("url", pattern))))
+                .sort(Sorts.descending("timestamp"))
+                .limit(Math.clamp(limit, 1, MAX_SEARCH_RESULTS))
+                .into(items);
+
+        List<Map<String, Object>> output = new ArrayList<>();
+        for (Item item : items) {
+            output.add(Map.of(
+                    Const.UID, item.getUid(),
+                    "url", safeUrl(item.getUrl()),
+                    "title", StringUtils.isNotBlank(item.getTitle()) ? item.getTitle() : safeUrl(item.getUrl()),
+                    "domain", StringUtils.isNotBlank(item.getDomain()) ? item.getDomain() : Strings.EMPTY,
+                    Const.CATEGORY_UID, item.getCategoryUid(),
+                    "category", categoryNames.getOrDefault(item.getCategoryUid(), Strings.EMPTY),
+                    "added", DateUtils.getPrettyTime(item.getTimestamp())));
+        }
+
+        return Optional.of(output);
     }
 
     public Result.Of addItem(String userUid, String url, String categoryUid) {
@@ -823,9 +950,7 @@ public class DataService {
             return;
         }
 
-        int trashRetention = Application
-                .getInstance(Config.class)
-                .getInt("application.trash.retention", 72);
+        int trashRetention = Utils.getTrashRetention();
 
         Bson expired = and(
                 in(Const.CATEGORY_UID, trashUids),

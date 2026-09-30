@@ -14,11 +14,15 @@ import jakarta.validation.constraints.NotNull;
 import services.DataService;
 import utils.ResultHandler;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 
 @FilterWith(ApiAccessFilter.class)
 public class ItemsControllerV1 {
+    private static final String INVALID_BODY = "Expected a JSON body with a uids array";
+    private static final int DEFAULT_SEARCH_LIMIT = 25;
     private final DataService dataService;
 
     @Inject
@@ -79,6 +83,50 @@ public class ItemsControllerV1 {
         String userUid = request.getAttribute(Const.USER_UID);
         return ResultHandler.handle(() -> dataService.emptyTrash(userUid));
     }
+
+    /**
+     * Free text search across all categories, used by the command palette. Kept
+     * off the /items path on purpose - a search term must never be mistaken for
+     * a category uid by the router.
+     */
+    public Response search(Request request, String q) {
+        String userUid = request.getAttribute(Const.USER_UID);
+
+        try {
+            return dataService.searchItems(userUid, q, DEFAULT_SEARCH_LIMIT)
+                    .map(items -> Response.ok().bodyJson(Map.of("items", items)))
+                    .orElse(Response.ok().bodyJson(Map.of("items", List.of())));
+        } catch (IllegalArgumentException e) {
+            return Response.badRequest().bodyJsonError(e.getMessage());
+        }
+    }
+
+    public Response bulkMove(Request request) {
+        String userUid = request.getAttribute(Const.USER_UID);
+
+        return bulk(request).map(bulk ->
+                ResultHandler.handle(() -> dataService.moveItems(bulk.uids(), userUid, bulk.category())))
+                .orElseGet(() -> Response.badRequest().bodyJsonError(INVALID_BODY));
+    }
+
+    public Response bulkDelete(Request request) {
+        String userUid = request.getAttribute(Const.USER_UID);
+
+        return bulk(request).map(bulk ->
+                ResultHandler.handle(() -> dataService.deleteItems(bulk.uids(), userUid)))
+                .orElseGet(() -> Response.badRequest().bodyJsonError(INVALID_BODY));
+    }
+
+    private Optional<Bulk> bulk(Request request) {
+        try {
+            Bulk bulk = JsonUtils.toObject(request.getBody(), Bulk.class);
+            return bulk == null || bulk.uids() == null ? Optional.empty() : Optional.of(bulk);
+        } catch (Exception e) {
+            return Optional.empty();
+        }
+    }
+
+    public record Bulk(List<String> uids, String category) {}
 
     public Response move(Request request, @NotNull @NotEmpty Map<String, String> data) {
         String userUid = request.getAttribute(Const.USER_UID);

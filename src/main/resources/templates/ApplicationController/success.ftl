@@ -1,15 +1,13 @@
 <#import "./layout.ftl" as layout>
-<@layout.myLayout "Layout">
-<div class="auth-container">
-    <div class="auth-box">
-    <span class="icon auth-logo" style="color: green;">
-        <i class="fas fa-bookmark fa-8x"></i>
-    </span>
-        <h1 class="auth-title">${i18n("application.success.title")}</h1>
-        <p class="auth-subtitle">${i18n("application.success.subtitle")}</p>
-        <div class="auth-links">
-            <a href="/auth/login">${i18n("application.success.link")}</a>
-        </div>
-    </div>
+<#import "../_icons.ftl" as icons>
+<@layout.myLayout "Success">
+<div class="auth__brand">
+    <span class="auth__mark" style="background:var(--moss);color:#fff"><@icons.icon "check"/></span>
+    <span class="auth__wordmark">Filed Papers<span class="auth__dot">.</span></span>
+</div>
+<h1 class="auth__title">${i18n("application.success.title")}</h1>
+<p class="auth__subtitle">${i18n("application.success.subtitle")}</p>
+<div class="auth__links">
+    <a href="/auth/login">${i18n("application.success.link")}</a>
 </div>
 </@layout.myLayout>

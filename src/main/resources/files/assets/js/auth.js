@@ -1,28 +1,19 @@
-function showLoading(element) {
-    const button = document.getElementById(element);
-    if (button) {
-        button.classList.add('is-loading');
-        button.disabled = true;
-    }
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-    const notification = document.querySelector('.notification');
-    if (notification) {
-        const deleteButton = notification.querySelector('.delete');
-
-        deleteButton.addEventListener('click', () => {
-            notification.remove();
-        });
-    }
+/*
+ * Filed Papers — sign in, sign up and password reset.
+ *
+ * These pages are plain form posts; the only thing script does here is keep a
+ * submitted button from being pressed twice and put the cursor in the field the
+ * page is about.
+ */
+document.querySelectorAll('form[data-busy]').forEach(form => {
+    form.addEventListener('submit', () => {
+        const button = document.getElementById(form.dataset.busy);
+        if (button) {
+            button.classList.add('is-busy');
+            button.disabled = true;
+        }
+    });
 });
 
-const username = document.getElementById("username");
-if (username) {
-    username.focus();
-}
-
-const mfa = document.getElementById("mfa");
-if (mfa) {
-    mfa.focus();
-}
+const firstField = document.getElementById('mfa') || document.getElementById('username');
+firstField?.focus();

@@ -79,6 +79,9 @@ public class Bootstrap implements MangooBootstrap {
 
         Bind.controller(ItemsControllerV1.class).withRoutes(
                 On.post().to("/api/v1/items").respondeWith("add"),
+                On.get().to("/api/v1/search").respondeWith("search"),
+                On.put().to("/api/v1/items/bulk/move").respondeWith("bulkMove"),
+                On.put().to("/api/v1/items/bulk/delete").respondeWith("bulkDelete"),
                 On.post().to("/api/v1/archive/{uid}").respondeWith("archive"),
                 On.put().to("/api/v1/items").respondeWith("move"),
                 On.get().to("/api/v1/items/{categoryUid}").respondeWith("list"),
