@@ -358,11 +358,12 @@ kbd {
    ========================================================================== */
 .main { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: hidden; }
 .page { flex: 1; overflow-y: auto; padding: 26px 30px 90px; }
-/* The content area fills whatever the window offers: the tile grid gains
-   columns on a wide screen instead of leaving margins, and everything stays
-   anchored to the sidebar it was opened from. Line length is limited where it
-   matters - in .column below - not for the page as a whole. */
-.page__inner { width: 100%; }
+/* The content area grows with the window up to six tile columns, so the grid
+   and the page tools stay within one glance on a wide screen. It is not
+   centred: everything stays anchored to the sidebar it was opened from and the
+   spare width is left on the right. Line length is limited further where it
+   matters - in .column below. */
+.page__inner { max-width: 1640px; }
 /* Settings and text pages stay readable by keeping the line short, but they
    start at the same left edge as the sidebar and as every page title - a
    centred column drifts away from the navigation on a wide screen. */
