@@ -1,6 +1,8 @@
 package controllers;
 
 import constants.Const;
+import io.mangoo.core.Application;
+import io.mangoo.interfaces.TokenBlacklist;
 import io.mangoo.test.TestRunner;
 import io.mangoo.test.http.TestRequest;
 import io.mangoo.test.http.TestResponse;
@@ -18,6 +20,7 @@ public class ApplicationControllerTests {
     public void testHealth() {
         //when
         TestResponse response = TestRequest.get("/health").execute();
+        Application.getInstance(TokenBlacklist.class).isRevoked("foo", null, null);
 
         //then
         assertThat(response, not(nullValue()));
