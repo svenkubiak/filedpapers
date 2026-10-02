@@ -18,6 +18,7 @@ import java.util.Optional;
 public class DashboardEventHandler implements ServerSentEventConnectionCallback {
     private static final Logger LOG = LogManager.getLogger(DashboardEventHandler.class);
 
+    // Tells the client the ticket was accepted, the first keep-alive comment only follows after 30s.
     // Undertow sends everything as a data frame, so this can't be an SSE comment; the client ignores stream.* events.
     private static final String OPEN = "{\"event\":\"stream.open\"}";
 

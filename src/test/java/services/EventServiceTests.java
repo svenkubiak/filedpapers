@@ -82,6 +82,6 @@ public class EventServiceTests {
         eventService().itemAdded(Utils.randomString(), Utils.randomString(), Utils.randomString());
         eventService().itemsMoved(Utils.randomString(), List.of(Utils.randomString()), Utils.randomString(), Utils.randomString());
         eventService().trashEmptied(Utils.randomString(), Utils.randomString());
-        eventService().heartbeat();
+        eventService().purgeClosedConnections();
     }
 }

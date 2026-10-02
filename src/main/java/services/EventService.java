@@ -30,9 +30,6 @@ public class EventService {
     private static final Duration TICKET_TTL = Duration.ofSeconds(30);
     private static final int MAX_TICKETS = 10_000;
 
-    // Undertow can't send sse comments, so the keep-alive is an event the dashboard ignores.
-    public static final String PING = "{\"event\":\"stream.ping\"}";
-
     private final Map<String, Ticket> tickets = new ConcurrentHashMap<>();
     private final Map<String, Set<ServerSentEventConnection>> connections = new ConcurrentHashMap<>();
     private final ServerSentEventManager eventManager;
@@ -158,22 +155,14 @@ public class EventService {
         }
     }
 
-    // Keeps proxies from closing idle streams. Sends per connection instead of via the
-    // manager so closed ones are unregistered here even if their close task never arrives.
-    public void heartbeat() {
+    // mangoo sends the keep-alive comment and drops a dead peer on its next write. This is the
+    // safety net for close tasks that never arrive (e.g. behind a proxy).
+    public void purgeClosedConnections() {
         List<Map.Entry<String, ServerSentEventConnection>> stale = new ArrayList<>();
 
-        connections.forEach((userUid, values) -> values.forEach(connection -> {
-            if (connection.isOpen()) {
-                try {
-                    connection.send(PING);
-                } catch (RuntimeException e) {
-                    LOG.debug("Heartbeat for user '{}' failed", userUid, e);
-                }
-            } else {
-                stale.add(Map.entry(userUid, connection));
-            }
-        }));
+        connections.forEach((userUid, values) -> values.stream()
+                .filter(connection -> !connection.isOpen())
+                .forEach(connection -> stale.add(Map.entry(userUid, connection))));
 
         stale.forEach(entry -> unregister(entry.getKey(), entry.getValue()));
     }

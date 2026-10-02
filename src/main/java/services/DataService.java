@@ -772,20 +772,35 @@ public class DataService {
                         return;
                     }
 
-                    LinkPreview linkPreview;
+                    List<Bson> updates = new ArrayList<>();
+                    String mediaUid = null;
                     try {
-                        linkPreview = LinkPreviewFetcher.fetch(item.getUrl(), user.getLanguage());
+                        LinkPreview linkPreview = LinkPreviewFetcher.fetch(item.getUrl(), user.getLanguage());
                         String image = linkPreview.image();
-                        item.setImage(image);
+                        updates.add(set(Const.IMAGE, image));
                         if (!PLACEHOLDER_IMAGE.equals(image) && StringUtils.isNotBlank(image)) {
                             mediaService.clean(item.getMediaUid(), item.getUserUid());
-                            item.setMediaUid(mediaService.fetchAndStore(item.getImage(), item.getUserUid()).orElse(null));
+                            mediaUid = mediaService.fetchAndStore(image, item.getUserUid()).orElse(null);
+                            updates.add(set(Const.MEDIA_UID, mediaUid));
                         }
                     } catch (Exception e) {
-                        item.setImage(PLACEHOLDER_IMAGE);
+                        updates.add(set(Const.IMAGE, PLACEHOLDER_IMAGE));
                         LOG.error(FAILED_TO_FETCH_LINK_PREVIEW, e);
                     }
-                    save(item);
+
+                    // A resync runs for minutes, so only the preview fields are updated: saving the
+                    // whole item would undo a move and, as save upserts, bring back a deleted item.
+                    var updateResult = datastore.query(Collections.ITEMS).updateOne(
+                            and(
+                                    eq(Const.USER_UID, userUid),
+                                    eq(Const.UID, item.getUid())
+                            ),
+                            combine(updates)
+                    );
+
+                    if (updateResult.getMatchedCount() == 0) {
+                        mediaService.clean(mediaUid, userUid);
+                    }
         });
         LOG.info("Finished resync");
     }

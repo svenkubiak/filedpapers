@@ -828,7 +828,7 @@ function onStreamMessage(event) {
         return;
     }
 
-    // Connect ack and keep-alives arrive as stream.* events (they cannot be SSE comments).
+    // The connect ack arrives as a stream.* event; keep-alives are SSE comments EventSource drops itself.
     if (typeof payload.event === 'string' && payload.event.startsWith('stream.')) return;
 
     if (payload.event === 'items.moved') {

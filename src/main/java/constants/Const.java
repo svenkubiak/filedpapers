@@ -13,6 +13,7 @@ public final class Const {
     public static final String EXPIRES_AT = "expiresAt";
     public static final String FILEDPAPERS_FILES = "filedpapers.files";
     public static final String GENERAL_ERROR = "An error occurred. Please try again.";
+    public static final String IMAGE = "image";
     public static final String IMAGE_CACHE_PREFIX = "image-cache-";
     public static final String INBOX = "Inbox";
     public static final String MEDIA_UID = "mediaUid";

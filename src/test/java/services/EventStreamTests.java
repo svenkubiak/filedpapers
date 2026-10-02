@@ -126,32 +126,33 @@ public class EventStreamTests {
 
         first.hangUp();
 
-        // a dead peer is only noticed on the next write, which is the heartbeat
+        // a dead peer is only noticed on the next write
         await().atMost(TIMEOUT).until(() -> {
-            eventService.heartbeat();
+            eventService.itemAdded(userUid, categoryUid, itemUid);
+            eventService.purgeClosedConnections();
             return eventService.connectionCount(userUid) == 1;
         });
 
-        eventService.itemAdded(userUid, categoryUid, itemUid);
         await().atMost(TIMEOUT).until(() -> second.received().contains("item.added"));
         assertThat(second.received()).contains(itemUid);
     }
 
     @Test
-    void testTheHeartbeatReachesEveryConnectionOfAUser() throws Exception {
+    void testTheStreamIsNeitherBufferedNorCachedByAProxy() throws Exception {
         EventService eventService = Application.getInstance(EventService.class);
-        String userUid = userWithInbox();
 
-        Listener first = open(eventService.createTicket(userUid));
-        Listener second = open(eventService.createTicket(userUid));
-        awaitOpen(first, second);
+        HttpRequest request = HttpRequest.newBuilder(URI.create(url(eventService.createTicket(userWithInbox()))))
+                .header("Accept", "text/event-stream")
+                .GET()
+                .build();
 
-        eventService.heartbeat();
+        HttpResponse<InputStream> response = HttpClient.newHttpClient()
+                .send(request, HttpResponse.BodyHandlers.ofInputStream());
 
-        // undertow writes everything as a data frame, so the ping cannot be an sse comment
-        await().atMost(TIMEOUT).until(() -> first.received().contains("stream.ping")
-                && second.received().contains("stream.ping"));
-        assertThat(first.received()).contains("data:{\"event\":\"stream.ping\"}");
+        try (InputStream body = response.body()) {
+            assertThat(response.headers().firstValue("X-Accel-Buffering")).hasValue("no");
+            assertThat(response.headers().firstValue("Cache-Control")).hasValue("no-cache");
+        }
     }
 
     @Test
