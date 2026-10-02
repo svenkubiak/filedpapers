@@ -81,14 +81,13 @@ public class ApiAccessFilter implements PerRequestFilter {
                     return Response.unauthorized().end();
                 }
 
-                // The authentication cookie is issued before the second factor is
-                // verified, so a pending second factor has to block api access the
-                // same way it blocks routes bound with withAuthentication().
+                // The cookie is issued before the second factor is verified.
                 if (cookie && isTwoFactorPending(jwtClaimsSet)) {
                     return Response.unauthorized().end();
                 }
 
-                if (!cookie && authenticationService.isTokenBlacklisted(jwtClaimsSet.getJWTID())) {
+                // Parsed here rather than by mangoo, so a logged-out cookie has to be rejected here too.
+                if (authenticationService.isRevoked(jwtClaimsSet)) {
                     return Response.unauthorized().end();
                 }
 
@@ -97,8 +96,6 @@ public class ApiAccessFilter implements PerRequestFilter {
                     return Response.unauthorized().end();
                 }
 
-                // The user has to be loaded anyway to check the token against the
-                // last revocation, so this costs no extra round trip.
                 var user = dataService.findUserByUid(userUid);
                 if (user != null && AuthenticationService.isSessionValid(user, jwtClaimsSet)) {
                     request.addAttribute(Const.USER_UID, userUid);

@@ -19,11 +19,7 @@ public final class TestUtils {
         return csrfFrom(TestRequest.get("/auth/login").execute());
     }
 
-    /**
-     * Reads the csrf token out of the session cookie of a response. Needed for
-     * follow up requests in a flow, where the token of the initial response is no
-     * longer the current one.
-     */
+    /** Later requests in a flow need the current token from the session cookie, not the initial one. */
     public static Csrf csrfFrom(TestResponse response) {
         Config config = Application.getInstance(Config.class);
 

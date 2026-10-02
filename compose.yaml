@@ -64,7 +64,7 @@ services:
     container_name: filedpapers-metascraper
     image: ghcr.io/svenkubiak/filedpapers/filedpapers-metascraper:${VERSION}
     restart: always
-    # Chromium/single-file for Amazon needs more than 1g — 1g in prod causes OOM kills.
+    # Chromium/single-file (Amazon) gets OOM-killed with only 1g of memory.
     shm_size: "512mb"
     cpus: "2"
     cpu_shares: 1024

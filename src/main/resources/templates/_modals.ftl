@@ -1,8 +1,6 @@
 <#macro modals>
 <#import "_icons.ftl" as icons>
 
-<#-- Command palette: search across every category, plus the handful of places
-     and actions that are not reachable from the current page. -->
 <div class="veil" id="veil-search">
     <div class="palette">
         <div class="palette__in">
@@ -84,7 +82,6 @@
     </div>
 </div>
 
-<#-- Destination picker for a multi-item move. -->
 <div class="veil veil--center" id="bulk-move-modal">
     <div class="dialog">
         <div class="dialog__body">

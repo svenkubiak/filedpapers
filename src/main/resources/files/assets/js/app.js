@@ -1,12 +1,3 @@
-/*
- * Filed Papers — dashboard behaviour.
- *
- * The pages are rendered by the server; this file only covers what a page load
- * cannot do: dialogs, the command palette, selecting several bookmarks at once,
- * drag and drop, and the theme. Every mutation goes through the same /api/v1
- * endpoints the iOS app uses, followed by a reload so the sidebar counters and
- * the rendered list never drift apart.
- */
 const $id = (id) => document.getElementById(id);
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
@@ -26,9 +17,6 @@ const i18n = $id('i18n-js').dataset;
 let categoryToRename = null;
 let categoryToDelete = null;
 
-/* ==========================================================================
-   TOASTS
-   ========================================================================== */
 function showToast(message, type = 'success', duration = 4000) {
     const container = $id('toasts');
     if (!container || !message) return;
@@ -44,7 +32,6 @@ function showToast(message, type = 'success', duration = 4000) {
 }
 window.showToast = showToast;
 
-// A mutation redirects, so the confirmation has to survive the page load.
 function toastAfterReload(message, type = 'success') {
     sessionStorage.setItem(type === 'error' ? TOAST_ERROR : TOAST_SUCCESS, message);
 }
@@ -63,11 +50,7 @@ function flushStoredToasts() {
     }
 }
 
-/*
- * A failed request used to be followed by a reload, which wiped both the toast
- * and the console line that said what went wrong. Now the page stays where it
- * is and the message from the server is what the toast shows.
- */
+// Deliberately no reload on failure: it would wipe the toast and the logged error.
 function fail(error) {
     const response = error?.response;
 
@@ -95,9 +78,6 @@ function fail(error) {
         });
 }
 
-/* ==========================================================================
-   DIALOGS
-   ========================================================================== */
 function openDialog(el) {
     if (!el) return;
     closeDialogs();
@@ -118,9 +98,6 @@ function wireDialogs() {
     });
 }
 
-/* ==========================================================================
-   THEME
-   ========================================================================== */
 function currentTheme() {
     return document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light';
 }
@@ -137,9 +114,6 @@ function toggleTheme() {
     applyTheme(currentTheme() === 'dark' ? 'light' : 'dark');
 }
 
-/* ==========================================================================
-   SHELL — account menu and the off-canvas sidebar
-   ========================================================================== */
 function wireShell() {
     const menu = $id('account-menu');
     const account = $id('account');
@@ -173,9 +147,6 @@ function wireShell() {
     applyTheme(currentTheme());
 }
 
-/* ==========================================================================
-   CATEGORIES
-   ========================================================================== */
 function addCategory() {
     const input = $id('category');
     const name = input?.value.trim();
@@ -232,9 +203,6 @@ function emptyTrash() {
         .catch(fail);
 }
 
-/* ==========================================================================
-   BOOKMARKS
-   ========================================================================== */
 function addBookmark() {
     const url = $id('bookmark-url');
     const category = $id('bookmark-category');
@@ -273,20 +241,6 @@ function trashItem(item) {
         });
 }
 
-function archiveItem(uid) {
-    // Archiving fetches and stores the page, which takes a while - the server
-    // answers immediately and works in the background, so there is no reload.
-    window.apiPost(`/api/v1/archive/${uid}`, {})
-        .then(() => showToast(i18n.archivedSuccess))
-        .catch(() => showToast(i18n.error, 'error'));
-}
-
-/* ==========================================================================
-   SELECTING SEVERAL BOOKMARKS
-   A click opens a bookmark; selecting is a separate mode, entered on purpose.
-   While it is on, the per-item actions are hidden and the tray is the only
-   place an action comes from.
-   ========================================================================== */
 function isPicking() {
     return document.body.classList.contains('picking');
 }
@@ -348,7 +302,6 @@ function wirePicking() {
         const item = e.target.closest('.item');
         if (!item) return;
 
-        // Modifier-click starts the mode straight from a tile
         if (!isPicking() && (e.metaKey || e.ctrlKey || e.shiftKey)) {
             e.preventDefault();
             document.body.classList.add('picking');
@@ -411,17 +364,10 @@ function wirePicking() {
     });
 }
 
-/* ==========================================================================
-   DRAG & DROP — a tile onto a category in the sidebar
-   ========================================================================== */
 function wireDragAndDrop() {
-    // A tile is a link, and dragging a link makes the browser put its url into
-    // text/plain by itself. Reading that back as an item uid is what produced
-    // "itemUid is null or invalid", so the uids travel in a type of their own
-    // and a drop without it is not ours to handle.
+    // Own type: the browser fills text/plain with the dragged link's URL, which is not an item uid.
     const MIME = 'application/x-filedpapers-items';
 
-    // Where the drag started, so a drop onto that same category can be ignored
     let dragSource = null;
 
     on(document, 'dragstart', (e) => {
@@ -485,9 +431,6 @@ function wireDragAndDrop() {
     });
 }
 
-/* ==========================================================================
-   COMMAND PALETTE — search across all categories, plus jumps and actions
-   ========================================================================== */
 const palette = {
     veil: null,
     input: null,
@@ -500,8 +443,6 @@ function paletteOpen() {
     palette.veil = $id('veil-search');
     openDialog(palette.veil);
     palette.input.value = '';
-    // Opening with the categories and actions already listed makes the palette
-    // useful before a single key is pressed.
     paletteSearch();
     setTimeout(() => palette.input.focus(), 60);
 }
@@ -659,7 +600,6 @@ function wirePalette() {
 
     on('#open-search', 'click', paletteOpen);
     on('#open-search-sm', 'click', paletteOpen);
-    on('#menu-search', 'click', paletteOpen);
 
     on(palette.input, 'input', () => {
         clearTimeout(palette.timer);
@@ -685,9 +625,6 @@ function wirePalette() {
     });
 }
 
-/* ==========================================================================
-   VIEW MODE — the same markup, laid out as a grid or as rows
-   ========================================================================== */
 const VIEW_KEY = 'fp-view';
 
 function applyView(view) {
@@ -709,11 +646,7 @@ function wireView() {
     on('#view-grid', 'click', () => applyView('grid'));
 }
 
-/* ==========================================================================
-   FORMS
-   ========================================================================== */
 function wireForms() {
-    // Imports and profile changes are plain form posts; the button says so.
     onAll('form[data-busy]', 'submit', (e) => {
         const button = $id(e.currentTarget.dataset.busy);
         if (button) {
@@ -727,10 +660,27 @@ function wireForms() {
         if (name) $id('importfile-name').textContent = name;
     });
 
+    // Size checked here too: a file above the server's request limit never reaches its validation.
+    on('#avatar-pick', 'click', () => $id('avatar-file')?.click());
+    on('#avatar-file', 'change', (e) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (file.size > Number(e.target.dataset.maxBytes)) {
+            e.target.value = '';
+            showToast(i18n.avatarInvalid, 'error');
+            return;
+        }
+
+        const button = $id('avatar-pick');
+        button.classList.add('is-busy');
+        button.disabled = true;
+        e.target.form.submit();
+    });
+
     on('#bookmark-url', 'input', () => $id('bookmark-url').classList.remove('is-invalid'));
     on('#category', 'input', () => $id('category').classList.remove('is-invalid'));
 
-    // One digit per box, moving on by itself
     const otp = $$('.otp-input');
     otp.forEach((input, index) => {
         input.addEventListener('input', (e) => {
@@ -744,9 +694,6 @@ function wireForms() {
     otp.find(input => input.offsetParent !== null)?.focus();
 }
 
-/* ==========================================================================
-   KEYBOARD
-   ========================================================================== */
 function wireKeyboard() {
     on(document, 'keydown', (e) => {
         if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
@@ -779,13 +726,6 @@ function wireKeyboard() {
     });
 }
 
-/* ==========================================================================
-   LIVE UPDATES
-   A bookmark can arrive from the ios app or the browser extension while this
-   page sits open. The server pushes those over an event stream; the stream
-   itself runs on a route without filters, so it authenticates with a single
-   use ticket fetched from an endpoint that does have them.
-   ========================================================================== */
 const stream = {
     source: null,
     retry: null,
@@ -800,8 +740,6 @@ function currentCategoryUid() {
     return $('#nav .navitem.is-active')?.dataset.uid ?? null;
 }
 
-// Reloading under an open dialog or an active selection throws away what the
-// user is in the middle of, so it waits for them to finish.
 function reloadWhenIdle() {
     if ($('.veil.is-open') || isPicking()) {
         setTimeout(reloadWhenIdle, 2000);
@@ -824,17 +762,10 @@ function setCategoryCount(categoryUid, value) {
     if (counter) counter.textContent = String(value);
 }
 
-/*
- * Puts a bookmark that arrived elsewhere at the top of the list, without
- * rebuilding the page. The markup comes from the server - the same macro the
- * list is rendered with - so there is no second copy of the tile in here.
- */
 function insertTile(uid, countsTowardsCategory = true) {
     const shelf = $id('shelf');
 
-    // An empty category shows a placeholder instead of a grid, and a tile has
-    // nowhere to go in it. The same goes for a tile that is somehow here
-    // already, which a reconnect can cause.
+    // No shelf: empty category renders a placeholder instead. Duplicates can come from a reconnect.
     if (!shelf || shelf.querySelector(`.item[data-uid="${uid}"]`)) {
         if (!shelf) reloadWhenIdle();
         return;
@@ -850,7 +781,6 @@ function insertTile(uid, countsTowardsCategory = true) {
         .catch(() => reloadWhenIdle());
 }
 
-// Keeps the line under the page title honest after a tile was inserted
 function updateItemCount() {
     const counter = $('.page-head__meta span');
     const shelf = $id('shelf');
@@ -860,10 +790,6 @@ function updateItemCount() {
     counter.textContent = count + ' ' + (count === 1 ? i18n.bookmark : i18n.bookmarks);
 }
 
-/*
- * Bookmarks changed category somewhere else: drop the tiles that are on this
- * page, pull in the ones that now belong here, and correct both counters.
- */
 function onItemsMoved(payload) {
     const uids = Array.isArray(payload.uids) ? payload.uids : [];
     const current = currentCategoryUid();
@@ -881,7 +807,7 @@ function onItemsMoved(payload) {
     if (payload.from) adjustCategoryCount(payload.from, -uids.length);
     adjustCategoryCount(payload.to, uids.length);
 
-    // The last tile is gone, so the page has to show the placeholder instead
+    // An empty category needs the server-rendered placeholder.
     if (shelf && removed > 0 && !shelf.querySelector('.item')) {
         reloadWhenIdle();
         return;
@@ -889,7 +815,6 @@ function onItemsMoved(payload) {
 
     if (removed > 0) updateItemCount();
 
-    // They landed in the view that is open, so they have to show up here
     if (payload.to === current) {
         uids.forEach(uid => insertTile(uid, false));
     }
@@ -903,9 +828,7 @@ function onStreamMessage(event) {
         return;
     }
 
-    // The stream carries its own housekeeping: an acknowledgement on connect and
-    // a keep alive every few seconds. Neither can be an sse comment, so both
-    // arrive as events and are dropped here.
+    // Connect ack and keep-alives arrive as stream.* events (they cannot be SSE comments).
     if (typeof payload.event === 'string' && payload.event.startsWith('stream.')) return;
 
     if (payload.event === 'items.moved') {
@@ -914,8 +837,6 @@ function onStreamMessage(event) {
     }
 
     if (payload.event === 'trash.emptied') {
-        // Everything in that view is gone, and an empty category shows a
-        // placeholder instead of a grid - that is a different page.
         if (payload.categoryUid === currentCategoryUid()) {
             reloadWhenIdle();
         } else {
@@ -925,8 +846,6 @@ function onStreamMessage(event) {
     }
 
     if (payload.event === 'item.added') {
-        // Only the view the bookmark belongs to changes; for the others the
-        // sidebar counter is the whole of it.
         if (payload.categoryUid === currentCategoryUid()) {
             insertTile(payload.uid);
         } else {
@@ -935,11 +854,11 @@ function onStreamMessage(event) {
     }
 }
 
-// Only the pages that show bookmarks have anything to update
 function streamWanted() {
     return !!($id('shelf') || $('#nav .navitem'));
 }
 
+// The stream route has no filters, so it authenticates with a single-use ticket from one that does.
 function connectStream() {
     if (stream.closing || stream.connecting || stream.source) return;
     if (!streamWanted() || stream.attempts >= MAX_STREAM_ATTEMPTS) return;
@@ -958,9 +877,7 @@ function connectStream() {
             source.addEventListener('open', () => { stream.attempts = 0; });
             source.addEventListener('message', onStreamMessage);
 
-            // A ticket is spent once it has been used, so the reconnect that
-            // EventSource does on its own would be rejected - close it and come
-            // back with a new ticket instead.
+            // Tickets are single-use, so EventSource's own reconnect would be rejected; fetch a new ticket.
             source.addEventListener('error', () => {
                 source.close();
                 stream.source = null;
@@ -988,20 +905,13 @@ function retryStream() {
     }, Math.min(2000 * 2 ** (stream.attempts - 1), 30000));
 }
 
-/*
- * Comes back to a stream that is gone. Two cases end up here: a page restored
- * from the back forward cache, which was closed on the way out, and a machine
- * that was asleep or offline long enough to burn through every retry. Both
- * leave the page alive but deaf, and neither recovers on its own.
- */
+// Revives the stream after a bfcache restore or after sleep/offline exhausted all retries.
 function rearmStream() {
     if (document.visibilityState === 'hidden' || navigator.onLine === false) return;
 
     stream.closing = false;
     if (stream.source || stream.connecting) return;
 
-    // A pending retry is on a backoff of up to half a minute, and whatever woke
-    // us up is a better reason to try again than waiting that out.
     if (stream.retry) {
         clearTimeout(stream.retry);
         stream.retry = null;
@@ -1011,8 +921,7 @@ function rearmStream() {
     connectStream();
 }
 
-// Leaving the page tears the connection down anyway; saying so avoids a last
-// reconnect attempt while the document is already going away.
+// Prevents a last reconnect attempt while the page unloads.
 window.addEventListener('pagehide', () => {
     stream.closing = true;
     stream.source?.close();
@@ -1023,9 +932,6 @@ window.addEventListener('pageshow', rearmStream);
 window.addEventListener('online', rearmStream);
 document.addEventListener('visibilitychange', rearmStream);
 
-/* ==========================================================================
-   WIRING
-   ========================================================================== */
 wireDialogs();
 wireShell();
 wirePicking();
@@ -1069,22 +975,13 @@ onAll('.category-trash', 'click', (e) => {
 
 onAll('.empty-trash', 'click', () => openDialog($id('empty-trash-confirm-modal')));
 
-// Delegated, not bound per tile: a tile that arrives over the event stream is
-// inserted into the page afterwards and has to work the same way.
+// Delegated: tiles inserted later via the event stream must work too.
 on(document, 'click', (e) => {
     const trash = e.target.closest('.item-trash');
     if (trash) {
         e.preventDefault();
         e.stopPropagation();
         trashItem(trash.closest('.item'));
-        return;
-    }
-
-    const archive = e.target.closest('.item-archive');
-    if (archive) {
-        e.preventDefault();
-        e.stopPropagation();
-        archiveItem(archive.dataset.uid);
     }
 });
 

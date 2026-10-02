@@ -10,10 +10,7 @@
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
-    <#--
-      Runs before the stylesheet paints anything. Without it a dark theme
-      arrives one frame late and every page load flashes white.
-    -->
+    <#-- Must run before the stylesheet, otherwise dark theme flashes white on load. -->
     <script>
         (function () {
             var stored = null;
@@ -105,9 +102,6 @@
                 <button class="menu__item" id="menu-theme" type="button">
                     <@icons.icon "moon"/>${i18n("layout.menu.theme")}<kbd class="menu__kbd">⌘J</kbd>
                 </button>
-                <button class="menu__item" id="menu-search" type="button">
-                    <@icons.icon "command"/>${i18n("layout.menu.palette")}<kbd class="menu__kbd">⌘K</kbd>
-                </button>
                 <div class="menu__sep"></div>
                 <a class="menu__item menu__item--danger" href="/auth/logout">
                     <@icons.icon "logout"/>${i18n("layout.menu.logout")}
@@ -115,7 +109,7 @@
             </div>
 
             <button class="account" id="account" type="button" aria-haspopup="true" aria-expanded="false">
-                <span class="avatar">${username?substring(0, 2)?upper_case}</span>
+                <@avatarImage/>
                 <span class="account__txt">
                     <span class="account__mail">${username}</span>
                     <#assign bookmarkCount = 0>
@@ -172,7 +166,6 @@
      data-category-created-success='${i18n("js.category.created")}'
      data-bookmark-created-success='${i18n("js.bookmark.created")}'
      data-logout-devices-success='${i18n("js.logout.devices.success")}'
-     data-archived-success='${i18n("js.archived.success")}'
      data-items-moved-success='${i18n("js.items.moved")}'
      data-items-deleted-success='${i18n("js.items.deleted")}'
      data-selected-one='${i18n("js.selected.one")}'
@@ -186,6 +179,7 @@
      data-search-action-category='${i18n("js.search.action.category")}'
      data-search-action-theme='${i18n("js.search.action.theme")}'
      data-items-copied-success='${i18n("js.items.copied")}'
+     data-avatar-invalid='${i18n("toast.avatar.invalid")}'
      data-bookmark='${i18n("dashboard.bookmark")}'
      data-bookmarks='${i18n("dashboard.bookmarks")}'>
 </div>
@@ -201,4 +195,12 @@
 </#if>
 </body>
 </html>
+</#macro>
+
+<#macro avatarImage extra="">
+<#if avatar?? && avatar?has_content>
+    <img class="avatar<#if extra?has_content> ${extra}</#if>" src="/dashboard/profile/avatar?v=${avatar}" alt="">
+<#else>
+    <span class="avatar<#if extra?has_content> ${extra}</#if>">${username?substring(0, 2)?upper_case}</span>
+</#if>
 </#macro>

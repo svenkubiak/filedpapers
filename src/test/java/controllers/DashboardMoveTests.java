@@ -31,12 +31,7 @@ import java.util.regex.Pattern;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.*;
 
-/**
- * Drives the api the way the dashboard does: with the session cookie plus the
- * csrf token out of the rendered page, not with an access token. That
- * combination is what {@link filters.ApiAccessFilter} treats differently, so it
- * needs a test of its own.
- */
+/** Authenticates like the browser (session cookie + page csrf token), which ApiAccessFilter handles differently from access tokens. */
 @ExtendWith({TestRunner.class})
 public class DashboardMoveTests {
     private static final Pattern CSRF = Pattern.compile("id=\"x-csrf-token\"[^>]*data-csrf-token='([^']*)'");
@@ -96,7 +91,6 @@ public class DashboardMoveTests {
         session = login.getCookie(config.getSessionCookieName());
     }
 
-    /** The token the browser would send, read out of the page it was rendered into. */
     private String tokenFromDashboard() {
         TestResponse dashboard = get("/dashboard");
         Config config = Application.getInstance(Config.class);
@@ -121,10 +115,8 @@ public class DashboardMoveTests {
 
     @Test
     public void testMoveFromTheDashboard() {
-        //given the token of the currently rendered page
         String token = tokenFromDashboard();
 
-        //when the bookmark is dropped onto another category
         TestResponse response = TestRequest.put("/api/v1/items")
                 .withCookie(authentication)
                 .withCookie(session)
@@ -133,7 +125,6 @@ public class DashboardMoveTests {
                 .withStringBody(JsonUtils.toJson(Map.of("uid", itemUid, "category", targetUid)))
                 .execute();
 
-        //then
         assertThat(response.getStatusCode(), equalTo(200));
 
         DataService dataService = Application.getInstance(DataService.class);
@@ -143,10 +134,8 @@ public class DashboardMoveTests {
 
     @Test
     public void testBulkMoveFromTheDashboard() {
-        //given
         String token = tokenFromDashboard();
 
-        //when several bookmarks are dropped at once
         TestResponse response = TestRequest.put("/api/v1/items/bulk/move")
                 .withCookie(authentication)
                 .withCookie(session)
@@ -155,16 +144,13 @@ public class DashboardMoveTests {
                 .withStringBody(JsonUtils.toJson(Map.of("uids", List.of(itemUid), "category", targetUid)))
                 .execute();
 
-        //then
         assertThat(response.getStatusCode(), equalTo(200));
     }
 
     @Test
     public void testSearchFromTheDashboard() {
-        //given
         String token = tokenFromDashboard();
 
-        //when the command palette searches
         TestResponse response = TestRequest.get("/api/v1/search?q=bar")
                 .withCookie(authentication)
                 .withCookie(session)
@@ -172,13 +158,11 @@ public class DashboardMoveTests {
                 .withContentType("application/json")
                 .execute();
 
-        //then
         assertThat(response.getStatusCode(), equalTo(200));
     }
 
     @Test
     public void testTheTokenSurvivesAnEarlierApiCall() {
-        //given the page was rendered once, and something else already used its token
         String token = tokenFromDashboard();
 
         TestResponse first = TestRequest.get("/api/v1/search?q=bar")
@@ -189,7 +173,6 @@ public class DashboardMoveTests {
                 .execute();
         assertThat(first.getStatusCode(), equalTo(200));
 
-        //when a move follows with the same token, as it does in the browser
         TestResponse response = TestRequest.put("/api/v1/items")
                 .withCookie(authentication)
                 .withCookie(session)
@@ -198,16 +181,13 @@ public class DashboardMoveTests {
                 .withStringBody(JsonUtils.toJson(Map.of("uid", itemUid, "category", targetUid)))
                 .execute();
 
-        //then
         assertThat(response.getStatusCode(), equalTo(200));
     }
 
     @Test
     public void testMovingIntoTheSameCategory() {
-        //given
         String token = tokenFromDashboard();
 
-        //when the bookmark is dropped onto the category it already sits in
         TestResponse response = TestRequest.put("/api/v1/items")
                 .withCookie(authentication)
                 .withCookie(session)
@@ -216,13 +196,30 @@ public class DashboardMoveTests {
                 .withStringBody(JsonUtils.toJson(Map.of("uid", itemUid, "category", inboxUid)))
                 .execute();
 
-        //then
         assertThat(response.getStatusCode(), equalTo(200));
     }
 
     @Test
+    public void testTheApiRejectsCookiesAfterLogout() {
+        String token = tokenFromDashboard();
+
+        TestRequest.get("/auth/logout")
+                .withCookie(authentication)
+                .withCookie(session)
+                .execute();
+
+        TestResponse response = TestRequest.get("/api/v1/search?q=bar")
+                .withCookie(authentication)
+                .withCookie(session)
+                .withHeader("x-csrf-token", token)
+                .withContentType("application/json")
+                .execute();
+
+        assertThat(response.getStatusCode(), equalTo(401));
+    }
+
+    @Test
     public void testAMoveWithoutTheCsrfTokenIsRejected() {
-        //when the header is missing, the cookie alone must not be enough
         TestResponse response = TestRequest.put("/api/v1/items")
                 .withCookie(authentication)
                 .withCookie(session)
@@ -230,7 +227,6 @@ public class DashboardMoveTests {
                 .withStringBody(JsonUtils.toJson(Map.of("uid", itemUid, "category", targetUid)))
                 .execute();
 
-        //then
         assertThat(response.getStatusCode(), equalTo(401));
     }
 }

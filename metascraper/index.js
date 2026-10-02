@@ -18,7 +18,6 @@ const { access } = require('fs').promises;
 const app = express();
 const PORT = 3000;
 
-// metascraper: title, description, image, canonical url (+ amazon-specific rules)
 const metascraper = metascraperFactory([
   require('metascraper-amazon')(),
   require('metascraper-title')(),
@@ -48,10 +47,9 @@ const SCREENSHOT_DIR = path.join(os.tmpdir(), 'metascraper-screenshots');
 const SCREENSHOT_TTL_MS = 60 * 60 * 1000;
 const SINGLE_FILE_BIN = path.join(__dirname, 'node_modules', '.bin', 'single-file');
 
-// Port of the guarded forward proxy, set before the http server starts accepting.
 let browserProxyPort = null;
 
-// Only one Chromium/single-file job at a time — prevents OOM when multiple previews queue up.
+// Serialize Chromium/single-file jobs to avoid OOM.
 let browserJobQueue = Promise.resolve();
 
 const runWithBrowserLock = (task) => {
@@ -110,7 +108,6 @@ const findChromiumPath = async () => {
       await access(process.env.CHROME_BIN);
       return process.env.CHROME_BIN;
     } catch (e) {
-      // continue
     }
   }
 
@@ -138,7 +135,6 @@ const findChromiumPath = async () => {
     const foundPath = stdout.trim();
     if (foundPath) return foundPath;
   } catch (e) {
-    // ignore
   }
 
   return null;
@@ -149,10 +145,7 @@ const getChromiumArgs = () => {
   const args = flags.split(/\s+/).filter(Boolean);
 
   if (browserProxyPort) {
-    // Everything the browser requests, the main document and every subresource,
-    // goes through the guarded proxy. "<-loopback>" cancels Chromium's built in
-    // exception for loopback addresses, which would otherwise let a page reach
-    // services on 127.0.0.1 without passing the proxy at all.
+    // "<-loopback>" removes Chromium's implicit loopback bypass, so 127.0.0.1 also goes through the guard.
     args.push(`--proxy-server=http://127.0.0.1:${browserProxyPort}`);
     args.push('--proxy-bypass-list=<-loopback>');
   }
@@ -412,7 +405,6 @@ const extractGoogleMapsPlaceNameFromUrl = (url) => {
       return cleanText(decodeURIComponent(match[1].replace(/\+/g, ' ')));
     }
   } catch (e) {
-    // ignore
   }
   return null;
 };
@@ -692,8 +684,7 @@ const fetchMastodonStatusMetadata = async (status, pageUrl) => {
     image = media.preview_url || media.url;
   }
 
-  // Prefer OG image from the linked page — Mastodon's cached card.image can be a
-  // generic/warning preview; a screenshot would capture the "link verlassen" UI.
+  // Linked page's OG image first: Mastodon's card.image can be a generic warning preview.
   if (!image && status.card?.url) {
     image = await fetchImageFromLinkedUrl(status.card.url);
   }
@@ -848,11 +839,9 @@ const cleanupOldScreenshots = async () => {
           await fs.unlink(filePath);
         }
       } catch (e) {
-        // ignore
       }
     }));
   } catch (e) {
-    // ignore
   }
 };
 
@@ -905,7 +894,6 @@ const fetchMetadataWithBrowser = async (url) => {
   });
 };
 
-// Amazon pages: single-file-cli for JS-rendered product HTML
 const renderWithBrowser = async (url) => {
   return runWithBrowserLock(async () => {
     try {
@@ -1052,7 +1040,6 @@ app.get('/preview', async (req, res) => {
     let htmlValidationFailed = true;
     let lastHtml = null;
 
-    // Mastodon already resolved via API; skip HTML/UA scraping for it.
     if (!isMastodon) {
       for (const userAgent of getUserAgentsForUrl(fetchUrl)) {
         if (hasAllRequiredMetadata(bestMetadata)) break;
@@ -1091,13 +1078,11 @@ app.get('/preview', async (req, res) => {
           if (hasAllRequiredMetadata(bestMetadata)) break;
           if (isGoogleMapsUrl(fetchUrl) && getGoogleMapsImageScore(bestMetadata.image) >= 100) break;
         } catch (error) {
-          // next User-Agent
         }
       }
 
       enhanceMetadataForSite(bestMetadata, fetchUrl, lastHtml);
 
-      // Cloudflare / blocked / empty HTML → Chromium metadata (+ screenshot inside if needed)
       if (htmlValidationFailed && !bestMetadata.image) {
         console.log(`HTML fetch failed for ${fetchUrl}, trying browser fallback`);
         const browserMetadata = await fetchMetadataWithBrowser(fetchUrl);
@@ -1108,7 +1093,6 @@ app.get('/preview', async (req, res) => {
       }
     }
 
-    // Last resort: viewport screenshot when no image was found (never for Amazon)
     if (!bestMetadata.image && !isAmazon) {
       console.log(`No image found for ${fetchUrl}, capturing screenshot fallback`);
       const screenshotUrl = await captureScreenshot(fetchUrl);
@@ -1125,9 +1109,7 @@ app.get('/preview', async (req, res) => {
   }
 });
 
-// The proxy has to be up before the first browser launch, so it gates startup.
-// Without it Chromium would reach the network unguarded, which is exactly the
-// hole this is meant to close - so a failure here must not be survivable.
+// Must stay fatal: without the proxy Chromium would reach the network unguarded.
 startGuardedProxy()
   .then(({ port }) => {
     browserProxyPort = port;

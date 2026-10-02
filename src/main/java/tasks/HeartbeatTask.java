@@ -7,12 +7,7 @@ import services.EventService;
 
 import java.util.Objects;
 
-/**
- * Keeps the event streams open. A dashboard without changes sends nothing for
- * minutes, and a proxy in front of the application treats that as an idle
- * connection and closes it - so a keep alive goes out well within the usual
- * sixty second timeout.
- */
+// Keeps idle SSE streams alive; proxies typically close them after 60s.
 public class HeartbeatTask {
     private final EventService eventService;
 

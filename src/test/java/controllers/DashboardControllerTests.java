@@ -39,10 +39,8 @@ public class DashboardControllerTests {
 
     @Test
     public void testDashboardUnauthorized() {
-        //when
         TestResponse response = TestRequest.get("/dashboard/" + categoryId).execute();
 
-        //then
         assertThat(response, not(nullValue()));
         assertThat(response.getStatusCode(), equalTo(StatusCodes.OK));
         assertThat(response.getContent(), containsString("Please login to proceed."));
@@ -50,10 +48,8 @@ public class DashboardControllerTests {
 
     @Test
     public void testDashboardWithIdUnauthorized() {
-        //when
         TestResponse response = TestRequest.get("/dashboard/" + categoryId).execute();
 
-        //then
         assertThat(response, not(nullValue()));
         assertThat(response.getStatusCode(), equalTo(StatusCodes.OK));
         assertThat(response.getContent(), containsString("Please login to proceed."));
@@ -61,10 +57,8 @@ public class DashboardControllerTests {
 
     @Test
     public void testProfileUnauthorized() {
-        //when
         TestResponse response = TestRequest.get("/dashboard/profile").execute();
 
-        //then
         assertThat(response, not(nullValue()));
         assertThat(response.getStatusCode(), equalTo(StatusCodes.OK));
         assertThat(response.getContent(), containsString("Please login to proceed."));
@@ -72,10 +66,8 @@ public class DashboardControllerTests {
 
     @Test
     public void testAboutUnauthorized() {
-        //when
         TestResponse response = TestRequest.get("/dashboard/about").execute();
 
-        //then
         assertThat(response, not(nullValue()));
         assertThat(response.getStatusCode(), equalTo(StatusCodes.OK));
         assertThat(response.getContent(), containsString("Please login to proceed."));
@@ -83,10 +75,8 @@ public class DashboardControllerTests {
 
     @Test
     public void testResyncUnauthorized() {
-        //when
         TestResponse response = TestRequest.get("/dashboard/resync").execute();
 
-        //then
         assertThat(response, not(nullValue()));
         assertThat(response.getStatusCode(), equalTo(StatusCodes.OK));
         assertThat(response.getContent(), containsString("Please login to proceed."));
@@ -94,10 +84,8 @@ public class DashboardControllerTests {
 
     @Test
     public void testChangeUsernameUnauthorized() {
-        //when
         TestResponse response = TestRequest.post("/dashboard/profile/change-username").execute();
 
-        //then
         assertThat(response, not(nullValue()));
         assertThat(response.getStatusCode(), equalTo(StatusCodes.OK));
         assertThat(response.getContent(), containsString("Please login to proceed."));
@@ -105,10 +93,8 @@ public class DashboardControllerTests {
 
     @Test
     public void testChangePasswordUnauthorized() {
-        //when
         TestResponse response = TestRequest.post("/dashboard/profile/change-password").execute();
 
-        //then
         assertThat(response, not(nullValue()));
         assertThat(response.getStatusCode(), equalTo(StatusCodes.OK));
         assertThat(response.getContent(), containsString("Please login to proceed."));
@@ -116,10 +102,8 @@ public class DashboardControllerTests {
 
     @Test
     public void testChangeDeleteAccountUnauthorized() {
-        //when
         TestResponse response = TestRequest.post("/dashboard/profile/delete-account").execute();
 
-        //then
         assertThat(response, not(nullValue()));
         assertThat(response.getStatusCode(), equalTo(StatusCodes.OK));
         assertThat(response.getContent(), containsString("Please login to proceed."));
@@ -127,10 +111,8 @@ public class DashboardControllerTests {
 
     @Test
     public void testEnableMfaUnauthorized() {
-        //when
         TestResponse response = TestRequest.post("/dashboard/profile/enable-mfa").execute();
 
-        //then
         assertThat(response, not(nullValue()));
         assertThat(response.getStatusCode(), equalTo(StatusCodes.OK));
         assertThat(response.getContent(), containsString("Please login to proceed."));
@@ -138,10 +120,8 @@ public class DashboardControllerTests {
 
     @Test
     public void testLogoutDevicesUnauthorized() {
-        //when
         TestResponse response = TestRequest.post("/dashboard/profile/logout-devices").execute();
 
-        //then
         assertThat(response, not(nullValue()));
         assertThat(response.getStatusCode(), equalTo(StatusCodes.OK));
         assertThat(response.getContent(), containsString("Please login to proceed."));
@@ -149,10 +129,8 @@ public class DashboardControllerTests {
 
     @Test
     public void testSetLanguageUnauthorized() {
-        //when
         TestResponse response = TestRequest.post("/dashboard/profile/language").execute();
 
-        //then
         assertThat(response, not(nullValue()));
         assertThat(response.getStatusCode(), equalTo(StatusCodes.OK));
         assertThat(response.getContent(), containsString("Please login to proceed."));
@@ -160,10 +138,8 @@ public class DashboardControllerTests {
 
     @Test
     public void testConfirmEmailUnauthorized() {
-        //when
         TestResponse response = TestRequest.get("/dashboard/profile/confirm-email").execute();
 
-        //then
         assertThat(response, not(nullValue()));
         assertThat(response.getStatusCode(), equalTo(StatusCodes.OK));
         assertThat(response.getContent(), containsString("Please login to proceed."));
@@ -171,10 +147,8 @@ public class DashboardControllerTests {
 
     @Test
     public void testDashboardIoUnauthorized() {
-        //when
         TestResponse response = TestRequest.get("/dashboard/io").execute();
 
-        //then
         assertThat(response, not(nullValue()));
         assertThat(response.getStatusCode(), equalTo(StatusCodes.OK));
         assertThat(response.getContent(), containsString("Please login to proceed."));
@@ -182,10 +156,8 @@ public class DashboardControllerTests {
 
     @Test
     public void testExportUnauthorized() {
-        //when
         TestResponse response = TestRequest.post("/dashboard/io/exporter").execute();
 
-        //then
         assertThat(response, not(nullValue()));
         assertThat(response.getStatusCode(), equalTo(StatusCodes.OK));
         assertThat(response.getContent(), containsString("Please login to proceed."));
@@ -193,10 +165,8 @@ public class DashboardControllerTests {
 
     @Test
     public void testImporterUnauthorized() {
-        //when
         TestResponse response = TestRequest.post("/dashboard/io/importer").execute();
 
-        //then
         assertThat(response, not(nullValue()));
         assertThat(response.getStatusCode(), equalTo(StatusCodes.OK));
         assertThat(response.getContent(), containsString("Please login to proceed."));

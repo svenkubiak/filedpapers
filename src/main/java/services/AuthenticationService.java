@@ -1,35 +1,29 @@
 package services;
 
-import com.github.benmanes.caffeine.cache.Caffeine;
 import com.nimbusds.jwt.JWTClaimsSet;
 import constants.Const;
 import constants.Invalid;
 import constants.Required;
-import io.mangoo.cache.Cache;
-import io.mangoo.cache.CacheImpl;
 import io.mangoo.core.Config;
 import io.mangoo.exceptions.MangooJwtException;
+import io.mangoo.interfaces.TokenBlacklist;
 import io.mangoo.utils.Argument;
 import io.mangoo.utils.CommonUtils;
 import io.mangoo.utils.JwtUtils;
 import jakarta.inject.Inject;
 import jakarta.inject.Singleton;
-import models.Token;
 import models.User;
-import org.apache.logging.log4j.util.Strings;
 import utils.Utils;
 
 import java.nio.charset.StandardCharsets;
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
+import java.time.Instant;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 @Singleton
 public class AuthenticationService {
-    private static final int THOUSAND = 1000;
-    private static final String INVALID = "invalid_";
     private static final String API_CHALLENGE_TOKEN_SECRET = "api.challengeToken.secret";
     private static final String API_CHALLENGE_TOKEN_KEY = "api.challengeToken.key";
     private static final String API_ACCESS_TOKEN_SECRET = "api.accessToken.secret";
@@ -40,16 +34,14 @@ public class AuthenticationService {
     private static final String API_REFRESH_TOKEN_EXPIRES = "api.refreshToken.expires";
     private final DataService dataService;
     private final Config config;
-    private final Cache cache;
+    private final TokenBlacklist tokenBlacklist;
+    private final Set<String> challengesInUse = ConcurrentHashMap.newKeySet();
 
     @Inject
-    public AuthenticationService(DataService dataService, Config config) {
+    public AuthenticationService(DataService dataService, Config config, TokenBlacklist tokenBlacklist) {
         this.dataService = Objects.requireNonNull(dataService, Required.DATA_SERVICE);
         this.config = Objects.requireNonNull(config, Required.CONFIG);
-        this.cache = new CacheImpl( Caffeine.newBuilder()
-                .maximumSize(THOUSAND)
-                .expireAfterWrite(Duration.of(10, ChronoUnit.MINUTES))
-                .build());
+        this.tokenBlacklist = Objects.requireNonNull(tokenBlacklist, Required.TOKEN_BLACKLIST);
     }
 
     public Map<String, String> getChallengeToken(String userUid) throws MangooJwtException {
@@ -105,16 +97,8 @@ public class AuthenticationService {
         return Map.of(Const.ACCESS_TOKEN, accessToken, Const.REFRESH_TOKEN, refreshToken);
     }
 
-    /**
-     * Checks whether a token or authentication cookie was issued after the last
-     * revocation for the given user. This is the single point that makes
-     * "logout all devices", a password change and a password reset effective
-     * for access tokens, refresh tokens and dashboard sessions alike.
-     *
-     * @param user The user the token was issued for, may be null
-     * @param jwtClaimsSet The claims of the parsed token or cookie
-     * @return true if the token is still considered valid
-     */
+    // Single revocation check for all tokens and cookies: anything issued before
+    // sessionsValidFrom (epoch seconds) is invalid.
     public static boolean isSessionValid(User user, JWTClaimsSet jwtClaimsSet) {
         if (user == null || jwtClaimsSet == null) {
             return false;
@@ -182,27 +166,60 @@ public class AuthenticationService {
                 (int) config.getAuthenticationCookieRememberExpires());
     }
 
-    public void blacklistToken(String id) {
-        Argument.requireNonBlank(id, Required.ID);
-        cache.put(INVALID + id, Strings.EMPTY);
+    public void revoke(JWTClaimsSet jwtClaimsSet) {
+        Objects.requireNonNull(jwtClaimsSet, Required.JWT_CLAIMS_SET);
+
+        tokenBlacklist.revoke(jwtClaimsSet.getJWTID(), jwtClaimsSet.getExpirationTime().toInstant());
     }
 
-    public boolean isTokenBlacklisted(String id) {
-        Argument.requireNonBlank(id, Required.ID);
+    // The refresh token only carries the id of its access token, so the configured lifetime is the expiry bound.
+    public void revokeAccessToken(String jwtId) {
+        Argument.requireNonBlank(jwtId, Required.ID);
 
-        return cache.get(INVALID + id) != null;
+        tokenBlacklist.revoke(jwtId, Instant.now().plusSeconds(config.getInt(API_ACCESS_TOKEN_EXPIRES) * 60L));
     }
 
-    public boolean isRefreshBlacklisted(String id) {
-        Argument.requireNonBlank(id, Required.ID);
-        return dataService.tokenExists(id);
+    // Covers every token type and the authentication cookie, which mangoo revokes on logout.
+    public boolean isRevoked(JWTClaimsSet jwtClaimsSet) {
+        Objects.requireNonNull(jwtClaimsSet, Required.JWT_CLAIMS_SET);
+
+        var issuedAt = jwtClaimsSet.getIssueTime();
+        return tokenBlacklist.isRevoked(jwtClaimsSet.getJWTID(),
+                jwtClaimsSet.getSubject(),
+                issuedAt == null ? null : issuedAt.toInstant());
     }
 
-    public void blacklistRefreshToken(String id) {
-        Argument.requireNonBlank(id, Required.ID);
+    /**
+     * Reserves a challenge token for one attempt; a parallel attempt with the same token is refused.
+     * Must be paired with {@link #endChallenge(JWTClaimsSet, boolean)}.
+     */
+    public boolean beginChallenge(JWTClaimsSet jwtClaimsSet) {
+        Objects.requireNonNull(jwtClaimsSet, Required.JWT_CLAIMS_SET);
 
-        if (!isRefreshBlacklisted(id)) {
-            dataService.save(new Token(id, LocalDateTime.now()));
+        String jwtId = jwtClaimsSet.getJWTID();
+        if (!challengesInUse.add(jwtId)) {
+            return false;
+        }
+
+        // Checked only after reserving: a redeeming attempt revokes before it releases, so this sees it.
+        if (isRevoked(jwtClaimsSet)) {
+            challengesInUse.remove(jwtId);
+            return false;
+        }
+
+        return true;
+    }
+
+    // A failed attempt releases the token so a mistyped code can be retried.
+    public void endChallenge(JWTClaimsSet jwtClaimsSet, boolean redeemed) {
+        Objects.requireNonNull(jwtClaimsSet, Required.JWT_CLAIMS_SET);
+
+        try {
+            if (redeemed) {
+                revoke(jwtClaimsSet);
+            }
+        } finally {
+            challengesInUse.remove(jwtClaimsSet.getJWTID());
         }
     }
 }

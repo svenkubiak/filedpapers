@@ -38,7 +38,7 @@ public class MediaService {
     private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36";
     private static final String BUCKET_NAME = "filedpapers";
     private static final Pattern SCREENSHOT_PATTERN = Pattern.compile(Const.SCREENSHOTS_PATH + "[a-zA-Z0-9_-]+\\.webp");
-    private static final int MAX_SIZE = 16 * 1024 * 1024; //16MB max size for GridFS
+    private static final int MAX_SIZE = 16 * 1024 * 1024;
     private final Datastore datastore;
     private final Cache cache;
     private final GridFSBucket bucket;
@@ -168,13 +168,8 @@ public class MediaService {
         return Optional.ofNullable(uid);
     }
 
-    /**
-     * Screenshots are served by the metascraper sidecar which is not publicly
-     * routable by design, so the sidecar itself is the only exempted target.
-     * The exemption is limited to the screenshot route; matching on the origin
-     * and the full path keeps a crafted image url from reaching any other
-     * sidecar endpoint.
-     */
+    // SSRF exemption for the non-public metascraper sidecar, restricted to its screenshot
+    // route by exact origin and path so a crafted url can't reach other sidecar endpoints.
     private boolean isScreenshotUrl(String url) {
         try {
             var uri = new URI(url);

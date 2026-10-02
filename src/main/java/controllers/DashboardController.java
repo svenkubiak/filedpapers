@@ -14,6 +14,7 @@ import io.mangoo.routing.bindings.Form;
 import io.mangoo.routing.bindings.Session;
 import io.mangoo.utils.CommonUtils;
 import io.mangoo.utils.TotpUtils;
+import io.undertow.util.Headers;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.validation.constraints.NotEmpty;
@@ -25,6 +26,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.util.Strings;
 import services.DataService;
 import services.NotificationService;
+import utils.Avatars;
 import utils.Utils;
 import utils.io.IOUtils;
 import utils.io.Leaf;
@@ -42,6 +44,7 @@ import static constants.Const.TOAST_ERROR;
 @FilterWith(SessionRevocationFilter.class)
 public class DashboardController {
     private static final int MAX_FILE_SIZE_BYTES = 10485760; // 10MB
+    private static final String AVATAR = "avatar";
     private final DataService dataService;
     private final NotificationService notificationService;
     private final Config config;
@@ -73,6 +76,7 @@ public class DashboardController {
         Optional<List<Map<String, Object>>> items = dataService.findItems(userUid, category.getUid());
 
         categories.ifPresent(Utils::sortCategories);
+        var user = dataService.findUserByUid(userUid);
 
         return Response.ok()
                 .render("active", category.getName().toLowerCase(Locale.ENGLISH))
@@ -80,21 +84,13 @@ public class DashboardController {
                 .render("categories", categories.orElseThrow())
                 .render("categoryUid", category.getUid())
                 .render("items", Utils.convertItems(items.orElseThrow()))
-                .render("username", dataService.findUserByUid(userUid).getUsername())
+                .render("username", user.getUsername())
+                .render("avatar", user.getAvatar())
                 .render("version", Utils.getVersion())
                 .render("assetVersion", Utils.getAssetVersion())
                 .render("trashRetention", Utils.getTrashRetentionLabel());
     }
 
-    /**
-     * Renders a single bookmark tile, without the page around it.
-     *
-     * The dashboard asks for this when an event says a bookmark arrived while it
-     * was open: inserting one tile keeps the scroll position, an open selection
-     * and the preview images that are already loaded, where a full reload would
-     * throw all of that away. The markup comes from the same macro the list
-     * uses, so there is no second version of it in javascript.
-     */
     public Response item(Authentication authentication, @NotEmpty String uid) {
         String userUid = authentication.getSubject();
 
@@ -158,6 +154,8 @@ public class DashboardController {
         return Response.ok()
                 .render("mfaFallback", fallback)
                 .render("username", user.getUsername())
+                .render("avatar", user.getAvatar())
+                .render("maxAvatarBytes", Avatars.MAX_UPLOAD_BYTES)
                 .render("confirmed", user.isConfirmed())
                 .render("mfa", user.isMfa())
                 .render("enrollMfa", !user.isMfa() && ("enable").equals(mfa))
@@ -204,13 +202,51 @@ public class DashboardController {
         return Response.redirect("/dashboard/profile");
     }
 
+    // Cached as immutable: the url carries the avatar version, so a new upload is a new url.
+    public Response avatar(Authentication authentication) {
+        return dataService.findAvatar(authentication.getSubject())
+                .map(data -> Response.ok()
+                        .contentType("image/jpeg")
+                        .header(Headers.CACHE_CONTROL_STRING, "private, max-age=31536000, immutable")
+                        .bodyBinary(data))
+                .orElse(Response.notFound());
+    }
+
+    @FilterWith(CsrfFilter.class)
+    public Response doAvatar(Form form, Authentication authentication, Flash flash) {
+        String userUid = authentication.getSubject();
+        form.expectFile(AVATAR);
+        form.expectFileMaxSize(AVATAR, Avatars.MAX_UPLOAD_BYTES);
+        // Sniffed from the content, not the request; Avatars re-checks the format when decoding.
+        form.expectFileMimeType(AVATAR, Avatars.MIME_TYPES);
+
+        Optional<byte[]> avatar = form.isValid()
+                ? form.getFile(AVATAR).flatMap(Avatars::normalize)
+                : Optional.empty();
+
+        if (avatar.isPresent() && dataService.saveAvatar(userUid, avatar.orElseThrow())) {
+            flash.put(Const.TOAST_SUCCESS, messages.get("toast.avatar.success"));
+        } else {
+            flash.put(TOAST_ERROR, messages.get("toast.avatar.invalid"));
+        }
+
+        return Response.redirect("/dashboard/profile");
+    }
+
+    @FilterWith(CsrfFilter.class)
+    public Response doDeleteAvatar(Authentication authentication, Flash flash) {
+        dataService.deleteAvatar(authentication.getSubject());
+        flash.put(Const.TOAST_SUCCESS, messages.get("toast.avatar.removed"));
+
+        return Response.redirect("/dashboard/profile");
+    }
+
     @FilterWith(CsrfFilter.class)
     public Response doLogoutDevices(Authentication authentication) {
         String userUid = authentication.getSubject();
 
         if (dataService.revokeSessions(userUid)) {
-            // The revocation covers the current cookie as well, so a fresh one is
-            // issued to keep the device the user is acting on signed in.
+            // The revocation also invalidates the current cookie; re-issue it.
             authentication.update();
 
             return Response.ok();
@@ -251,10 +287,12 @@ public class DashboardController {
         Optional<List<Map<String, Object>>> categories = dataService.findCategories(userUid);
 
         categories.ifPresent(Utils::sortCategories);
+        var user = dataService.findUserByUid(userUid);
 
         return Response.ok()
                 .render("active", "io")
-                .render("username", dataService.findUserByUid(userUid).getUsername())
+                .render("username", user.getUsername())
+                .render("avatar", user.getAvatar())
                 .render("version", Utils.getVersion())
                 .render("assetVersion", Utils.getAssetVersion())
                 .render("categories", categories.orElseThrow());
@@ -265,10 +303,12 @@ public class DashboardController {
         Optional<List<Map<String, Object>>> categories = dataService.findCategories(userUid);
 
         categories.ifPresent(Utils::sortCategories);
+        var user = dataService.findUserByUid(userUid);
 
         return Response.ok()
                 .render("active", "about")
-                .render("username", dataService.findUserByUid(userUid).getUsername())
+                .render("username", user.getUsername())
+                .render("avatar", user.getAvatar())
                 .render("version", Utils.getVersion())
                 .render("assetVersion", Utils.getAssetVersion())
                 .render("categories", categories.orElseThrow());
@@ -314,10 +354,7 @@ public class DashboardController {
                         }
 
                         for (Leaf child : leaf.getChildren()) {
-                            // A bookmark file is untrusted input. Entries with an
-                            // unusable scheme are skipped rather than failing the
-                            // whole import, so one odd entry does not cost the user
-                            // the rest of their collection.
+                            // Untrusted input: skip unsafe entries instead of failing the whole import.
                             if (!child.isFolder() && Utils.isSafeLinkUrl(child.getUrl())) {
                                 String cover = Utils.isSafeLinkUrl(child.getDataCover()) ? child.getDataCover() : null;
 
@@ -461,8 +498,7 @@ public class DashboardController {
             var user = dataService.findUserByUid(userUid);
             if (user.getPassword().equals(CommonUtils.hashArgon2(password, user.getSalt()))) {
                 user.setPassword(CommonUtils.hashArgon2(newPassword, user.getSalt()));
-                // A password change ends every session that was established with
-                // the old password; the current device is re-issued below.
+                // Revokes all sessions; authentication.update() re-issues the current one.
                 user.setSessionsValidFrom(Instant.now().getEpochSecond());
                 dataService.save(user);
                 authentication.update();

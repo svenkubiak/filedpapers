@@ -58,10 +58,6 @@ public class AuthenticationControllerTests {
         datastore.save(new Category(Const.TRASH, user.getUid(), Role.TRASH));
     }
 
-    /**
-     * Logs in and returns the response of the login, which carries the
-     * authentication cookie and a session cookie with a fresh csrf token.
-     */
     private static TestResponse login(String username) {
         Csrf csrf = TestUtils.getCsrf();
         Multimap<String, String> form = ArrayListMultimap.create();
@@ -93,20 +89,17 @@ public class AuthenticationControllerTests {
 
     @Test
     public void testLogin() {
-        //given
         Csrf csrf = TestUtils.getCsrf();
         Multimap<String, String> form = ArrayListMultimap.create();
         form.put("username", "foo@bar.com");
         form.put("password", "bar");
         form.put(io.mangoo.constants.Const.CSRF_TOKEN, csrf.token());
 
-        //when
         TestResponse response = TestRequest.post("/auth/login")
                 .withCookie(csrf.cookie())
                 .withForm(form)
                 .execute();
 
-        //then
         assertThat(response, not(nullValue()));
         assertThat(response.getStatusCode(), equalTo(StatusCodes.OK));
         assertThat(response.getContent(), containsString("Logout"));
@@ -115,13 +108,10 @@ public class AuthenticationControllerTests {
 
     @Test
     public void testMfaWithMalformedInputIsRejected() {
-        //given
         TestResponse login = login("mfa-garbage@bar.com");
 
-        //when a value that is neither an otp nor a fallback code is submitted
         TestResponse response = submitMfa(login, "not-a-code");
 
-        //then the attempt fails like any other, it must not blow up the request
         assertThat(response, not(nullValue()));
         assertThat(response.getStatusCode(), equalTo(StatusCodes.OK));
         assertThat(response.getContent(), containsString("Two-Step Verification"));
@@ -129,13 +119,10 @@ public class AuthenticationControllerTests {
 
     @Test
     public void testMfaWithWrongFallbackIsRejected() {
-        //given
         TestResponse login = login("mfa-garbage@bar.com");
 
-        //when a well formed but wrong fallback code is submitted
         TestResponse response = submitMfa(login, "cccccccccccccccccccccccccccccccc");
 
-        //then
         assertThat(response, not(nullValue()));
         assertThat(response.getStatusCode(), equalTo(StatusCodes.OK));
         assertThat(response.getContent(), containsString("Two-Step Verification"));
@@ -143,20 +130,16 @@ public class AuthenticationControllerTests {
 
     @Test
     public void testMfaFallbackIsRedeemedAndRotated() {
-        //given
         Datastore datastore = Application.getInstance(Datastore.class);
         User before = datastore.find(User.class, Filters.eq("username", "mfa-fallback@bar.com"));
         TestResponse login = login("mfa-fallback@bar.com");
 
-        //when
         TestResponse response = submitMfa(login, VALID_FALLBACK);
 
-        //then the fallback completes the login
         assertThat(response, not(nullValue()));
         assertThat(response.getStatusCode(), equalTo(StatusCodes.OK));
         assertThat(response.getContent(), containsString("Logout"));
 
-        //and redeeming it is single use: mfa is off, secret and code are rotated
         User after = datastore.find(User.class, Filters.eq("username", "mfa-fallback@bar.com"));
         assertThat(after.isMfa(), equalTo(false));
         assertThat(after.getMfaFallback(), not(equalTo(before.getMfaFallback())));
@@ -165,16 +148,13 @@ public class AuthenticationControllerTests {
 
     @Test
     public void testMfaFallbackCanNotBeReplayed() {
-        //given a user of its own, so the test does not depend on the order in
-        //which the other fallback test runs
+        // Own user, so the result does not depend on test order
         Datastore datastore = Application.getInstance(Datastore.class);
         createMfaUser(datastore, "mfa-replay@bar.com", VALID_FALLBACK);
         submitMfa(login("mfa-replay@bar.com"), VALID_FALLBACK);
 
-        //when the same code is submitted a second time
         TestResponse response = submitMfa(login("mfa-replay@bar.com"), VALID_FALLBACK);
 
-        //then it no longer completes a login
         assertThat(response, not(nullValue()));
         assertThat(response.getContent(), not(containsString("Logout")));
     }

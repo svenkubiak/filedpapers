@@ -13,21 +13,12 @@ import java.util.Deque;
 import java.util.Objects;
 import java.util.Optional;
 
-/**
- * Accepts a dashboard that wants to be told about changes.
- *
- * The sse route carries no filters, so this is where the connection is
- * authenticated: the client passes the ticket it fetched from
- * /api/v1/events/ticket as a query parameter, and a connection that cannot
- * produce a valid one is closed right away. Nothing is ever sent to a
- * connection that has not been tied to a user.
- */
+// SSE routes run no filters, so connections authenticate here with a ticket from /api/v1/events/ticket.
 @Singleton
 public class DashboardEventHandler implements ServerSentEventConnectionCallback {
     private static final Logger LOG = LogManager.getLogger(DashboardEventHandler.class);
 
-    // Undertow writes a data frame for anything that is sent, so this cannot be
-    // an sse comment - the dashboard drops every stream.* event instead.
+    // Undertow sends everything as a data frame, so this can't be an SSE comment; the client ignores stream.* events.
     private static final String OPEN = "{\"event\":\"stream.open\"}";
 
     private final EventService eventService;
@@ -53,9 +44,7 @@ public class DashboardEventHandler implements ServerSentEventConnectionCallback 
             String uid = userUid.orElseThrow();
             eventService.register(uid, connection);
 
-            // The framework listener removes a connection under its request uri,
-            // which is not the key it was added with here, so the clean up has to
-            // name that key itself.
+            // The framework removes connections by request uri, not by this key.
             connection.addCloseTask(closed -> eventService.unregister(uid, closed));
             connection.send(OPEN);
         });

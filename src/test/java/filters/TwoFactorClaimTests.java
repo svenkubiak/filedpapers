@@ -11,11 +11,7 @@ import java.util.Map;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 
-/**
- * Pins the assumption ApiAccessFilter relies on: the two factor claim survives
- * the authentication cookie round trip and is readable the same way the
- * framework writes it.
- */
+/** Pins what ApiAccessFilter relies on: the two factor claim survives the authentication cookie round trip. */
 public class TwoFactorClaimTests {
     private static final byte[] KEY = "0123456789012345678901234567890123456789012345678901234567890123".getBytes(StandardCharsets.UTF_8);
     private static final byte[] SECRET = "9876543210987654321098765432109876543210987654321098765432109876".getBytes(StandardCharsets.UTF_8);

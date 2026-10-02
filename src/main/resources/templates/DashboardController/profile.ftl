@@ -16,7 +16,40 @@
         </div>
     </div>
 
-    <#-- ---------------------------------------------------------- 2FA ---- -->
+    <#assign hasAvatar = avatar?? && avatar?has_content>
+    <div class="sheet">
+        <div class="sheet__title">${i18n("profile.avatar.title")}</div>
+        <div class="sheet__body">
+            <div class="line" style="border-bottom:none;flex-wrap:wrap">
+                <div class="avatar-line">
+                    <@layout.avatarImage "avatar--lg"/>
+                    <div>
+                        <div class="line__label">${i18n("profile.avatar.title")}</div>
+                        <div class="line__hint">${i18n("profile.avatar.info")}</div>
+                    </div>
+                </div>
+                <div class="line__ctrl actions">
+                    <form action="/dashboard/profile/avatar" method="POST" enctype="multipart/form-data">
+                        <button class="btn btn--ink" id="avatar-pick" type="button">
+                            <@icons.icon "upload"/><#if hasAvatar>${i18n("profile.avatar.change")}<#else>${i18n("profile.avatar.upload")}</#if>
+                        </button>
+                        <input class="is-hidden" type="file" name="avatar" id="avatar-file"
+                               accept="image/png,image/jpeg" data-max-bytes="${maxAvatarBytes?c}">
+                        <@csrfform/>
+                    </form>
+                    <#if hasAvatar>
+                        <form action="/dashboard/profile/avatar/delete" method="POST">
+                            <button class="btn btn--danger btn--line" type="submit">
+                                <@icons.icon "trash"/>${i18n("profile.avatar.remove")}
+                            </button>
+                            <@csrfform/>
+                        </form>
+                    </#if>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="sheet">
         <div class="sheet__title">${i18n("profile.mfa.title")}</div>
         <#if mfa>
@@ -89,7 +122,6 @@
         </#if>
     </div>
 
-    <#-- ------------------------------------------------------ language ---- -->
     <div class="sheet">
         <div class="sheet__title">${i18n("profile.language.title")}</div>
         <form action="/dashboard/profile/language" method="POST">
@@ -113,7 +145,6 @@
         </form>
     </div>
 
-    <#-- -------------------------------------------------------- email ----- -->
     <div class="sheet">
         <div class="sheet__title">${i18n("profile.email.title")}</div>
         <#if !confirmed>
@@ -155,7 +186,6 @@
         </form>
     </div>
 
-    <#-- ------------------------------------------------------ password ---- -->
     <div class="sheet">
         <div class="sheet__title">${i18n("profile.password.title")}</div>
         <form action="/dashboard/profile/change-password" method="POST" data-busy="update-password-button">
@@ -195,7 +225,6 @@
         </form>
     </div>
 
-    <#-- -------------------------------------------------------- devices --- -->
     <div class="sheet">
         <div class="sheet__title">${i18n("profile.logout.devices.title")}</div>
         <div class="sheet__body">
@@ -211,7 +240,6 @@
         </div>
     </div>
 
-    <#-- ---------------------------------------------------- danger zone --- -->
     <div class="sheet">
         <div class="sheet__title" style="color:var(--rust)">${i18n("profile.danger.title")}</div>
         <div class="sheet__body">

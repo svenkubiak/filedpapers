@@ -11,12 +11,10 @@ import constants.Collections;
 import constants.Const;
 import constants.Invalid;
 import constants.Required;
-import de.svenkubiak.http.Http;
 import io.mangoo.persistence.interfaces.Datastore;
 import io.mangoo.routing.bindings.Authentication;
 import io.mangoo.utils.CommonUtils;
 import io.mangoo.utils.DateUtils;
-import io.mangoo.utils.JsonUtils;
 import io.mangoo.utils.TotpUtils;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
@@ -29,17 +27,12 @@ import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.util.Strings;
 import org.bson.Document;
 import org.bson.conversions.Bson;
-import org.jsoup.Jsoup;
-import org.jsoup.safety.Safelist;
 import utils.Result;
 import utils.SsrfGuard;
 import utils.Utils;
 import utils.preview.LinkPreview;
 import utils.preview.LinkPreviewFetcher;
 
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
-import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
@@ -57,17 +50,6 @@ import static constants.Const.PLACEHOLDER_IMAGE;
 
 @Singleton
 public class DataService {
-    /**
-     * Relaxed plus inline styles, structural elements and data uris, so a page
-     * snapshot keeps as much of its appearance as possible. Scripts, event
-     * handlers, iframes, objects, embeds, forms and meta refreshes are dropped,
-     * because an allowlist only keeps what is listed here.
-     */
-    static final Safelist ARCHIVE_SAFELIST = Safelist.relaxed()
-            .addTags("section", "article", "header", "footer", "nav", "main", "aside", "figure", "figcaption", "hr")
-            .addAttributes(":all", "style", "class", "id", "title", "dir", "lang")
-            .addProtocols("img", "src", "data", "http", "https")
-            .preserveRelativeLinks(false);
     private static final Logger LOG = LogManager.getLogger(DataService.class);
     private static final String FAILED_TO_FETCH_LINK_PREVIEW = "Failed to fetch link preview";
     private static final int MAX_BULK_ITEMS = 200;
@@ -90,6 +72,12 @@ public class DataService {
     }
 
     public void indexify() {
+        datastore.query(Token.class)
+                .createIndex(
+                        Indexes.ascending(Const.EXPIRES_AT),
+                        new IndexOptions().expireAfter(0L, TimeUnit.SECONDS));
+
+        // Entries written before expiresAt existed only carry a timestamp.
         datastore.query(Token.class)
                 .createIndex(
                         Indexes.descending("timestamp"),
@@ -157,14 +145,6 @@ public class DataService {
         return Optional.of(output);
     }
 
-    /**
-     * Finds a single item in the same shape {@link #findItems(String, String)}
-     * returns it, so a template can render one tile without the whole list.
-     *
-     * @param itemUid the item
-     * @param userUid the owner
-     * @return the item, or empty if it does not exist or belongs to somebody else
-     */
     public Optional<Map<String, Object>> findItemForDisplay(String itemUid, String userUid) {
         Utils.checkCondition(Utils.isValidRandom(itemUid), Invalid.ITEM_UID);
         Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
@@ -174,8 +154,7 @@ public class DataService {
             return Optional.empty();
         }
 
-        // Not part of what the api returns for a list - the tile needs it to know
-        // where a drag would move the bookmark away from.
+        // Not in the api list shape; the tile needs it as the drag source.
         Map<String, Object> entry = toMap(item);
         entry.put(Const.CATEGORY_UID, item.getCategoryUid());
 
@@ -194,8 +173,6 @@ public class DataService {
                 "archived", item.isArchived(),
                 "added", DateUtils.getPrettyTime(item.getTimestamp()))); // FIX ME: Remove in later API version
 
-        // Only a trashed item has a deletion date, and the client cannot work it
-        // out on its own - the retention is a server side setting.
         if (item.getTrashed() != null) {
             entry.put("deleteAt", item.getTrashed().plusHours(Utils.getTrashRetention()).toEpochSecond(ZoneOffset.UTC));
         }
@@ -203,11 +180,7 @@ public class DataService {
         return entry;
     }
 
-    /**
-     * Last line before a url reaches an href attribute in the dashboard or a
-     * client. The input side rejects unusable schemes, but records that were
-     * stored before those checks existed are only covered here.
-     */
+    // XSS guard for hrefs: records stored before input-side scheme checks are only covered here.
     private String safeUrl(String url) {
         return Utils.isSafeLinkUrl(url) ? url : Const.BLANK_URL;
     }
@@ -227,7 +200,7 @@ public class DataService {
         Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
 
         Category trash = findTrash(userUid);
-        // Read before the update, or the category it came from is already gone
+        // Must be read before the update moves the item.
         String source = sourceCategory(List.of(itemUid), userUid);
         var updateResult = datastore.query(Collections.ITEMS).updateOne(
                 and(
@@ -324,7 +297,7 @@ public class DataService {
         var targetCategory = findCategory(categoryUid, userUid);
 
         if (!sourceCategory.getUid().equals(targetCategory.getUid())) {
-            //Keep the trashed timestamp in sync, as it drives the automatic trash cleanup
+            // TRASHED drives the automatic trash cleanup, so it must follow the target category.
             Bson update = targetCategory.getRole() == Role.TRASH
                     ? combine(set(Const.CATEGORY_UID, categoryUid), set(Const.TRASHED, LocalDateTime.now()))
                     : combine(set(Const.CATEGORY_UID, categoryUid), unset(Const.TRASHED));
@@ -342,19 +315,11 @@ public class DataService {
 
             return Result.Failure.server("Failed to move item");
         } else {
-            // Dropping a bookmark on the category it already sits in asks for a
-            // state it is already in. Reporting that as a server error made the
-            // dashboard show an error toast for a gesture that did no harm -
-            // and the bulk move, which filters those items out, never did.
+            // Moving into the current category is a no-op, not an error (same as the bulk move).
             return Result.Success.empty();
         }
     }
 
-    /**
-     * Moves several items in one update. The trashed timestamp has to follow the
-     * target category the same way a single move does, because it drives the
-     * automatic trash cleanup.
-     */
     public Result.Of moveItems(List<String> itemUids, String userUid, String categoryUid) {
         Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
         Utils.checkCondition(Utils.isValidRandom(categoryUid), Invalid.CATEGORY_UID);
@@ -386,10 +351,7 @@ public class DataService {
         return Result.Failure.server("Failed to move items");
     }
 
-    /**
-     * Moves several items into the trash. Deleting in Filed Papers never removes
-     * anything right away - {@link #cleanTrash()} does that later.
-     */
+    // Soft delete: moves into the trash; cleanTrash() removes them later.
     public Result.Of deleteItems(List<String> itemUids, String userUid) {
         Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
         List<String> uids = validUids(itemUids);
@@ -416,12 +378,7 @@ public class DataService {
         return Result.Failure.server("Failed to delete items");
     }
 
-    /**
-     * The category a set of items currently sits in, if they all sit in the same
-     * one. A selection in the dashboard always comes from a single view, so this
-     * is the normal case - an api client moving items from all over gets null,
-     * and the clients then only drop the tiles they can find.
-     */
+    // Null if the items sit in more than one category.
     private String sourceCategory(List<String> itemUids, String userUid) {
         List<Item> items = new ArrayList<>();
         datastore.query(Item.class)
@@ -445,12 +402,7 @@ public class DataService {
         return uids;
     }
 
-    /**
-     * Free text search across every category of a user except the trash, so the
-     * command palette can find a bookmark without knowing where it was filed.
-     * The term is quoted before it becomes a regular expression - a user
-     * searching for "c++" must not send a pattern to the database.
-     */
+    // The term is quoted so user input is never sent to the database as a regex.
     public Optional<List<Map<String, Object>>> searchItems(String userUid, String query, int limit) {
         Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
 
@@ -634,12 +586,53 @@ public class DataService {
 
             DeleteResult deleteCategories = datastore.query(Category.class).deleteMany(eq(Const.USER_UID, userUid));
             DeleteResult deleteItems = datastore.query(Item.class).deleteMany(eq(Const.USER_UID, userUid));
+            datastore.query(Avatar.class).deleteOne(eq(Const.USER_UID, userUid));
             DeleteResult deleteUser = datastore.query(User.class).deleteOne(eq(Const.UID, userUid));
 
             return deleteCategories.wasAcknowledged() && deleteItems.wasAcknowledged() && deleteUser.wasAcknowledged();
         }
 
         return false;
+    }
+
+    // Expects data already normalized by Avatars.normalize().
+    public boolean saveAvatar(String userUid, byte[] data) {
+        Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
+        Objects.requireNonNull(data, Required.DATA);
+
+        var user = findUserByUid(userUid);
+        if (user == null) {
+            return false;
+        }
+
+        var avatar = Optional.ofNullable(datastore.find(Avatar.class, eq(Const.USER_UID, userUid)))
+                .orElseGet(() -> new Avatar(userUid));
+        avatar.setData(data);
+        datastore.save(avatar);
+
+        user.setAvatar(Utils.randomString());
+        save(user);
+
+        return true;
+    }
+
+    public Optional<byte[]> findAvatar(String userUid) {
+        Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
+
+        return Optional.ofNullable(datastore.find(Avatar.class, eq(Const.USER_UID, userUid)))
+                .map(Avatar::getData);
+    }
+
+    public void deleteAvatar(String userUid) {
+        Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
+
+        datastore.query(Avatar.class).deleteOne(eq(Const.USER_UID, userUid));
+
+        var user = findUserByUid(userUid);
+        if (user != null && user.getAvatar() != null) {
+            user.setAvatar(null);
+            save(user);
+        }
     }
 
     public boolean userHasMfa(String userUid) {
@@ -659,9 +652,7 @@ public class DataService {
             return false;
         }
 
-        // Check the lock before doing any work. Without this a locked account
-        // could still be used to trigger the expensive fallback comparison below
-        // on every request.
+        // Check the lock first, or a locked account could still trigger the expensive Argon2 fallback check.
         if (authentication.userHasSecondFactorLock(user.getUid())) {
             return false;
         }
@@ -673,11 +664,7 @@ public class DataService {
         return isValidMfaFallback(user, otp);
     }
 
-    /**
-     * Redeems a fallback code. Like the web flow, a successful redemption is
-     * single use: it turns mfa off and rotates both the secret and the code, so
-     * the same value can not be replayed.
-     */
+    // Single use: a match disables mfa and rotates secret and code so it can't be replayed.
     private boolean isValidMfaFallback(User user, String fallback) {
         boolean matches = CommonUtils.matchArgon2(fallback, user.getSalt(), user.getMfaFallback());
 
@@ -720,8 +707,7 @@ public class DataService {
         var user = findUserByUid(userUid);
         if (user != null) {
             user.setPassword(CommonUtils.hashArgon2(password, user.getSalt()));
-            // A password reset is a response to a suspected compromise, so every
-            // session that existed before it has to end.
+            // A reset implies suspected compromise, so all earlier sessions are revoked.
             user.setSessionsValidFrom(Instant.now().getEpochSecond());
             save(user);
         }
@@ -762,10 +748,6 @@ public class DataService {
         return false;
     }
 
-    /**
-     * Invalidates every access token, refresh token and authentication cookie
-     * that was issued for this user up to now.
-     */
     public boolean revokeSessions(String userUid) {
         Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
 
@@ -810,58 +792,47 @@ public class DataService {
 
     @SuppressWarnings("unchecked")
     public void upgrade() {
-        //Remove outdated Item attributes
         datastore.query(Collections.ITEMS).updateMany(
                 exists("imageBase64"),
                 unset("imageBase64"));
 
-        //Remove outdated Category attributes
-        datastore.query(Collections.ITEMS).updateMany(
+        datastore.query(Collections.CATEGORIES).updateMany(
                 exists("count"),
                 unset("count"));
 
-        //Add new refresh token key
         datastore.query(Collections.USERS).updateMany(
                 exists("refreshTokenKey"),
                 unset("refreshTokenKey"));
 
-        //Remove pepper, replaced by sessionsValidFrom
         datastore.query(Collections.USERS).updateMany(
                 exists("pepper"),
                 unset("pepper"));
 
-        //Add sessionsValidFrom if not exists
         datastore.query(Collections.USERS).updateMany(
                 not(exists("sessionsValidFrom")),
                 set("sessionsValidFrom", 0L));
 
-        //Add language if not exists
         datastore.query(Collections.USERS).updateMany(
                 not(exists("language")),
                 set("language", Const.DEFAULT_LANGUAGE));
 
-        //Add new archived value
         datastore.query(Collections.ITEMS).updateMany(
                 not(exists("archived")),
                 set("archived", Boolean.FALSE));
 
-        //Add new role type to INBOX
         datastore.query(Collections.CATEGORIES).updateMany(
                 and(eq("name", "Inbox"), exists("role", false)),
                 set("role", "INBOX"));
 
-        //Add new role type to TRASH
         datastore.query(Collections.CATEGORIES).updateMany(
                 and(eq("name", "Trash"), exists("role", false)),
                 set("role", "TRASH"));
 
-        //Add new role type to CUSTOM categories
         datastore.query(Collections.CATEGORIES).updateMany(
                 and(ne("name", "Inbox"), ne("name", "Trash"), exists("role", false)),
                 set("role", "CUSTOM")
         );
 
-        //Updated items which have null value mediaUids
         List<Item> items = new ArrayList<>();
         datastore.query(Item.class)
                 .find(or(eq(Const.MEDIA_UID, null), eq(Const.MEDIA_UID, Strings.EMPTY)))
@@ -874,7 +845,6 @@ public class DataService {
             );
         }
 
-        //Add trashed timestamp to items that were moved to trash before it was tracked
         List<String> trashUids = new ArrayList<>();
         datastore.query(Category.class)
                 .find(eq(Const.ROLE, Role.TRASH))
@@ -887,14 +857,12 @@ public class DataService {
             );
         }
 
-        //Remove stale trashed timestamps from items that live outside of the trash
         datastore.query(Collections.ITEMS).updateMany(
                 and(nin(Const.CATEGORY_UID, trashUids), exists(Const.TRASHED)),
                 unset(Const.TRASHED)
         );
 
         Thread.ofVirtual().start(() -> {
-            //Remove stored media with null uid valus
             datastore.query(Const.FILEDPAPERS_FILES)
                     .find(Filters.eq(Const.METADATA_UID, null))
                     .forEach(media -> {
@@ -905,7 +873,6 @@ public class DataService {
                         LOG.info("Deleted media with null uid");
                     });
 
-            //Remove all media that is not linked as a mediauid in an item
             List<String> usedMediaUids = new ArrayList<>();
             datastore.query(Item.class).find()
                     .projection(include(Const.MEDIA_UID, Const.ARCHIVE_UID))
@@ -955,67 +922,6 @@ public class DataService {
         }
     }
 
-    /**
-     * Strips everything executable from an archived page before it is stored.
-     *
-     * The content security policy on the archive route is the control that makes
-     * the snapshot safe to serve; this is the second line, so that no executable
-     * markup is persisted in the first place and a lost or stripped header can
-     * not turn stored data into a stored xss. Input and output are base64, so
-     * the storage format stays unchanged.
-     */
-    private String sanitizeArchive(String base64Html) {
-        String html = new String(CommonUtils.decodeFromBase64(base64Html), StandardCharsets.UTF_8);
-        String sanitized = Jsoup.clean(html, ARCHIVE_SAFELIST);
-
-        return Base64.getEncoder().encodeToString(sanitized.getBytes(StandardCharsets.UTF_8));
-    }
-
-    public Result.Of archive(String uid, String userUid) {
-        Objects.requireNonNull(uid, Required.UID);
-
-        var item = findItem(uid, userUid);
-        if (item != null) {
-            LOG.info("Archiving media with url {}", item.getUrl());
-
-            if (!SsrfGuard.isPubliclyRoutable(item.getUrl())) {
-                return Result.Failure.user(Invalid.URL);
-            }
-
-            var result = Http.get(LinkPreviewFetcher.getUrl() + "/archive?url=" + URLEncoder.encode(item.getUrl(), StandardCharsets.UTF_8))
-                    .withTimeout(Duration.ofSeconds(120))
-                    .send();
-
-            if (result.isValid()) {
-                Map<String, String> json = JsonUtils.toFlatMap(result.body());
-                if (!json.isEmpty() && json.get("success").equals("true")) {
-                    String archiveUid = mediaService.store(sanitizeArchive(json.get("archive")).getBytes(StandardCharsets.UTF_8), item.getUserUid());
-                    item.setArchived(true);
-                    item.setArchiveUid(archiveUid);
-                    save(item);
-
-                    return Result.Success.empty();
-                }
-            } else {
-                return Result.Failure.server("Received invalid response from archiving endpoint");
-            }
-        } else {
-            return Result.Failure.user("Could not find item");
-        }
-
-        return Result.Failure.server("Failed to archive item");
-    }
-
-    public Optional<byte[]> findArchive(Item item) {
-        Objects.requireNonNull(item, "item cannot be null");
-
-        return mediaService.retrieve(item.getArchiveUid());
-    }
-
-    public boolean tokenExists(String id) {
-        return datastore.query(Token.class).find(eq ("uid", id)).first() != null;
-    }
-
     public void cleanTrash() {
         List<String> trashUids = new ArrayList<>();
         datastore.query(Category.class)
@@ -1053,12 +959,6 @@ public class DataService {
         }
     }
 
-    /**
-     * Removes the stored media and the stored archive of an item from GridFS. Both
-     * are stored as media, so both have to be removed when an item is deleted.
-     *
-     * @param item The item whose media should be removed
-     */
     private void deleteMedia(Item item) {
         if (StringUtils.isNotBlank(item.getMediaUid())) {
             mediaService.delete(item.getMediaUid(), item.getUserUid());

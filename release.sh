@@ -143,7 +143,6 @@ run_maven "Running mvn clean verify" clean verify
 echo
 success "Maven build succeeded."
 
-# === DEV MODE ===
 if [[ "$MODE" == "dev" ]]; then
   TOTAL_STEPS=3
   step "Building and pushing dev images"
@@ -182,8 +181,6 @@ if [[ "$MODE" == "dev" ]]; then
   echo
   exit 0
 fi
-
-# === REGULAR RELEASE MODE ===
 
 step "Determining release version"
 

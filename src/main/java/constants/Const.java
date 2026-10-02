@@ -10,6 +10,7 @@ public final class Const {
     public static final String COUNT = "count";
     public static final String DEFAULT_LANGUAGE = "en";
     public static final String EMAIL_PREFIX = "[Filed Papers]";
+    public static final String EXPIRES_AT = "expiresAt";
     public static final String FILEDPAPERS_FILES = "filedpapers.files";
     public static final String GENERAL_ERROR = "An error occurred. Please try again.";
     public static final String IMAGE_CACHE_PREFIX = "image-cache-";
@@ -26,6 +27,7 @@ public final class Const {
     public static final String BLANK_URL = "#";
     public static final String ROLE = "role";
     public static final String SCREENSHOTS_PATH = "/screenshots/";
+    public static final String SESSIONS_VALID_FROM = "sessionsValidFrom";
     public static final String TOAST_ERROR = "toasterror";
     public static final String TOAST_SUCCESS = "toastsuccess";
     public static final String TRASH = "Trash";

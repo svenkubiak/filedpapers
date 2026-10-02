@@ -4,7 +4,6 @@
 <@layout.myLayout "Dashboard">
 <#assign isTrash = active == "trash">
 <#assign isInbox = active == "inbox">
-<#-- "3 days" or "5 hours", depending on application.trash.retention -->
 <#assign retention = trashRetention.value + " " + i18n("dashboard.trash.unit." + trashRetention.unit)>
 
 <div class="page-head">

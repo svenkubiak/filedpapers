@@ -1,11 +1,4 @@
-# Application configuration
-#
-# The configuration consists of default values that are common in all environments and
-# environment specific values for dev, test, and prod.
-#
-# Values in an active environment overwrite default values
-#
-# Default configuration:
+# Values of the active environment (under environments) override these defaults.
 
 default:
   application:
@@ -65,8 +58,6 @@ default:
     from: from
     protocol: smtptls
     debug: false
-
-# Environments configuration:
 
 environments:
   test:

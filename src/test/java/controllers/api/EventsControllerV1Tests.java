@@ -49,32 +49,26 @@ public class EventsControllerV1Tests {
 
     @Test
     void testTicketUnauthorized() {
-        //when
         TestResponse response = TestRequest.post("/api/v1/events/ticket")
                 .withContentType("application/json")
                 .execute();
 
-        //then an unauthenticated caller must not be able to obtain a ticket -
-        //it is the only thing the sse route checks
         assertThat(response.getStatusCode()).isEqualTo(401);
     }
 
     @Test
     void testTicket() {
-        //when
         TestResponse response = TestRequest.post("/api/v1/events/ticket")
                 .withHeader("Authorization", ACCESS_TOKEN)
                 .withContentType("application/json")
                 .execute();
 
-        //then
         assertThat(response.getStatusCode()).isEqualTo(200);
         assertThatJson(response.getContent()).inPath("$.ticket").isString();
     }
 
     @Test
     void testTheTicketBelongsToTheCallerAndWorksOnce() {
-        //given
         TestResponse response = TestRequest.post("/api/v1/events/ticket")
                 .withHeader("Authorization", ACCESS_TOKEN)
                 .withContentType("application/json")
@@ -83,15 +77,12 @@ public class EventsControllerV1Tests {
         String ticket = JsonUtils.toFlatMap(response.getContent()).get("ticket");
         EventService eventService = Application.getInstance(EventService.class);
 
-        //when the sse handler trades it in
-        //then it names the user who asked for it, and only the first time
         assertThat(eventService.redeemTicket(ticket)).contains(USER_UID);
         assertThat(eventService.redeemTicket(ticket)).isEmpty();
     }
 
     @Test
     void testEveryCallHandsOutADifferentTicket() {
-        //given
         String first = JsonUtils.toFlatMap(TestRequest.post("/api/v1/events/ticket")
                 .withHeader("Authorization", ACCESS_TOKEN)
                 .withContentType("application/json")
@@ -102,7 +93,6 @@ public class EventsControllerV1Tests {
                 .withContentType("application/json")
                 .execute().getContent()).get("ticket");
 
-        //then
         assertThat(first).isNotEqualTo(second);
     }
 }

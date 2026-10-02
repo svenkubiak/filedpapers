@@ -42,8 +42,7 @@ public class Bootstrap implements MangooBootstrap {
         );
 
         Bind.controller(MediaController.class).withRoutes(
-                On.get().to("/media/image/{uid}").respondeWith("image"),
-                On.get().to("/media/archive/{uid}").respondeWith("archive")
+                On.get().to("/media/image/{uid}").respondeWith("image")
         );
 
         Bind.controller(DashboardController.class).withAuthentication().withRoutes(
@@ -59,6 +58,9 @@ public class Bootstrap implements MangooBootstrap {
                 On.post().to("/dashboard/profile/enable-mfa").respondeWith("doMfa"),
                 On.post().to("/dashboard/profile/logout-devices").respondeWith("doLogoutDevices"),
                 On.post().to("/dashboard/profile/language").respondeWith("doLanguage"),
+                On.get().to("/dashboard/profile/avatar").respondeWith("avatar"),
+                On.post().to("/dashboard/profile/avatar").respondeWith("doAvatar"),
+                On.post().to("/dashboard/profile/avatar/delete").respondeWith("doDeleteAvatar"),
                 On.get().to("/dashboard/profile/confirm-email").respondeWith("confirmEmail"),
                 On.get().to("/dashboard/io").respondeWith("io"),
                 On.post().to("/dashboard/io/importer").respondeWith("importer"),
@@ -85,7 +87,6 @@ public class Bootstrap implements MangooBootstrap {
                 On.get().to("/api/v1/search").respondeWith("search"),
                 On.put().to("/api/v1/items/bulk/move").respondeWith("bulkMove"),
                 On.put().to("/api/v1/items/bulk/delete").respondeWith("bulkDelete"),
-                On.post().to("/api/v1/archive/{uid}").respondeWith("archive"),
                 On.put().to("/api/v1/items").respondeWith("move"),
                 On.get().to("/api/v1/items/{categoryUid}").respondeWith("list"),
                 On.put().to("/api/v1/items/{uid}").respondeWith("delete"),
@@ -103,8 +104,7 @@ public class Bootstrap implements MangooBootstrap {
                 On.post().to("/api/v1/events/ticket").respondeWith("ticket")
         );
 
-        // No filters run on an sse route, so DashboardEventHandler authenticates
-        // the connection itself with the ticket from the endpoint above.
+        // SSE routes run no filters; DashboardEventHandler authenticates via the ticket.
         Bind.serverSentEvent().to("/api/v1/events").withHandler(DashboardEventHandler.class);
 
         Bind.controller(UserControllerV1.class).withRoutes(

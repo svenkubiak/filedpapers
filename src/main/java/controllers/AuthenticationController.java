@@ -108,14 +108,10 @@ public class AuthenticationController {
             String userUid = authentication.getSubject();
             String mfa = form.get("mfa");
 
-            // Redeeming a fallback code turns mfa off and rotates both the secret
-            // and the code, so the shape of the input has to be read before
-            // isValidMfa consumes it.
+            // Must be read before isValidMfa, which rotates the secret and fallback code.
             boolean fallback = Utils.isValidMfaFallback(mfa);
 
-            // isValidMfa rejects anything that is neither an otp nor a fallback
-            // code by throwing, so the shape is checked here and a malformed
-            // input ends up in the flash error below like any other bad attempt.
+            // isValidMfa throws on malformed input, so validate the shape first.
             if (Utils.isValidRandom(userUid) && (Utils.isValidOtp(mfa) || fallback)
                     && dataService.isValidMfa(userUid, mfa, authentication)) {
                 authentication.twoFactorAuthentication(false);

@@ -1,11 +1,3 @@
-/*
- * Filed Papers — sign in, sign up, password reset and the error pages.
- *
- * Loaded after app.css, whose tokens and components (.btn, .input, .field,
- * .note) it reuses; everything here is the centred single card those pages sit
- * in, and nothing else.
- */
-
 .auth {
   min-height: 100svh;
   display: grid;
@@ -70,5 +62,4 @@
 .auth__links a { color: var(--accent); }
 .auth__links a:hover { text-decoration: underline; text-underline-offset: 2px; }
 
-/* the one-time code on the second factor page */
 .auth .otp { justify-content: center; }

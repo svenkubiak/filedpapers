@@ -15,8 +15,7 @@ public class SafeLinkUrlTests {
             "javascript:alert(1)",
             "JavaScript:alert(1)",
             "JAVASCRIPT:alert(1)",
-            // URI parses this as scheme javascript with host example.com, which is
-            // what made the previous host based check accept it
+            // URI reads example.com as the host here, so a host based check would accept it
             "javascript://example.com/%0aalert(document.domain)",
             "vbscript:msgbox(1)",
             "data:text/html;base64,PHNjcmlwdD5hbGVydCgxKTwvc2NyaXB0Pg==",
@@ -35,8 +34,6 @@ public class SafeLinkUrlTests {
 
     @ParameterizedTest
     @ValueSource(strings = {
-            // Browsers strip control characters and whitespace inside a scheme, so
-            // these all execute as javascript: and have to be rejected
             "java\tscript:alert(1)",
             "java\nscript:alert(1)",
             "java\rscript:alert(1)",
@@ -77,8 +74,8 @@ public class SafeLinkUrlTests {
 
     @ParameterizedTest
     @ValueSource(strings = {
-            "123456",          // an otp can never be a fallback code, which is why
-            "12345",           // hashing it against the fallback was guaranteed waste
+            "123456",
+            "12345",
             "1234567",
             "short",
             "this-code-is-far-too-long-to-be-a-fallback",
@@ -100,11 +97,6 @@ public class SafeLinkUrlTests {
         assertThat(Utils.isValidOtp(code), equalTo(false));
     }
 
-    /**
-     * The payloads that defeated the removed containsDangerousContent blocklist:
-     * the raw string does not contain "javascript:", but jsoup decodes it back
-     * into exactly that. Checking after parsing is what closes this.
-     */
     @ParameterizedTest
     @ValueSource(strings = {
             "&#106;avascript:alert(1)",
@@ -117,7 +109,6 @@ public class SafeLinkUrlTests {
         String html = "<DL><DT><A HREF=\"" + encodedHref + "\">entry</A></DL>";
         String decodedHref = Jsoup.parse(html).select("a").attr("href");
 
-        // the decoded value is the dangerous one, and it is what the import stores
         assertThat(decodedHref, Utils.isSafeLinkUrl(decodedHref), equalTo(false));
     }
 

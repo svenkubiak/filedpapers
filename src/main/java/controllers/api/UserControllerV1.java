@@ -57,25 +57,27 @@ public class UserControllerV1 {
         String challengeToken = Optional.ofNullable(credentials.get(Const.CHALLENGE_TOKEN)).orElse(Strings.EMPTY);
         String otp = Optional.ofNullable(credentials.get(Const.OTP)).orElse(Strings.EMPTY);
 
-        // Either a six digit otp or a fallback recovery code. The fallback used to
-        // be rejected here, which made it redeemable in the browser only.
         if (StringUtils.isBlank(challengeToken) || !(Utils.isValidOtp(otp) || Utils.isValidMfaFallback(otp))) {
             return Response.forbidden();
         }
 
         try {
             var jwtClaimsSet = authenticationService.parseChallengeToken(challengeToken);
-            if (jwtClaimsSet == null || authenticationService.isTokenBlacklisted(jwtClaimsSet.getJWTID())) {
+            if (jwtClaimsSet == null || !authenticationService.beginChallenge(jwtClaimsSet)) {
                 return Response.forbidden();
             }
 
-            String userUid = jwtClaimsSet.getSubject();
-            if (dataService.isValidMfa(userUid, otp, authentication)) {
-                authenticationService.blacklistToken(jwtClaimsSet.getJWTID());
-                return Response.ok().bodyJson(authenticationService.getRefreshAndAccessToken(userUid));
+            boolean redeemed = false;
+            try {
+                String userUid = jwtClaimsSet.getSubject();
+                if (dataService.isValidMfa(userUid, otp, authentication)) {
+                    redeemed = true;
+                    return Response.ok().bodyJson(authenticationService.getRefreshAndAccessToken(userUid));
+                }
+                return Response.forbidden();
+            } finally {
+                authenticationService.endChallenge(jwtClaimsSet, redeemed);
             }
-            return Response.forbidden();
-
         } catch (MangooJwtException e) {
             return Response.forbidden();
         }
@@ -93,7 +95,7 @@ public class UserControllerV1 {
                 return Response.unauthorized();
             }
 
-            if (authenticationService.isRefreshBlacklisted(jwtClaimsSet.getJWTID())) {
+            if (authenticationService.isRevoked(jwtClaimsSet)) {
                 return Response.unauthorized();
             }
 
@@ -102,8 +104,8 @@ public class UserControllerV1 {
                 return Response.unauthorized();
             }
 
-            authenticationService.blacklistToken(jwtClaimsSet.getClaimAsString(Const.ATID));
-            authenticationService.blacklistRefreshToken(jwtClaimsSet.getJWTID());
+            authenticationService.revokeAccessToken(jwtClaimsSet.getClaimAsString(Const.ATID));
+            authenticationService.revoke(jwtClaimsSet);
 
             return Response.ok().bodyJson(authenticationService.getRefreshAndAccessToken(userUid));
         } catch (MangooJwtException | ParseException e) {
@@ -120,17 +122,17 @@ public class UserControllerV1 {
 
         try {
             JWTClaimsSet accessTokenClaims = authenticationService.parseAccessToken(accessToken);
-            if (accessTokenClaims == null || authenticationService.isTokenBlacklisted(accessTokenClaims.getJWTID())) {
+            if (accessTokenClaims == null || authenticationService.isRevoked(accessTokenClaims)) {
                 return Response.unauthorized();
             }
 
             JWTClaimsSet refreshTokenClaims = authenticationService.parseRefreshToken(refreshToken);
-            if (refreshTokenClaims == null || authenticationService.isRefreshBlacklisted(refreshTokenClaims.getJWTID())) {
+            if (refreshTokenClaims == null || authenticationService.isRevoked(refreshTokenClaims)) {
                 return Response.unauthorized();
             }
 
-            authenticationService.blacklistToken(accessTokenClaims.getJWTID());
-            authenticationService.blacklistRefreshToken(refreshTokenClaims.getJWTID());
+            authenticationService.revoke(accessTokenClaims);
+            authenticationService.revoke(refreshTokenClaims);
             return Response.ok();
         } catch (MangooJwtException e) {
             return Response.unauthorized();

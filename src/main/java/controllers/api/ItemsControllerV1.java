@@ -43,13 +43,6 @@ public class ItemsControllerV1 {
         }
     }
 
-    public Response archive(Request request, @NotEmpty String uid) {
-        String userUid = request.getAttribute(Const.USER_UID);
-        Thread.ofVirtual().start(() -> ResultHandler.handle(() -> dataService.archive(uid, userUid)));
-
-        return Response.ok();
-    }
-
     public Response list(Request request, @NotEmpty String categoryUid) {
         String userUid = request.getAttribute(Const.USER_UID);
         String ifNoneMatch = request.getHeader("If-None-Match");
@@ -84,11 +77,7 @@ public class ItemsControllerV1 {
         return ResultHandler.handle(() -> dataService.emptyTrash(userUid));
     }
 
-    /**
-     * Free text search across all categories, used by the command palette. Kept
-     * off the /items path on purpose - a search term must never be mistaken for
-     * a category uid by the router.
-     */
+    // Not under /items so the router can't mistake a search term for a category uid.
     public Response search(Request request, String q) {
         String userUid = request.getAttribute(Const.USER_UID);
 

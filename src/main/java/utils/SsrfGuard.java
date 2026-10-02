@@ -9,13 +9,7 @@ import java.net.URI;
 import java.util.Locale;
 import java.util.Set;
 
-/**
- * Guards outbound HTTP requests that are triggered by untrusted input against
- * Server-Side Request Forgery.
- *
- * A URL is only considered safe if its scheme and port are allow-listed and
- * <b>every</b> address the hostname resolves to is publicly routable.
- */
+// SSRF guard: every address the host resolves to must be public, not just the first.
 public final class SsrfGuard {
     private static final Logger LOG = LogManager.getLogger(SsrfGuard.class);
     private static final Set<String> ALLOWED_SCHEMES = Set.of("http", "https");
@@ -24,12 +18,6 @@ public final class SsrfGuard {
     private SsrfGuard() {
     }
 
-    /**
-     * Checks whether the given URL may be requested by the server.
-     *
-     * @param url the URL to check
-     * @return true if scheme, port and all resolved addresses are acceptable
-     */
     public static boolean isPubliclyRoutable(String url) {
         URI uri;
         try {
@@ -82,10 +70,10 @@ public final class SsrfGuard {
     }
 
     private static boolean isPublic(InetAddress address) {
-        if (address.isAnyLocalAddress()         // 0.0.0.0, ::
-                || address.isLoopbackAddress()  // 127.0.0.0/8, ::1
-                || address.isLinkLocalAddress() // 169.254.0.0/16, fe80::/10
-                || address.isSiteLocalAddress() // 10/8, 172.16/12, 192.168/16
+        if (address.isAnyLocalAddress()
+                || address.isLoopbackAddress()
+                || address.isLinkLocalAddress()
+                || address.isSiteLocalAddress()
                 || address.isMulticastAddress()) {
             return false;
         }
@@ -94,12 +82,15 @@ public final class SsrfGuard {
         if (address instanceof Inet4Address) {
             int first = bytes[0] & 0xFF;
             int second = bytes[1] & 0xFF;
+            int third = bytes[2] & 0xFF;
 
+            // Same ranges as metascraper/ssrf-guard.js; the /24s must not widen to /16 (192.0.x.x is WordPress.com).
+            if (first == 0) return false;                                           // 0.0.0.0/8
             if (first == 100 && second >= 64 && second <= 127) return false;        // 100.64.0.0/10 CGNAT
-            if (first == 192 && second == 0) return false;                          // 192.0.0.0/24, 192.0.2.0/24
+            if (first == 192 && second == 0 && (third == 0 || third == 2)) return false; // 192.0.0.0/24, 192.0.2.0/24
             if (first == 198 && (second == 18 || second == 19)) return false;       // 198.18.0.0/15
-            if (first == 198 && second == 51) return false;                         // 198.51.100.0/24
-            if (first == 203 && second == 0) return false;                          // 203.0.113.0/24
+            if (first == 198 && second == 51 && third == 100) return false;         // 198.51.100.0/24
+            if (first == 203 && second == 0 && third == 113) return false;          // 203.0.113.0/24
             if (first >= 240) return false;                                         // 240.0.0.0/4, 255.255.255.255
         } else {
             if ((bytes[0] & 0xFE) == 0xFC) return false;                            // fc00::/7 unique local

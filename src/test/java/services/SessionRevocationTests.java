@@ -14,10 +14,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 
-/**
- * Covers the revocation rule itself: a token is only accepted when it was
- * issued at or after the last revocation for that user.
- */
 public class SessionRevocationTests {
     private static final byte[] KEY = "0123456789012345678901234567890123456789012345678901234567890123".getBytes(StandardCharsets.UTF_8);
     private static final byte[] SECRET = "9876543210987654321098765432109876543210987654321098765432109876".getBytes(StandardCharsets.UTF_8);
@@ -91,8 +87,6 @@ public class SessionRevocationTests {
 
     @Test
     public void testLegacyUserWithoutRevocationTimestampAcceptsTokens() throws Exception {
-        // Documents are migrated with sessionsValidFrom = 0, which must not lock
-        // existing users out.
         assertThat(isSessionValid(userWithRevocationAt(0L), issuedToken()), equalTo(true));
     }
 
@@ -123,7 +117,6 @@ public class SessionRevocationTests {
         var user = userWithRevocationAt(0L);
         assertThat(isSessionValid(user, token), equalTo(true));
 
-        // "logout all devices" one second after the token was issued
         user.setSessionsValidFrom(token.getIssueTime().toInstant().getEpochSecond() + 1);
 
         assertThat(isSessionValid(user, token), equalTo(false));

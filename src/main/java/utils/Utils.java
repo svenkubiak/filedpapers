@@ -32,7 +32,7 @@ public final class Utils {
             Pattern.CASE_INSENSITIVE | Pattern.UNICODE_CASE
     );
     private static final Pattern MFA_PATTERN = Pattern.compile("\\d{6}");
-    // randomString() produces 32 characters of base64url
+    // Must match the output of randomString().
     private static final Pattern MFA_FALLBACK_PATTERN = Pattern.compile("[A-Za-z0-9_-]{32}");
     private static final Pattern CONTROL_CHARS = Pattern.compile("[\\x00-\\x20]");
     private static final Set<String> ALLOWED_LINK_SCHEMES = Set.of("http", "https");
@@ -40,25 +40,14 @@ public final class Utils {
     private Utils() {
     }
 
-    /**
-     * Checks whether a url is safe to store and to render into an href attribute.
-     *
-     * Deliberately performs no name resolution: this is about the scheme, not
-     * about the network target, and it runs once per bookmark on import. Use
-     * {@link SsrfGuard#isPubliclyRoutable(String)} where the server itself is
-     * going to request the url.
-     *
-     * @param url the url to check
-     * @return true if the url carries an allowed scheme
-     */
+    // Scheme check for href rendering only, no DNS; use SsrfGuard where the server fetches the url.
     public static boolean isSafeLinkUrl(String url) {
         if (StringUtils.isBlank(url)) {
             return false;
         }
 
         try {
-            // Browsers ignore control characters and whitespace inside a scheme,
-            // so "java&Tab;script:" has to be judged as "javascript:".
+            // Browsers ignore control characters in a scheme, so "java&Tab;script:" is "javascript:".
             var uri = new URI(CONTROL_CHARS.matcher(url).replaceAll(Strings.EMPTY));
             String scheme = uri.getScheme();
 
@@ -93,14 +82,6 @@ public final class Utils {
         return StringUtils.isNotBlank(mfa) && MFA_PATTERN.matcher(mfa).matches();
     }
 
-    /**
-     * Checks whether a value has the shape of an mfa fallback code, which is a
-     * 32 character string as produced by {@link #randomString()}.
-     *
-     * Used to decide whether the expensive comparison against the stored
-     * fallback hash is worth performing at all: a six digit otp can never match
-     * a 32 character code, so hashing it would be guaranteed waste.
-     */
     public static boolean isValidMfaFallback(String value) {
         return StringUtils.isNotBlank(value) && MFA_FALLBACK_PATTERN.matcher(value).matches();
     }
@@ -144,8 +125,6 @@ public final class Utils {
 
             map.put("sort", toLocalDateTime(item.get("sort")));
 
-            // Present on trashed items only, and the template formats it the
-            // same way it formats the date an item was added.
             if (item.get("deleteAt") != null) {
                 map.put("deleteAt", toLocalDateTime(item.get("deleteAt")));
             }
@@ -169,12 +148,7 @@ public final class Utils {
         return version;
     }
 
-    /**
-     * Cache busting suffix for the stylesheets and scripts. A released build is
-     * pinned to its version; a development build uses the start time instead,
-     * because the version does not change between two runs and the browser
-     * would happily keep serving the assets of the previous one.
-     */
+    // Snapshot builds use the start time, since their version doesn't change between runs.
     public static String getAssetVersion() {
         return ASSET_VERSION;
     }
@@ -226,12 +200,6 @@ public final class Utils {
                 .getInt("application.trash.retention", 72);
     }
 
-    /**
-     * The trash retention, split into the number and the unit key a template
-     * translates. Configured in hours, but a whole number of days reads better
-     * than "72 hours" - and the dashboard used to claim a hard coded 30 days
-     * regardless of what was configured.
-     */
     public static Map<String, String> getTrashRetentionLabel() {
         int hours = getTrashRetention();
 

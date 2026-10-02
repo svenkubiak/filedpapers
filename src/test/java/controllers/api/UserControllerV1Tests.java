@@ -50,18 +50,15 @@ public class UserControllerV1Tests {
 
     @Test
     void testLogin() {
-        //given
         String username = "foo";
         String password = "bar";
         String body = JsonUtils.toJson(Map.of("username", username, "password", password));
 
-        //when
         TestResponse response = TestRequest.post("/api/v1/users/login")
                 .withContentType("application/json")
                 .withStringBody(body)
                 .execute();
 
-        //then
         assertThat(response).isNotNull();
         assertThat(response.getStatusCode()).isEqualTo(200);
         assertThat(response.getContent()).isNotNull();
@@ -80,18 +77,15 @@ public class UserControllerV1Tests {
 
     @Test
     void testAuthMfa() {
-        //given
         String username = "bar";
         String password = "bar";
         String body = JsonUtils.toJson(Map.of("username", username, "password", password));
 
-        //when
         TestResponse response = TestRequest.post("/api/v1/users/login")
                 .withContentType("application/json")
                 .withStringBody(body)
                 .execute();
 
-        //then
         assertThat(response).isNotNull();
         assertThat(response.getStatusCode()).isEqualTo(202);
         assertThat(response.getContent()).isNotNull();
@@ -106,35 +100,29 @@ public class UserControllerV1Tests {
 
     @Test
     void testLoginMfa() {
-        //given
         String username = "bar";
         String password = "bar";
         String body = JsonUtils.toJson(Map.of("username", username, "password", password));
 
-        //when
         TestResponse response = TestRequest.post("/api/v1/users/login")
                 .withContentType("application/json")
                 .withStringBody(body)
                 .execute();
 
-        //then
         assertThat(response).isNotNull();
         assertThat(response.getStatusCode()).isEqualTo(202);
         assertThat(response.getContent()).isNotNull();
         assertThat(response.getContent()).contains("challengeToken");
         assertThatJson(response.getContent()).node("challengeToken").isString().startsWith("ey");
 
-        //given
         Map<String, String> credentials = JsonUtils.toFlatMap(response.getContent());
         body = JsonUtils.toJson(Map.of("challengeToken", credentials.get("challengeToken"), "otp", TotpUtils.getTotp("foobar")));
 
-        //when
         response = TestRequest.post("/api/v1/users/mfa")
                 .withContentType("application/json")
                 .withStringBody(body)
                 .execute();
 
-        //then
         assertThat(response).isNotNull();
         assertThat(response.getStatusCode()).isEqualTo(200);
         assertThat(response.getContent()).isNotNull();
@@ -144,13 +132,11 @@ public class UserControllerV1Tests {
         assertThatJson(response.getContent()).node("accessToken").isString().startsWith("ey");
         assertThatJson(response.getContent()).node("refreshToken").isString().startsWith("ey");
 
-        //when
         response = TestRequest.post("/api/v1/users/mfa")
                 .withContentType("application/json")
                 .withStringBody(body)
                 .execute();
 
-        //then
         assertThat(response).isNotNull();
         assertThat(response.getStatusCode()).isEqualTo(403);
         assertThat(response.getContent()).isEmpty();
@@ -159,35 +145,29 @@ public class UserControllerV1Tests {
 
     @Test
     void testIncorrectOtpLoginMfa() {
-        //given
         String username = "bar";
         String password = "bar";
         String body = JsonUtils.toJson(Map.of("username", username, "password", password));
 
-        //when
         TestResponse response = TestRequest.post("/api/v1/users/login")
                 .withContentType("application/json")
                 .withStringBody(body)
                 .execute();
 
-        //then
         assertThat(response).isNotNull();
         assertThat(response.getStatusCode()).isEqualTo(202);
         assertThat(response.getContent()).isNotNull();
         assertThat(response.getContent()).contains("challengeToken");
         assertThatJson(response.getContent()).node("challengeToken").isString().startsWith("ey");
 
-        //given
         Map<String, String> credentials = JsonUtils.toFlatMap(response.getContent());
         body = JsonUtils.toJson(Map.of("challengeToken", credentials.get("challengeToken"), "otp", "111111"));
 
-        //when
         response = TestRequest.post("/api/v1/users/mfa")
                 .withContentType("application/json")
                 .withStringBody(body)
                 .execute();
 
-        //then
         assertThat(response).isNotNull();
         assertThat(response.getStatusCode()).isEqualTo(403);
         assertThat(response.getContent()).isEmpty();
@@ -195,8 +175,39 @@ public class UserControllerV1Tests {
     }
 
     @Test
+    void testAMistypedOtpKeepsTheChallengeToken() {
+        TestResponse response = TestRequest.post("/api/v1/users/login")
+                .withContentType("application/json")
+                .withStringBody(JsonUtils.toJson(Map.of("username", "bar", "password", "bar")))
+                .execute();
+
+        String challengeToken = JsonUtils.toFlatMap(response.getContent()).get("challengeToken");
+
+        response = TestRequest.post("/api/v1/users/mfa")
+                .withContentType("application/json")
+                .withStringBody(JsonUtils.toJson(Map.of("challengeToken", challengeToken, "otp", "111111")))
+                .execute();
+
+        assertThat(response.getStatusCode()).isEqualTo(403);
+
+        String body = JsonUtils.toJson(Map.of("challengeToken", challengeToken, "otp", TotpUtils.getTotp("foobar")));
+        response = TestRequest.post("/api/v1/users/mfa")
+                .withContentType("application/json")
+                .withStringBody(body)
+                .execute();
+
+        assertThat(response.getStatusCode()).isEqualTo(200);
+
+        response = TestRequest.post("/api/v1/users/mfa")
+                .withContentType("application/json")
+                .withStringBody(body)
+                .execute();
+
+        assertThat(response.getStatusCode()).isEqualTo(403);
+    }
+
+    @Test
     void testAuthShouldNotWorkWithChallengeToken() {
-        //given
         String username = "bar";
         String password = "bar";
         String body = JsonUtils.toJson(Map.of("username", username, "password", password));
@@ -208,13 +219,11 @@ public class UserControllerV1Tests {
 
         Map<String, String> credentials = JsonUtils.toFlatMap(response.getContent());
 
-        //when
         response = TestRequest.post("/api/v1/categories")
                 .withContentType("application/json")
                 .withStringBody(JsonUtils.toJson(Map.of("accessToken", credentials.get("challengeToken"))))
                 .execute();
 
-        //then
         assertThat(response).isNotNull();
         assertThat(response.getStatusCode()).isEqualTo(401);
         assertThat(response.getContent()).isEmpty();
@@ -222,7 +231,6 @@ public class UserControllerV1Tests {
 
     @Test
     void testAuthShouldNotWorkWithRefreshToken() {
-        //given
         String username = "foo";
         String password = "bar";
         String body = JsonUtils.toJson(Map.of("username", username, "password", password));
@@ -234,13 +242,11 @@ public class UserControllerV1Tests {
 
         Map<String, String> credentials = JsonUtils.toFlatMap(response.getContent());
 
-        //when
         response = TestRequest.post("/api/v1/categories")
                 .withContentType("application/json")
                 .withStringBody(JsonUtils.toJson(Map.of("accessToken", credentials.get("refreshToken"))))
                 .execute();
 
-        //then
         assertThat(response).isNotNull();
         assertThat(response.getStatusCode()).isEqualTo(401);
         assertThat(response.getContent()).isEmpty();
@@ -248,7 +254,6 @@ public class UserControllerV1Tests {
 
     @Test
     void testRefreshShouldNotWorkWithChallengeToken() {
-        //given
         String username = "bar";
         String password = "bar";
         String body = JsonUtils.toJson(Map.of("username", username, "password", password));
@@ -260,13 +265,11 @@ public class UserControllerV1Tests {
 
         Map<String, String> credentials = JsonUtils.toFlatMap(response.getContent());
 
-        //when
         response = TestRequest.post("/api/v1/users/refresh")
                 .withContentType("application/json")
                 .withStringBody(JsonUtils.toJson(Map.of("refreshToken", credentials.get("challengeToken"))))
                 .execute();
 
-        //then
         assertThat(response).isNotNull();
         assertThat(response.getStatusCode()).isEqualTo(401);
         assertThat(response.getContent()).isEmpty();
@@ -275,18 +278,15 @@ public class UserControllerV1Tests {
 
     @Test
     void testInvalidLogin() {
-        //given
         String username = Utils.randomString();
         String password = Utils.randomString();
         String body = JsonUtils.toJson(Map.of("username", username, "password", password));
 
-        //when
         TestResponse response = TestRequest.post("/api/v1/users/login")
                 .withContentType("application/json")
                 .withStringBody(body)
                 .execute();
 
-        //then
         assertThat(response).isNotNull();
         assertThat(response.getStatusCode()).isEqualTo(401);
         assertThat(response.getContent()).isEmpty();
@@ -295,7 +295,6 @@ public class UserControllerV1Tests {
 
     @Test
     void testRefresh() {
-        //given
         String username = "foo";
         String password = "bar";
         String body = JsonUtils.toJson(Map.of("username", username, "password", password));
@@ -307,13 +306,11 @@ public class UserControllerV1Tests {
 
         Map<String, String> credentials = JsonUtils.toFlatMap(response.getContent());
 
-        //when
         response = TestRequest.post("/api/v1/users/refresh")
                 .withContentType("application/json")
                 .withStringBody(JsonUtils.toJson(Map.of("refreshToken", credentials.get("refreshToken"))))
                 .execute();
 
-        //then
         assertThat(response).isNotNull();
         assertThat(response.getStatusCode()).isEqualTo(200);
         assertThat(response.getContent()).isNotNull();
@@ -323,13 +320,11 @@ public class UserControllerV1Tests {
         assertThatJson(response.getContent()).node("accessToken").isString().startsWith("ey");
         assertThatJson(response.getContent()).node("refreshToken").isString().startsWith("ey");
 
-        //when
         response = TestRequest.post("/api/v1/users/refresh")
                 .withContentType("application/json")
                 .withStringBody(JsonUtils.toJson(Map.of("refreshToken", credentials.get("refreshToken"))))
                 .execute();
 
-        //then
         assertThat(response).isNotNull();
         assertThat(response.getStatusCode()).isEqualTo(401);
         assertThat(response.getContent()).isEmpty();
@@ -338,7 +333,6 @@ public class UserControllerV1Tests {
 
     @Test
     void testRefreshShouldNotWorkWithAccessToken() {
-        //given
         String username = "foo";
         String password = "bar";
         String body = JsonUtils.toJson(Map.of("username", username, "password", password));
@@ -350,13 +344,11 @@ public class UserControllerV1Tests {
 
         Map<String, String> credentials = JsonUtils.toFlatMap(response.getContent());
 
-        //when
         response = TestRequest.post("/api/v1/users/refresh")
                 .withContentType("application/json")
                 .withStringBody(JsonUtils.toJson(Map.of("refreshToken", credentials.get("accessToken"))))
                 .execute();
 
-        //then
         assertThat(response).isNotNull();
         assertThat(response.getStatusCode()).isEqualTo(401);
         assertThat(response.getContent()).isEmpty();
@@ -364,19 +356,50 @@ public class UserControllerV1Tests {
     }
 
     @Test
-    void testLogout() {
-        //given
-        String username = "foo";
-        String password = "bar";
-        String body = JsonUtils.toJson(Map.of("username", username, "password", password));
+    void testRefreshRevokesTheOldAccessToken() {
+        String body = JsonUtils.toJson(Map.of("username", "foo", "password", "bar"));
 
-        //when
         TestResponse response = TestRequest.post("/api/v1/users/login")
                 .withContentType("application/json")
                 .withStringBody(body)
                 .execute();
 
-        //then
+        Map<String, String> credentials = JsonUtils.toFlatMap(response.getContent());
+
+        response = TestRequest.post("/api/v1/users/refresh")
+                .withContentType("application/json")
+                .withStringBody(JsonUtils.toJson(Map.of("refreshToken", credentials.get("refreshToken"))))
+                .execute();
+
+        assertThat(response.getStatusCode()).isEqualTo(200);
+        Map<String, String> refreshed = JsonUtils.toFlatMap(response.getContent());
+
+        response = TestRequest.get("/api/v1/categories")
+                .withContentType("application/json")
+                .withHeader("Authorization", credentials.get("accessToken"))
+                .execute();
+
+        assertThat(response.getStatusCode()).isEqualTo(401);
+
+        response = TestRequest.get("/api/v1/categories")
+                .withContentType("application/json")
+                .withHeader("Authorization", refreshed.get("accessToken"))
+                .execute();
+
+        assertThat(response.getStatusCode()).isEqualTo(200);
+    }
+
+    @Test
+    void testLogout() {
+        String username = "foo";
+        String password = "bar";
+        String body = JsonUtils.toJson(Map.of("username", username, "password", password));
+
+        TestResponse response = TestRequest.post("/api/v1/users/login")
+                .withContentType("application/json")
+                .withStringBody(body)
+                .execute();
+
         assertThat(response).isNotNull();
         assertThat(response.getStatusCode()).isEqualTo(200);
         assertThat(response.getContent()).isNotNull();
@@ -395,7 +418,6 @@ public class UserControllerV1Tests {
         Map<String, String> credentials = JsonUtils.toFlatMap(response.getContent());
         String accessToken = credentials.get("accessToken");
 
-        //when
         response = TestRequest.post("/api/v1/users/logout")
                 .withContentType("application/json")
                 .withStringBody(JsonUtils.toJson(Map.of("refreshToken", credentials.get("refreshToken"), "accessToken", accessToken)))
@@ -405,25 +427,21 @@ public class UserControllerV1Tests {
         assertThat(response.getStatusCode()).isEqualTo(200);
         assertThat(response.getContent()).isEmpty();
 
-        //when
         response = TestRequest.post("/api/v1/users/refresh")
                 .withContentType("application/json")
                 .withStringBody(JsonUtils.toJson(Map.of("refreshToken", credentials.get("refreshToken"))))
                 .execute();
 
-        //then
         assertThat(response).isNotNull();
         assertThat(response.getStatusCode()).isEqualTo(401);
         assertThat(response.getContent()).isEmpty();
         assertThat(response.getContent()).doesNotContain("accessToken", "refreshToken");
 
-        //when
         response = TestRequest.get("/api/v1/categories")
                 .withContentType("application/json")
                 .withHeader("Authorization", credentials.get("accessToken"))
                 .execute();
 
-        //then
         assertThat(response).isNotNull();
         assertThat(response.getStatusCode()).isEqualTo(401);
         assertThat(response.getContent()).isEmpty();

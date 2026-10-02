@@ -21,8 +21,7 @@ async function apiBaseRequest(url, options = {}) {
     return response;
 }
 
-// The api filter accepts the session cookie, but only together with the csrf
-// token - which is why even a read goes through here instead of plain fetch.
+// The API accepts the session cookie only with the CSRF token, so reads go through here too.
 window.apiGet = (url, options = {}) =>
     apiBaseRequest(url, {
         method: 'GET',

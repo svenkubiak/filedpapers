@@ -1,28 +1,21 @@
 package models;
 
 import constants.Collections;
-import constants.Required;
 import io.mangoo.annotations.Collection;
 import io.mangoo.annotations.Indexed;
 import io.mangoo.persistence.Entity;
-import io.mangoo.utils.Argument;
 
 import java.io.Serializable;
-import java.time.LocalDateTime;
-import java.util.Objects;
+import java.util.Date;
 
+// A revoked token id; removed by a TTL index once the token would have expired anyway.
 @Collection(name = Collections.TOKENS)
 public class Token extends Entity implements Serializable {
     @Indexed(unique = true)
     private String uid;
-    private LocalDateTime timestamp;
+    private Date expiresAt;
 
     public Token() {}
-
-    public Token(String uid, LocalDateTime timestamp) {
-        this.uid = Argument.requireNonBlank(uid, Required.UID);
-        this.timestamp = Objects.requireNonNull(timestamp, Required.CREATED_AT);
-    }
 
     public String getUid() {
         return uid;
@@ -32,11 +25,11 @@ public class Token extends Entity implements Serializable {
         this.uid = uid;
     }
 
-    public LocalDateTime getTimestamp() {
-        return timestamp;
+    public Date getExpiresAt() {
+        return expiresAt;
     }
 
-    public void setTimestamp(LocalDateTime timestamp) {
-        this.timestamp = timestamp;
+    public void setExpiresAt(Date expiresAt) {
+        this.expiresAt = expiresAt;
     }
 }

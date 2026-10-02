@@ -25,13 +25,15 @@ public class SsrfGuardTests {
             "http://100.64.0.1/",
             "http://0.0.0.0/",
             "http://255.255.255.255/",
-            // Alternative notations are covered because the guard inspects the
-            // resolved address, not the literal the user typed.
+            // the guard checks the resolved address, so alternative notations are caught too
             "http://2130706433/",
             "http://127.1/",
             "http://192.0.2.1/",
+            "http://192.0.0.8/",
             "http://198.18.0.1/",
+            "http://198.51.100.7/",
             "http://203.0.113.1/",
+            "http://0.1.2.3/",
             "http://240.0.0.1/"
     })
     public void testBlocksNonPublicTargets(String url) {
@@ -41,8 +43,6 @@ public class SsrfGuardTests {
     @ParameterizedTest
     @ValueSource(strings = {
             "file:///etc/passwd",
-            // the scheme allowlist is also what keeps a javascript: url out of the
-            // api entry point, see SafeLinkUrlTests for the import side
             "javascript://example.com/%0aalert(1)",
             "javascript:alert(1)",
             "vbscript:msgbox(1)",
@@ -65,7 +65,11 @@ public class SsrfGuardTests {
             "http://8.8.8.8/",
             "https://1.1.1.1/",
             "https://8.8.4.4:443/some/path?a=b",
-            "http://[2606:4700:4700::1111]/"
+            "http://[2606:4700:4700::1111]/",
+            // public neighbours of the reserved /24s, e.g. WordPress.com
+            "https://192.0.78.9/",
+            "http://198.51.4.1/",
+            "http://203.0.178.1/"
     })
     public void testAllowsPublicTargets(String url) {
         assertThat(url, SsrfGuard.isPubliclyRoutable(url), equalTo(true));

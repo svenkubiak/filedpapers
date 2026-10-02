@@ -49,49 +49,38 @@ public class DataServiceTrashTests {
 
     @Test
     void testCleanTrashRemovesExpiredItem() {
-        //given
         String itemUid = saveItem(trashUid, LocalDateTime.now().minusHours(73));
 
-        //when
         dataService.cleanTrash();
 
-        //then
         assertThat(findItem(itemUid)).isNull();
     }
 
     @Test
     void testCleanTrashKeepsItemWithinRetention() {
-        //given
         String itemUid = saveItem(trashUid, LocalDateTime.now());
 
-        //when
         dataService.cleanTrash();
 
-        //then
         assertThat(findItem(itemUid)).isNotNull();
     }
 
     @Test
     void testCleanTrashKeepsItemOutsideOfTrash() {
-        //given an item that was restored, but still carries a stale timestamp
+        // restored item that still carries a stale trash timestamp
         String itemUid = saveItem(inboxUid, LocalDateTime.now().minusHours(2));
 
-        //when
         dataService.cleanTrash();
 
-        //then
         assertThat(findItem(itemUid)).isNotNull();
     }
 
     @Test
     void testDeleteItemSetsTrashedTimestamp() {
-        //given
         String itemUid = saveItem(inboxUid, null);
 
-        //when
         dataService.deleteItem(itemUid, userUid);
 
-        //then
         Item item = findItem(itemUid);
         assertThat(item.getCategoryUid()).isEqualTo(trashUid);
         assertThat(item.getTrashed()).isNotNull();
@@ -99,26 +88,20 @@ public class DataServiceTrashTests {
 
     @Test
     void testMoveItemToTrashSetsTrashedTimestamp() {
-        //given
         String itemUid = saveItem(inboxUid, null);
 
-        //when
         dataService.moveItem(itemUid, userUid, trashUid);
 
-        //then
         assertThat(findItem(itemUid).getTrashed()).isNotNull();
     }
 
     @Test
     void testMoveItemOutOfTrashClearsTrashedTimestamp() {
-        //given
         String itemUid = saveItem(trashUid, LocalDateTime.now().minusHours(2));
 
-        //when
         dataService.moveItem(itemUid, userUid, inboxUid);
         dataService.cleanTrash();
 
-        //then the restored item is neither flagged nor removed
         Item item = findItem(itemUid);
         assertThat(item).isNotNull();
         assertThat(item.getTrashed()).isNull();

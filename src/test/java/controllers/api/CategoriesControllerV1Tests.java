@@ -50,7 +50,6 @@ public class CategoriesControllerV1Tests {
         String password = "bar";
         String body = JsonUtils.toJson(Map.of("username", username, "password", password));
 
-        //when
         TestResponse response = TestRequest.post("/api/v1/users/login")
                 .withContentType("application/json")
                 .withStringBody(body)
@@ -63,13 +62,11 @@ public class CategoriesControllerV1Tests {
 
     @Test
     void testList() {
-        //when
         TestResponse response = TestRequest.get("/api/v1/categories")
                 .withHeader("Authorization", ACCESS_TOKEN)
                 .withContentType("application/json")
                 .execute();
 
-        //then
         assertThat(response).isNotNull();
         assertThat(response.getStatusCode()).isEqualTo(200);
         assertThat(response.getContent()).isNotEmpty();
@@ -85,12 +82,10 @@ public class CategoriesControllerV1Tests {
 
     @Test
     void testListUnauthorized() {
-        //when
         TestResponse response = TestRequest.get("/api/v1/categories")
                 .withContentType("application/json")
                 .execute();
 
-        //then
         assertThat(response).isNotNull();
         assertThat(response.getStatusCode()).isEqualTo(401);
         assertThat(response.getContent()).isEmpty();
@@ -98,12 +93,10 @@ public class CategoriesControllerV1Tests {
 
     @Test
     void testDeleteUnauthorized() {
-        //when
         TestResponse response = TestRequest.delete("/api/v1/categories/" + CommonUtils.uuidV4())
                 .withContentType("application/json")
                 .execute();
 
-        //then
         assertThat(response).isNotNull();
         assertThat(response.getStatusCode()).isEqualTo(401);
         assertThat(response.getContent()).isEmpty();
@@ -111,7 +104,6 @@ public class CategoriesControllerV1Tests {
 
     @Test
     void testDelete() {
-        //when
         String name = Utils.randomString();
         Category category = new Category(name, USER_UID, Role.CUSTOM);
         Application.getInstance(DataService.class).save(category);
@@ -120,7 +112,6 @@ public class CategoriesControllerV1Tests {
                 .withContentType("application/json")
                 .execute();
 
-        //then
         assertThat(response).isNotNull();
         assertThat(response.getStatusCode()).isEqualTo(200);
         assertThat(response.getContent()).isEmpty();
@@ -129,12 +120,10 @@ public class CategoriesControllerV1Tests {
 
     @Test
     void testAddUnauthorized() {
-        //when
         TestResponse response = TestRequest.post("/api/v1/categories")
                 .withContentType("application/json")
                 .execute();
 
-        //then
         assertThat(response).isNotNull();
         assertThat(response.getStatusCode()).isEqualTo(401);
         assertThat(response.getContent()).isEmpty();
@@ -142,12 +131,10 @@ public class CategoriesControllerV1Tests {
 
     @Test
     void testEditUnauthorized() {
-        //when
         TestResponse response = TestRequest.put("/api/v1/categories")
                 .withContentType("application/json")
                 .execute();
 
-        //then
         assertThat(response).isNotNull();
         assertThat(response.getStatusCode()).isEqualTo(401);
         assertThat(response.getContent()).isEmpty();
@@ -155,7 +142,6 @@ public class CategoriesControllerV1Tests {
 
     @Test
     void testEditAuthorized() {
-        //when
         String name = Utils.randomString();
         Map<String, String> body = Map.of("uid", CATEGORY_UID, "name", name);
         TestResponse response = TestRequest.put("/api/v1/categories")
@@ -164,7 +150,6 @@ public class CategoriesControllerV1Tests {
                 .withStringBody(JsonUtils.toJson(body))
                 .execute();
 
-        //then
         assertThat(response).isNotNull();
         assertThat(response.getStatusCode()).isEqualTo(200);
         assertThat(Application.getInstance(DataService.class).findCategory(CATEGORY_UID, USER_UID).getName()).isEqualTo(name);
@@ -172,7 +157,6 @@ public class CategoriesControllerV1Tests {
 
     @Test
     void testAddAuthorized() {
-        //when
         String name = Utils.randomString();
         Map<String, String> body = Map.of("name", name);
         TestResponse response = TestRequest.post("/api/v1/categories")
@@ -181,7 +165,6 @@ public class CategoriesControllerV1Tests {
                 .withStringBody(JsonUtils.toJson(body))
                 .execute();
 
-        //then
         assertThat(response).isNotNull();
         assertThat(response.getStatusCode()).isEqualTo(200);
         assertThat(Application.getInstance(DataService.class).findCategoryByName(name, USER_UID)).isNotNull();

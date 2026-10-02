@@ -18,11 +18,9 @@ public class ApplicationControllerTests {
 
     @Test
     public void testHealth() {
-        //when
         TestResponse response = TestRequest.get("/health").execute();
         Application.getInstance(TokenBlacklist.class).isRevoked("foo", null, null);
 
-        //then
         assertThat(response, not(nullValue()));
         assertThat(response.getStatusCode(), equalTo(StatusCodes.OK));
         assertThat(response.getContent(), containsString("OK"));
@@ -30,10 +28,8 @@ public class ApplicationControllerTests {
 
     @Test
     public void testSuccess() {
-        //when
         TestResponse response = TestRequest.get("/success").execute();
 
-        //then
         assertThat(response, not(nullValue()));
         assertThat(response.getStatusCode(), equalTo(StatusCodes.OK));
         assertThat(response.getContent(), containsString("Success"));
@@ -50,10 +46,8 @@ public class ApplicationControllerTests {
 
     @Test
     public void testError() {
-        //when
         TestResponse response = TestRequest.get("/error").execute();
 
-        //then
         assertThat(response, not(nullValue()));
         assertThat(response.getStatusCode(), equalTo(StatusCodes.OK));
         assertThat(response.getContent(), containsString("Error"));

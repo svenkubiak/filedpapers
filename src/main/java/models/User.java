@@ -25,13 +25,11 @@ public class User extends Entity implements Serializable  {
 
     private String salt;
 
-    /**
-     * Epoch seconds. Every access token, refresh token and authentication cookie
-     * issued before this point is rejected, which is what makes a revocation
-     * effective across all devices. Stored as epoch seconds to keep the
-     * comparison against the iat claim free of time zone ambiguity.
-     */
+    // Epoch seconds; tokens and cookies issued before this are rejected.
     private long sessionsValidFrom;
+
+    // Version token, changes on every upload and keys the picture url cache; null without a picture.
+    private String avatar;
 
     private String mfaSecret;
     private String mfaFallback;
@@ -121,6 +119,14 @@ public class User extends Entity implements Serializable  {
 
     public void setLanguage(String language) {
         this.language = language;
+    }
+
+    public String getAvatar() {
+        return avatar;
+    }
+
+    public void setAvatar(String avatar) {
+        this.avatar = avatar;
     }
 
     public long getSessionsValidFrom() {

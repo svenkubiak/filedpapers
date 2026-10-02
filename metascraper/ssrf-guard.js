@@ -1,11 +1,6 @@
 'use strict';
 
-// Guards all outbound requests against Server-Side Request Forgery.
-//
-// The check runs inside the agent's DNS lookup, i.e. at connect time. That makes
-// it immune to DNS rebinding (there is no window between check and use) and it
-// automatically covers every redirect hop, because each hop opens a new socket
-// through the same agent.
+// The SSRF check runs in the agents' DNS lookup at connect time: no DNS rebinding window, and every redirect hop is re-checked.
 
 const axios = require('axios');
 const dns = require('dns');
@@ -20,9 +15,9 @@ const ALLOWED_PORTS = new Set(['', '80', '443']);
 const blocklist = new net.BlockList();
 blocklist.addSubnet('0.0.0.0', 8, 'ipv4');
 blocklist.addSubnet('10.0.0.0', 8, 'ipv4');
-blocklist.addSubnet('100.64.0.0', 10, 'ipv4');      // CGNAT
+blocklist.addSubnet('100.64.0.0', 10, 'ipv4');
 blocklist.addSubnet('127.0.0.0', 8, 'ipv4');
-blocklist.addSubnet('169.254.0.0', 16, 'ipv4');     // link-local / cloud metadata
+blocklist.addSubnet('169.254.0.0', 16, 'ipv4');
 blocklist.addSubnet('172.16.0.0', 12, 'ipv4');
 blocklist.addSubnet('192.0.0.0', 24, 'ipv4');
 blocklist.addSubnet('192.0.2.0', 24, 'ipv4');
@@ -30,16 +25,16 @@ blocklist.addSubnet('192.168.0.0', 16, 'ipv4');
 blocklist.addSubnet('198.18.0.0', 15, 'ipv4');
 blocklist.addSubnet('198.51.100.0', 24, 'ipv4');
 blocklist.addSubnet('203.0.113.0', 24, 'ipv4');
-blocklist.addSubnet('224.0.0.0', 4, 'ipv4');        // multicast
-blocklist.addSubnet('240.0.0.0', 4, 'ipv4');        // reserved + broadcast
+blocklist.addSubnet('224.0.0.0', 4, 'ipv4');
+blocklist.addSubnet('240.0.0.0', 4, 'ipv4');
 blocklist.addSubnet('::', 128, 'ipv6');
 blocklist.addSubnet('::1', 128, 'ipv6');
-blocklist.addSubnet('fc00::', 7, 'ipv6');           // unique local
-blocklist.addSubnet('fe80::', 10, 'ipv6');          // link-local
-blocklist.addSubnet('ff00::', 8, 'ipv6');           // multicast
+blocklist.addSubnet('fc00::', 7, 'ipv6');
+blocklist.addSubnet('fe80::', 10, 'ipv6');
+blocklist.addSubnet('ff00::', 8, 'ipv6');
 
 const isBlockedAddress = (address, family) => {
-  // Normalise IPv4-mapped IPv6 (::ffff:127.0.0.1) so IPv4 rules apply.
+  // IPv4-mapped IPv6 (::ffff:127.0.0.1) must hit the IPv4 rules.
   const mapped = /^::ffff:(\d+\.\d+\.\d+\.\d+)$/i.exec(address);
   if (mapped) {
     return blocklist.check(mapped[1], 'ipv4');
@@ -62,7 +57,7 @@ const guardedLookup = (hostname, options, callback) => {
       return callback(new Error(`SSRF guard: ${hostname} did not resolve`));
     }
 
-    // Fail closed: a single internal record is enough to reject the host.
+    // Fail closed: one internal record rejects the host.
     for (const entry of resolved) {
       if (isBlockedAddress(entry.address, entry.family)) {
         return callback(new Error(`SSRF guard: blocked ${hostname} -> ${entry.address}`));
@@ -75,9 +70,7 @@ const guardedLookup = (hostname, options, callback) => {
   });
 };
 
-// Node skips the lookup hook entirely when the host is already an IP literal,
-// so the agent's connect step is guarded as well. Both hooks together form a
-// single choke point that also covers redirect hops.
+// Node skips the lookup hook for IP literals, so the connect step is guarded too.
 const guardAgent = (agent) => {
   const createConnection = agent.createConnection.bind(agent);
 
@@ -105,12 +98,7 @@ const httpsAgent = guardAgent(new https.Agent({ keepAlive: false, lookup: guarde
 
 const safeAxios = axios.create({ httpAgent, httpsAgent });
 
-/**
- * Cheap pre-flight check on protocol, port and literal address. The
- * authoritative check for anything going through safeAxios happens in the
- * agent; this keeps unwanted targets out of the pipeline early and is the only
- * guard available for targets handed to Chromium.
- */
+// Pre-flight only (no DNS); the authoritative check is in the agents' lookup.
 const isAllowedUrl = (url) => {
   try {
     const parsed = new URL(url);
@@ -118,7 +106,6 @@ const isAllowedUrl = (url) => {
       return false;
     }
 
-    // Strip the brackets of an IPv6 literal before checking it.
     const host = parsed.hostname.replace(/^\[|\]$/g, '');
     const family = net.isIP(host);
 

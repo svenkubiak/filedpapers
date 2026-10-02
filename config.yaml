@@ -20,7 +20,7 @@ default:
     refreshToken:
       secret: env{}
       key: env{}
-      expires: 10080 # Minutes (7 days)
+      expires: 10080 # Minutes
     challengeToken:
       key: env{}
       secret: env{}
@@ -31,6 +31,7 @@ default:
       key: env{}
       secure: true
   authentication:
+    blacklist: true
     redirect:
       login: /auth/login
       mfa: /auth/mfa
@@ -73,5 +74,3 @@ environments:
   prod:
     application:
       name: filedpapers
-
-### Do not change anything unless you know what you are doing ###

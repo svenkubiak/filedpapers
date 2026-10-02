@@ -16,7 +16,7 @@ import java.util.Objects;
 
 public final class IOUtils {
     public static final int MAX_ELEMENTS = 10000;
-    private static final long MAX_CONTENT_LENGTH = 5L * 1024 * 1024; // 5MB for content
+    private static final long MAX_CONTENT_LENGTH = 5L * 1024 * 1024;
     private static final int MAX_BOOKMARKS_PER_IMPORT = 1000;
 
     private IOUtils() {
@@ -104,37 +104,28 @@ public final class IOUtils {
     }
 
     public static List<Leaf> importItems(String input) {
-        // 1. Input length validation
         if (input == null || input.length() > MAX_CONTENT_LENGTH) {
             throw new SecurityException("Content too large");
         }
 
-        // 2. Basic HTML structure validation
         if (!input.contains("<") || !input.contains(">")) {
             throw new SecurityException("Invalid HTML content");
         }
 
-        // 3. Parse first. A string blocklist on raw html can not hold: the parser
-        // decodes entities and strips control characters afterwards, so patterns
-        // like "&#106;avascript:" or "java&Tab;script:" pass the check and turn
-        // dangerous only after parsing. The scheme of every extracted url is
-        // validated instead, see Utils.isSafeLinkUrl.
+        // No blocklist on raw HTML: the parser decodes entities ("&#106;avascript:"), so
+        // every extracted url is checked with Utils.isSafeLinkUrl instead.
         Document doc = Jsoup.parse(input, StandardCharsets.UTF_8.name());
 
-        // 4. Limit the number of elements to prevent DoS
         if (doc.getAllElements().size() > MAX_ELEMENTS) {
             throw new SecurityException("Too many HTML elements");
         }
 
-        // 5. Validate bookmark-specific structure
         validateBookmarkStructure(doc);
 
-        // The root bookmark that will contain all others
         var root = new Leaf();
         root.setFolder(true);
         root.setTitle("Root");
 
-        // Process all DL elements (bookmark folders)
         var dls = doc.getElementsByTag("dl");
         if (!dls.isEmpty()) {
             processDL(Objects.requireNonNull(dls.first()), root);
@@ -177,12 +168,10 @@ public final class IOUtils {
 
                 if (firstChild != null) {
                     if (firstChild.is("h3")) {
-                        // This is a folder
                         currentFolder = new Leaf();
                         currentFolder.setFolder(true);
                         currentFolder.setTitle(firstChild.text());
 
-                        // Parse dates if available
                         String addDate = firstChild.attr("add_date");
                         if (!addDate.isEmpty()) {
                             currentFolder.setAddDate(Instant.ofEpochSecond(Long.parseLong(addDate)));
@@ -193,7 +182,6 @@ public final class IOUtils {
                             currentFolder.setLastModified(Instant.ofEpochSecond(Long.parseLong(lastModified)));
                         }
 
-                        // Parse data-cover if available
                         String dataCover = firstChild.attr("data-cover");
                         if (!dataCover.isEmpty()) {
                             currentFolder.setDataCover(dataCover);
@@ -201,19 +189,16 @@ public final class IOUtils {
 
                         parent.addChild(currentFolder);
 
-                        // Process nested DL if it exists
                         Element nextDL = item.getElementsByTag("dl").first();
                         if (nextDL != null) {
                             processDL(nextDL, currentFolder);
                         }
                     } else if (firstChild.is("a")) {
-                        // This is a bookmark
                         var bookmark = new Leaf();
                         bookmark.setFolder(false);
                         bookmark.setTitle(firstChild.text());
                         bookmark.setUrl(firstChild.attr("href"));
 
-                        // Parse dates if available
                         String addDate = firstChild.attr("add_date");
                         if (!addDate.isEmpty()) {
                             bookmark.setAddDate(Instant.ofEpochSecond(Long.parseLong(addDate)));
@@ -224,7 +209,6 @@ public final class IOUtils {
                             bookmark.setLastModified(Instant.ofEpochSecond(Long.parseLong(lastModified)));
                         }
 
-                        // Parse data-cover if available
                         String dataCover = firstChild.attr("data-cover");
                         if (!dataCover.isEmpty()) {
                             bookmark.setDataCover(dataCover);

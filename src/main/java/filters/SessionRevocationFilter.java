@@ -16,14 +16,7 @@ import utils.Utils;
 
 import java.util.Objects;
 
-/**
- * Enforces a session revocation for the cookie based dashboard.
- *
- * The framework only validates signature, issuer, audience and expiry of the
- * authentication cookie; it has no concept of a user wide revocation. Without
- * this filter "logout all devices" would end the api sessions but leave every
- * dashboard session on other devices untouched.
- */
+// mangoo only consults the token blacklist with authentication.blacklist enabled; this enforces sessionsValidFrom regardless.
 public class SessionRevocationFilter implements PerRequestFilter {
     private static final Logger LOG = LogManager.getLogger(SessionRevocationFilter.class);
     private final DataService dataService;

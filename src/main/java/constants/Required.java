@@ -13,6 +13,7 @@ public final class Required {
     public static final String CONNECTION = "connection can not be null";
     public static final String COOKIE_NAME = "cookieName can not be null";
     public static final String CREATED_AT = "createdAt can not be null";
+    public static final String EXPIRES_AT = "expiresAt can not be null";
     public static final String DATA = "data can not be null";
     public static final String DATA_SERVICE = "dataService can not be null";
     public static final String DATASTORE = "database can not be null";
@@ -20,6 +21,7 @@ public final class Required {
     public static final String EVENT_SERVICE = "eventService can not be null";
     public static final String FROM = "from can not be null";
     public static final String ID = "id can not be null";
+    public static final String JWT_CLAIMS_SET = "jwtClaimsSet can not be null";
     public static final String IMAGE = "image can not be null";
     public static final String ITEMS = "items can not be null";
     public static final String LANGUAGE = "language can not be null";
@@ -38,8 +40,11 @@ public final class Required {
     public static final String RESPONSE = "response can not be null";
     public static final String ROLE = "role can not be null";
     public static final String SECRET = "secret can not be null";
+    public static final String SINCE = "since can not be null";
+    public static final String SUBJECT = "subject can not be null";
     public static final String TITLE = "title can not be null";
     public static final String TOKEN = "token can not be null";
+    public static final String TOKEN_BLACKLIST = "tokenBlacklist can not be null";
     public static final String UID = "uid can not be null";
     public static final String URL = "url can not be null";
     public static final String USER_UID = "userUid can not be null";

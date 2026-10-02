@@ -1,18 +1,15 @@
 #!/bin/bash
 
-# Set variables
 CONFIG_URL="https://raw.githubusercontent.com/svenkubiak/filedpapers/refs/heads/main/config.yaml"
 COMPOSE_URL="https://raw.githubusercontent.com/svenkubiak/filedpapers/refs/heads/main/compose.yaml"
 
-# Fix locale to avoid "Illegal byte sequence" error
+# Prevents tr's "Illegal byte sequence" error on /dev/urandom.
 export LC_CTYPE=C.UTF-8
 
-# Generate a random 64-character secret (retained for future use)
 generate_secret() {
   tr -dc 'A-Za-z0-9' </dev/urandom | head -c 64
 }
 
-# Create an .env file and add configuration variables
 echo "1/6 Creating .env file..."
 
 MONGODB_USERNAME=filedpapers
@@ -61,7 +58,6 @@ else
   echo "[Skipping] Logs folder already exists."
 fi
 
-# Create config folder if it does not exist
 if [ ! -d "config" ]; then
   echo "3/6 Creating config folder..."
   mkdir "config"
@@ -70,18 +66,14 @@ else
 fi
 cd config || { echo "Failed to enter config directory."; exit 1; }
 
-# Download the default config.yaml (silent download)
 echo "4/6 Downloading config.yaml..."
 curl -s -O "$CONFIG_URL"
 
-# Return to the installation directory
 cd .. || { echo "Failed to return to installation directory."; exit 1; }
 
-# Step 5: Download the compose.yaml (silent download)
 echo "5/6 Downloading compose.yaml..."
 curl -s -O "$COMPOSE_URL"
 
-# Step 6: Installation complete
 echo "6/6 Installation complete!"
 echo ""
 echo "Please configure your specific environment in your compose.yaml and remove this script."
