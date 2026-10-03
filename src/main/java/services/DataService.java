@@ -11,6 +11,7 @@ import constants.Collections;
 import constants.Const;
 import constants.Invalid;
 import constants.Required;
+import io.mangoo.interfaces.TokenBlacklist;
 import io.mangoo.persistence.interfaces.Datastore;
 import io.mangoo.routing.bindings.Authentication;
 import io.mangoo.utils.CommonUtils;
@@ -33,7 +34,6 @@ import utils.Utils;
 import utils.preview.LinkPreview;
 import utils.preview.LinkPreviewFetcher;
 
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
@@ -58,16 +58,19 @@ public class DataService {
     private final Datastore datastore;
     private final MediaService mediaService;
     private final EventService eventService;
+    private final TokenBlacklist tokenBlacklist;
     private final String applicationUrl;
 
     @Inject
     public DataService(Datastore datastore,
                        MediaService mediaService,
                        EventService eventService,
+                       TokenBlacklist tokenBlacklist,
                        @Named("application.url") String applicationUrl) {
         this.datastore = Objects.requireNonNull(datastore, Required.DATASTORE);
         this.mediaService = Objects.requireNonNull(mediaService, Required.MEDIA_SERVICE);
         this.eventService = Objects.requireNonNull(eventService, Required.EVENT_SERVICE);
+        this.tokenBlacklist = Objects.requireNonNull(tokenBlacklist, Required.TOKEN_BLACKLIST);
         this.applicationUrl = Objects.requireNonNull(applicationUrl, Required.APPLICATION_URL);
     }
 
@@ -707,9 +710,9 @@ public class DataService {
         var user = findUserByUid(userUid);
         if (user != null) {
             user.setPassword(CommonUtils.hashArgon2(password, user.getSalt()));
-            // A reset implies suspected compromise, so all earlier sessions are revoked.
-            user.setSessionsValidFrom(Instant.now().getEpochSecond());
             save(user);
+            // A reset implies suspected compromise, so all earlier sessions are revoked.
+            tokenBlacklist.revokeSubject(userUid);
         }
     }
 
@@ -751,10 +754,10 @@ public class DataService {
     public boolean revokeSessions(String userUid) {
         Utils.checkCondition(Utils.isValidRandom(userUid), Invalid.USER_UID);
 
-        var user = findUserByUid(userUid);
-        if (user != null) {
-            user.setSessionsValidFrom(Instant.now().getEpochSecond());
-            return save(user) != null;
+        // Revoke only after any save(user) of the caller: save writes the whole document and would reset sessionsValidFrom.
+        if (findUserByUid(userUid) != null) {
+            tokenBlacklist.revokeSubject(userUid);
+            return true;
         }
 
         return false;

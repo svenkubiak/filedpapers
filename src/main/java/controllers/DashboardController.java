@@ -32,7 +32,6 @@ import utils.io.IOUtils;
 import utils.io.Leaf;
 
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.*;
@@ -498,9 +497,9 @@ public class DashboardController {
             var user = dataService.findUserByUid(userUid);
             if (user.getPassword().equals(CommonUtils.hashArgon2(password, user.getSalt()))) {
                 user.setPassword(CommonUtils.hashArgon2(newPassword, user.getSalt()));
-                // Revokes all sessions; authentication.update() re-issues the current one.
-                user.setSessionsValidFrom(Instant.now().getEpochSecond());
                 dataService.save(user);
+                // Revokes all sessions; authentication.update() re-issues the current one.
+                dataService.revokeSessions(userUid);
                 authentication.update();
 
                 notificationService.accountChanged(user.getUsername(), messages.get("email.account.changes.password"));
