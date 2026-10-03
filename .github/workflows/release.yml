@@ -1,0 +1,72 @@
+name: Release
+
+# Triggered by the tag pushed from release.sh after the Docker images are
+# published. Creates the GitHub release with notes generated from the
+# Conventional Commits since the previous tag.
+on:
+  push:
+    tags:
+      - '[0-9]+.[0-9]+.[0-9]+*'
+
+jobs:
+  release:
+    name: Create GitHub Release
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Generate release notes
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          PREV_TAG=$(git describe --tags --abbrev=0 "${TAG}^" 2>/dev/null) || true
+          RANGE="${PREV_TAG:+${PREV_TAG}..}${TAG}"
+
+          changelog() {
+            local prefix=$1 title=$2
+            local items
+            items=$(git log ${RANGE} --pretty=format:"%s" | grep -E "^${prefix}(\([^)]+\))?: " | sed -E "s/^${prefix}(\([^)]+\))?: /- /") || true
+            if [ -n "$items" ]; then printf "## %s\n%s\n\n" "$title" "$items"; fi
+          }
+
+          breaking=$(
+            git log ${RANGE} --pretty=format:"%s" | grep -E '^[a-z]+(\([^)]+\))?!: ' | sed -E 's/^[a-z]+(\([^)]+\))?!: /- /'
+            git log ${RANGE} --pretty=format:"%b" | grep "^BREAKING CHANGE:" | sed "s/^BREAKING CHANGE: /- /"
+          ) || true
+
+          {
+            if [ -n "$breaking" ]; then printf "## Breaking Changes\n%s\n\n" "$breaking"; fi
+            changelog "feat"     "Features"
+            changelog "fix"      "Bug Fixes"
+            changelog "perf"     "Performance"
+            changelog "refactor" "Refactoring"
+            changelog "docs"     "Documentation"
+            changelog "chore"    "Maintenance"
+            printf "## Docker Images\n"
+            printf -- "- \`ghcr.io/svenkubiak/filedpapers/filedpapers:%s\`\n" "$TAG"
+            printf -- "- \`ghcr.io/svenkubiak/filedpapers/filedpapers-metascraper:%s\`\n\n" "$TAG"
+            if [ -n "$PREV_TAG" ]; then
+              printf "**Full Changelog**: https://github.com/${{ github.repository }}/compare/${PREV_TAG}...${TAG}\n"
+            fi
+          } > release-notes.md
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          PRERELEASE=""
+          if [[ "$TAG" == *-* ]]; then
+            PRERELEASE="--prerelease"
+          fi
+
+          gh release create "$TAG" \
+            --repo "${{ github.repository }}" \
+            --title "$TAG" \
+            --notes-file release-notes.md \
+            --verify-tag \
+            $PRERELEASE

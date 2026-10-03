@@ -37,7 +37,8 @@ Why Choose Filed Papers?
 [https://buymeacoffee.com/svenkubiak](https://buymeacoffee.com/svenkubiak)
 
 **Changelog**   
-[https://github.com/svenkubiak/filedpapers/wiki/Changelog](https://github.com/svenkubiak/filedpapers/wiki/Changelog)
+[https://github.com/svenkubiak/filedpapers/releases](https://github.com/svenkubiak/filedpapers/releases)   
+Versions up to 6.0.0: [https://github.com/svenkubiak/filedpapers/wiki/Changelog](https://github.com/svenkubiak/filedpapers/wiki/Changelog)
 
 **Migrations**   
 [https://github.com/svenkubiak/filedpapers/wiki/Migrations](https://github.com/svenkubiak/filedpapers/wiki/Migrations)
@@ -100,3 +101,48 @@ Before starting the installation process, make sure you have the following prere
    ```
 
 By default, the container with the application runs at 127.0.0.1 on port 9090. Adopt this as required in the compose.yaml file.
+
+# Contributing
+
+Contributions are welcome! This project follows the [Conventional Commits](https://www.conventionalcommits.org/) specification. The release notes are generated automatically from the commit history, so every commit message needs to follow this format:
+
+```
+<type>(<scope>): <description>
+
+[optional body]
+
+[optional footer(s)]
+```
+
+### Types
+
+| Type       | Use for                                                     | Release notes section |
+|------------|-------------------------------------------------------------|-----------------------|
+| `feat`     | A new feature                                               | Features              |
+| `fix`      | A bug fix                                                   | Bug Fixes             |
+| `perf`     | A performance improvement                                   | Performance           |
+| `refactor` | Code changes that neither fix a bug nor add a feature       | Refactoring           |
+| `docs`     | Documentation only                                          | Documentation         |
+| `chore`    | Maintenance, e.g. dependency updates (`chore(deps): ...`)   | Maintenance           |
+| `test`     | Adding or changing tests                                    | –                     |
+| `build`    | Build system changes                                        | –                     |
+| `ci`       | CI configuration                                            | –                     |
+
+The scope is optional and names the affected area, e.g. `api`, `ui` or `metascraper`. Write the description in the imperative mood ("add", not "added").
+
+### Breaking changes
+
+Mark breaking changes with a `!` after the type or scope, or add a `BREAKING CHANGE:` footer. They are listed in a separate section of the release notes. If a change requires manual steps, also document them in the [Migrations](https://github.com/svenkubiak/filedpapers/wiki/Migrations) wiki page.
+
+### Examples
+
+```
+feat(ui): add bulk move for bookmarks
+fix(metascraper): handle pages without og:image
+chore(deps): bump mangooio to 10.15.0
+feat(api)!: remove deprecated token endpoint
+```
+
+### Releases
+
+Releases are built and published by the maintainer with `release.sh`. Pushing the version tag triggers a GitHub Action that creates the GitHub release, with notes generated from the commits since the previous release. Commits that do not follow the format above do not appear in the release notes.
