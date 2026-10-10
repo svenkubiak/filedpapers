@@ -5,3 +5,5 @@
 .classpath
 .project
 *.iml
+.claude/settings.local.json
+src/main/java/app/Main.java
