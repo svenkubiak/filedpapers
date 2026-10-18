@@ -18,7 +18,7 @@
     "metascraper-url": "^5.58.4",
     "puppeteer-core": "^25.14.0",
     "sharp": "^0.35.5",
-    "single-file-cli": "^2.18.3"
+    "single-file-cli": "^2.18.4"
   },
   "overrides": {
     "qs": "6.16.0"
