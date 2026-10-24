@@ -1,6 +1,7 @@
 const express = require('express');
 const { safeAxios, isAllowedUrl } = require('./ssrf-guard');
 const { startGuardedProxy } = require('./browser-proxy');
+const { fetchImdbMetadata, isImdbUrl } = require('./imdb');
 const sharp = require('sharp');
 const puppeteer = require('puppeteer-core');
 const metascraperFactory = require('metascraper');
@@ -450,6 +451,7 @@ const isOpaquePathSegment = (segment) => {
   if (/^\d+$/.test(segment)) return true;
   if (/^[a-f0-9-]{20,}$/i.test(segment)) return true;
   if (/^B[0-9A-Z]{8,}$/i.test(segment)) return true;
+  if (/^(?:tt|nm)\d{5,}$/i.test(segment)) return true;
   return false;
 };
 
@@ -477,6 +479,7 @@ const extractTitleFromUrl = (url) => {
       const formatted = formatUrlSegment(segment);
       if (!formatted || formatted.length < 2) continue;
       if (GENERIC_PATH_SEGMENTS.has(formatted.toLowerCase())) continue;
+      if (isImdbUrl(url) && (formatted.toLowerCase() === 'title' || formatted.toLowerCase() === 'name')) continue;
 
       return toTitleCase(formatted);
     }
@@ -1034,6 +1037,12 @@ app.get('/preview', async (req, res) => {
       bestMetadata = await fetchAmazonMetadata(fetchUrl);
       applyUrlFallbacks(bestMetadata, fetchUrl);
       return res.json(bestMetadata);
+    }
+
+    const imdbMetadata = await fetchImdbMetadata(fetchUrl, validateImageUrl);
+    if (imdbMetadata?.title) {
+      applyUrlFallbacks(imdbMetadata, fetchUrl);
+      return res.json(imdbMetadata);
     }
 
     let html = null;
