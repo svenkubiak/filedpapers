@@ -316,7 +316,12 @@ img.avatar { object-fit: cover; box-shadow: 0 0 0 1px var(--line); }
 }
 
 .main { flex: 1; min-width: 0; display: flex; flex-direction: column; overflow: hidden; }
-.page { flex: 1; overflow-y: auto; padding: 26px 30px 90px; }
+.page {
+  flex: 1; min-height: 0;
+  overflow-x: hidden; overflow-y: auto;
+  overscroll-behavior: none;
+  padding: 26px 30px 90px;
+}
 .page__inner { max-width: 1640px; }
 .column { max-width: 720px; }
 
@@ -564,13 +569,15 @@ body.picking .tray { display: flex; }
 
 [data-tip] { position: relative; }
 [data-tip]::after {
-  content: attr(data-tip); position: absolute; bottom: calc(100% + 5px); left: 50%;
-  transform: translateX(-50%) translateY(3px);
-  padding: 3px 7px; border-radius: var(--r-xs); white-space: nowrap;
+  /* Right-aligned and capped: a centered label sticks out of the pane and widens its scrollport. */
+  content: attr(data-tip); position: absolute; bottom: calc(100% + 5px); right: 0;
+  width: max-content; max-width: 220px;
+  transform: translateY(3px);
+  padding: 3px 7px; border-radius: var(--r-xs); white-space: normal; text-align: left;
   background: var(--solid-bg); color: var(--solid-fg); font-size: 12px;
   opacity: 0; pointer-events: none; transition: .13s var(--ease); z-index: 50;
 }
-[data-tip]:hover::after { opacity: 1; transform: translateX(-50%); }
+[data-tip]:hover::after { opacity: 1; transform: none; }
 .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 9px; }
 
 .only-sm { display: none; }
