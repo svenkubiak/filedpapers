@@ -29,8 +29,11 @@
 
     <div class="field">
         <label class="label" for="password">${i18n("auth.login.password.placeholder")}</label>
-        <input class="input<#if form.hasError("password")> is-invalid</#if>" type="password" id="password"
-               name="password" autocomplete="current-password" required>
+        <div class="secret">
+            <input class="input<#if form.hasError("password")> is-invalid</#if>" type="password" id="password"
+                   name="password" autocomplete="current-password" required>
+            <@icons.secretToggle/>
+        </div>
         <#if form.hasError("password")>
             <p class="help is-invalid">${form.getError("password")}</p>
         </#if>

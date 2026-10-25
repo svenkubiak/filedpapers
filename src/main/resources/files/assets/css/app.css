@@ -138,6 +138,15 @@ svg { display: block; flex: none; }
   border: none; border-bottom: 1.5px solid var(--ink-muted);
   border-radius: 0; transition: border-color .15s var(--ease);
 }
+.secret { position: relative; }
+.secret .input { padding-right: 32px; }
+.secret__toggle {
+  position: absolute; right: 0; bottom: 5px;
+  width: 28px; height: 28px; padding: 0; border: none; background: none;
+  color: var(--ink-muted); cursor: pointer; display: grid; place-items: center;
+}
+.secret__toggle svg { width: 16px; height: 16px; }
+.secret__toggle:hover { color: var(--ink); }
 .input::placeholder { color: var(--ink-subtle); }
 .input:focus, .select:focus { outline: none; border-bottom-color: var(--accent); }
 .input[disabled] { color: var(--ink-subtle); border-bottom-style: dashed; }
@@ -547,10 +556,10 @@ body.picking .tray { display: flex; }
   border-radius: var(--r); cursor: pointer; font-size: 14.5px;
 }
 .palette__row svg { width: 15px; height: 15px; color: var(--ink-subtle); }
-.palette__row[data-href]:hover,
+a.palette__row:hover,
 .palette__row[data-action]:hover,
 .palette__row.is-cursor { background: var(--sunken); }
-.palette__row[data-href]:hover svg,
+a.palette__row:hover svg,
 .palette__row[data-action]:hover svg,
 .palette__row.is-cursor svg { color: var(--accent); }
 .palette__row .mark { width: 16px; height: 16px; }

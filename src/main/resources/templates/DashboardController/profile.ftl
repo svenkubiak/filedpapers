@@ -174,8 +174,11 @@
                 <div class="line line--stack" style="border-bottom:none">
                     <div class="field">
                         <label class="label" for="email-password">${i18n("profile.email.password.label")}</label>
-                        <input class="input" type="password" id="email-password" name="password"
-                               placeholder="${i18n("profile.email.password.placeholder")}">
+                        <div class="secret">
+                            <input class="input" type="password" id="email-password" name="password"
+                                   placeholder="${i18n("profile.email.password.placeholder")}">
+                            <@icons.secretToggle/>
+                        </div>
                     </div>
                     <div class="actions" style="margin-top:18px">
                         <button type="submit" class="btn btn--ink" id="update-email-button">${i18n("profile.email.button")}</button>
@@ -193,15 +196,21 @@
                 <div class="line line--stack">
                     <div class="field">
                         <label class="label" for="current-password">${i18n("profile.password.label")}</label>
-                        <input class="input" type="password" id="current-password" name="password"
-                               placeholder="${i18n("profile.password.placeholder")}">
+                        <div class="secret">
+                            <input class="input" type="password" id="current-password" name="password"
+                                   placeholder="${i18n("profile.password.placeholder")}">
+                            <@icons.secretToggle/>
+                        </div>
                     </div>
                 </div>
                 <div class="line line--stack">
                     <div class="field">
                         <label class="label" for="new-password">${i18n("profile.password.new.label")}</label>
-                        <input class="input<#if form.hasError("new-password")> is-invalid</#if>" type="password"
-                               id="new-password" name="new-password" placeholder="${i18n("profile.password.new.placeholder")}">
+                        <div class="secret">
+                            <input class="input<#if form.hasError("new-password")> is-invalid</#if>" type="password"
+                                   id="new-password" name="new-password" placeholder="${i18n("profile.password.new.placeholder")}">
+                            <@icons.secretToggle/>
+                        </div>
                         <#if form.hasError("new-password")>
                             <p class="help is-invalid">${form.getError("new-password")}</p>
                         </#if>
@@ -210,8 +219,11 @@
                 <div class="line line--stack" style="border-bottom:none">
                     <div class="field">
                         <label class="label" for="confirm-password">${i18n("profile.password.confirm.label")}</label>
-                        <input class="input<#if form.hasError("confirm-password")> is-invalid</#if>" type="password"
-                               id="confirm-password" name="confirm-password" placeholder="${i18n("profile.password.confirm.placeholder")}">
+                        <div class="secret">
+                            <input class="input<#if form.hasError("confirm-password")> is-invalid</#if>" type="password"
+                                   id="confirm-password" name="confirm-password" placeholder="${i18n("profile.password.confirm.placeholder")}">
+                            <@icons.secretToggle/>
+                        </div>
                         <#if form.hasError("confirm-password")>
                             <p class="help is-invalid">${form.getError("confirm-password")}</p>
                         </#if>

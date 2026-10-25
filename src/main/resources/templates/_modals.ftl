@@ -174,8 +174,11 @@
                 <p class="dialog__text">${i18n("layout.modal.delete.account.body")}</p>
                 <div class="field" style="margin-top:20px">
                     <label class="label" for="confirmPassword">${i18n("layout.modal.delete.account.password")}</label>
-                    <input class="input" type="password" name="confirmPassword" id="confirmPassword"
-                           placeholder="${i18n("layout.modal.delete.account.placeholder")}">
+                    <div class="secret">
+                        <input class="input" type="password" name="confirmPassword" id="confirmPassword"
+                               placeholder="${i18n("layout.modal.delete.account.placeholder")}">
+                        <@icons.secretToggle/>
+                    </div>
                 </div>
             </div>
             <div class="dialog__foot">

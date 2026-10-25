@@ -41,7 +41,7 @@
                 </button>
                 <button class="btn btn--ink btn--icon" id="add-bookmark" type="button"
                         aria-label="${i18n("layout.add.bookmark")}"
-                        data-tip="${i18n("layout.add.bookmark")}">
+                        data-tip="${i18n("layout.add.bookmark")} · N">
                     <@icons.icon "plus"/>
                 </button>
             </div>

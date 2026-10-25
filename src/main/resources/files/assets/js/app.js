@@ -86,17 +86,33 @@ function fail(error) {
         });
 }
 
+let dialogOpener = null;
+
+function dialogFocusable(root) {
+    return $$('a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled])', root)
+        .filter(el => el.getClientRects().length > 0);
+}
+
 function openDialog(el) {
     if (!el) return;
-    closeDialogs();
+    const opener = dialogOpener
+        || (document.activeElement && document.activeElement !== document.body ? document.activeElement : null);
+    closeDialogs(false);
+    dialogOpener = opener;
     el.classList.add('is-open');
 
     const field = $('input:not([type=hidden]), select', el);
     if (field) setTimeout(() => field.focus(), 60);
 }
 
-function closeDialogs() {
-    $$('.veil.is-open').forEach(el => el.classList.remove('is-open'));
+function closeDialogs(restore = true) {
+    const opener = dialogOpener;
+    const open = $$('.veil.is-open');
+    if (!open.length) return;
+
+    open.forEach(el => el.classList.remove('is-open'));
+    dialogOpener = null;
+    if (restore && opener && document.contains(opener)) opener.focus();
 }
 
 function wireDialogs() {
@@ -224,13 +240,15 @@ function addBookmark() {
     const category = $id('bookmark-category');
     const button = $id('confirm-add-bookmark');
 
-    if (!url?.value.trim()) {
+    const bookmarkUrl = withScheme(url.value);
+    if (!bookmarkUrl) {
         setFieldError(url, $id('bookmark-url-error'), true);
         return;
     }
+    url.value = bookmarkUrl;
 
     button.classList.add('is-busy');
-    window.apiPost('/api/v1/items?async=true', { url: url.value.trim(), category: category.value })
+    window.apiPost('/api/v1/items?async=true', { url: bookmarkUrl, category: category.value })
         .then(() => {
             toastAfterReload(i18n.bookmarkCreatedSuccess);
             window.location.href = '/dashboard/' + category.value;
@@ -268,6 +286,57 @@ function trashItem(item) {
             item.style.opacity = '';
             fail(error);
         });
+}
+
+function withScheme(value) {
+    const url = value.trim();
+    if (!url || /^[a-z][a-z0-9+.-]*:/i.test(url)) return url;
+    if (url.startsWith('//')) return 'https:' + url;
+    return 'https://' + url;
+}
+
+function tilesFor(uids) {
+    const shelf = $id('shelf');
+    return uids.map(uid => shelf?.querySelector(`.item[data-uid="${uid}"]`)).filter(Boolean);
+}
+
+function markLeaving(tiles) {
+    tiles.forEach(tile => {
+        tile.dataset.leaving = 'true';
+        tile.style.pointerEvents = 'none';
+        tile.style.transition = 'opacity .25s ease';
+        tile.style.opacity = '0';
+    });
+}
+
+function unmarkLeaving(tiles) {
+    tiles.forEach(tile => {
+        delete tile.dataset.leaving;
+        tile.style.pointerEvents = '';
+        tile.style.opacity = '';
+    });
+}
+
+function releaseItems(tiles, message) {
+    ['confirm-bulk-move', 'confirm-bulk-delete'].forEach(id => {
+        const button = $id(id);
+        if (!button) return;
+        button.classList.remove('is-busy');
+        button.disabled = false;
+    });
+    closeDialogs();
+    stopPicking();
+    window.setTimeout(() => {
+        const shelf = $id('shelf');
+        tiles.forEach(tile => tile.remove());
+        updateItemCount();
+        if (shelf && !shelf.querySelector('.item')) {
+            toastAfterReload(message);
+            reloadWhenIdle();
+            return;
+        }
+        showToast(message);
+    }, 250);
 }
 
 function isPicking() {
@@ -348,16 +417,28 @@ function wirePicking() {
     });
 
     on('#confirm-bulk-move', 'click', () => {
+        const button = $id('confirm-bulk-move');
         const uids = pickedUids();
         const category = $id('bulk-move-category')?.value;
-        if (!uids.length || !category) return;
+        if (!uids.length || !category || button?.disabled) return;
+
+        const tiles = tilesFor(uids);
+        markLeaving(tiles);
+        if (button) {
+            button.classList.add('is-busy');
+            button.disabled = true;
+        }
 
         window.apiPut('/api/v1/items/bulk/move', { uids, category })
-            .then(() => {
-                toastAfterReload(i18n.itemsMovedSuccess);
-                window.location.reload();
-            })
-            .catch(fail);
+            .then(() => releaseItems(tiles, i18n.itemsMovedSuccess))
+            .catch(error => {
+                unmarkLeaving(tiles);
+                if (button) {
+                    button.classList.remove('is-busy');
+                    button.disabled = false;
+                }
+                fail(error);
+            });
     });
 
     on('#bulk-delete', 'click', () => {
@@ -367,15 +448,27 @@ function wirePicking() {
     });
 
     on('#confirm-bulk-delete', 'click', () => {
+        const button = $id('confirm-bulk-delete');
         const uids = pickedUids();
-        if (!uids.length) return;
+        if (!uids.length || button?.disabled) return;
+
+        const tiles = tilesFor(uids);
+        markLeaving(tiles);
+        if (button) {
+            button.classList.add('is-busy');
+            button.disabled = true;
+        }
 
         window.apiPut('/api/v1/items/bulk/delete', { uids })
-            .then(() => {
-                toastAfterReload(i18n.itemsDeletedSuccess);
-                window.location.reload();
-            })
-            .catch(fail);
+            .then(() => releaseItems(tiles, i18n.itemsDeletedSuccess))
+            .catch(error => {
+                unmarkLeaving(tiles);
+                if (button) {
+                    button.classList.remove('is-busy');
+                    button.disabled = false;
+                }
+                fail(error);
+            });
     });
 
     on('#bulk-copy', 'click', () => {
@@ -474,11 +567,16 @@ function paletteOpen() {
 }
 
 function paletteRow(item) {
-    const row = document.createElement('div');
+    const row = document.createElement(item.href ? 'a' : 'div');
     row.className = 'palette__row';
-    row.dataset.href = item.href;
-    if (item.external) row.dataset.external = 'true';
     if (item.action) row.dataset.action = item.action;
+    if (item.href) {
+        row.href = item.href;
+        if (item.external) {
+            row.target = '_blank';
+            row.rel = 'noopener noreferrer';
+        }
+    }
 
     row.innerHTML = `<svg aria-hidden="true"><use href="#i-${item.icon}"/></svg>`;
     row.appendChild(document.createTextNode(item.label));
@@ -609,12 +707,13 @@ function runPaletteRow(row) {
         toggleTheme();
         return;
     }
-    if (row.dataset.href) {
-        if (row.dataset.external === 'true') {
-            window.open(row.dataset.href, '_blank', 'noopener');
+    const href = row.getAttribute('href');
+    if (href) {
+        if (row.target === '_blank') {
+            window.open(href, '_blank', 'noopener');
             closeDialogs();
         } else {
-            window.location.href = row.dataset.href;
+            window.location.href = href;
         }
     }
 }
@@ -648,7 +747,11 @@ function wirePalette() {
 
     on(palette.list, 'click', (e) => {
         const row = e.target.closest('.palette__row');
-        if (row) runPaletteRow(row);
+        if (!row || !palette.rows?.includes(row)) return;
+        const modified = e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0;
+        if (modified && row.matches('a[href]')) return;
+        e.preventDefault();
+        runPaletteRow(row);
     });
 
     on(palette.list, 'mousemove', (e) => {
@@ -729,10 +832,32 @@ function wireForms() {
         });
     });
     otp.find(input => input.offsetParent !== null)?.focus();
+    wireSecrets();
 }
 
 function wireKeyboard() {
     on(document, 'keydown', (e) => {
+        if (e.key === 'Tab') {
+            const veil = $('.veil.is-open');
+            if (!veil) return;
+            const items = dialogFocusable(veil);
+            if (!items.length) {
+                e.preventDefault();
+                return;
+            }
+            const first = items[0];
+            const last = items[items.length - 1];
+            const inside = veil.contains(document.activeElement);
+            if (e.shiftKey && (!inside || document.activeElement === first)) {
+                e.preventDefault();
+                last.focus();
+            } else if (!e.shiftKey && (!inside || document.activeElement === last)) {
+                e.preventDefault();
+                first.focus();
+            }
+            return;
+        }
+
         if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
             e.preventDefault();
             paletteOpen();
@@ -742,6 +867,15 @@ function wireKeyboard() {
         if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'j') {
             e.preventDefault();
             toggleTheme();
+            return;
+        }
+
+        if (e.key.toLowerCase() === 'n' && !e.metaKey && !e.ctrlKey && !e.altKey && !e.repeat && !e.isComposing) {
+            const tag = document.activeElement?.tagName;
+            if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || document.activeElement?.isContentEditable) return;
+            if ($('.veil.is-open')) return;
+            e.preventDefault();
+            openAddBookmark();
             return;
         }
 
@@ -818,10 +952,52 @@ function insertTile(uid, countsTowardsCategory = true) {
         .then(response => response.ok ? response.text() : Promise.reject(new Error('HTTP ' + response.status)))
         .then(html => {
             shelf.insertAdjacentHTML('afterbegin', html.trim());
+            bindPreviewImages(shelf.querySelector(`.item[data-uid="${uid}"]`) || shelf);
             updateItemCount();
             if (countsTowardsCategory) adjustCategoryCount(currentCategoryUid(), 1);
         })
         .catch(() => reloadWhenIdle());
+}
+
+function bindPreviewImages(root = document) {
+    if (!root) return;
+    root.querySelectorAll('.item__art img').forEach(img => {
+        if (img.dataset.fallbackBound) return;
+        img.dataset.fallbackBound = '1';
+
+        let replaced = false;
+        const fail = () => {
+            if (replaced) return;
+            replaced = true;
+            const art = img.closest('.item__art');
+            const item = img.closest('.item');
+            if (!art || !item) return;
+            const host = ($('.item__host', item)?.textContent || '').trim().replace(/^www\./i, '');
+            const blank = document.createElement('div');
+            blank.className = 'item__art item__art--blank';
+            const letter = document.createElement('span');
+            letter.textContent = host ? host.charAt(0).toUpperCase() : '·';
+            blank.appendChild(letter);
+            art.replaceWith(blank);
+        };
+
+        img.addEventListener('error', fail);
+        if (img.complete && img.naturalWidth === 0) fail();
+    });
+}
+
+function wireSecrets() {
+    $$('.secret__toggle').forEach(button => {
+        button.addEventListener('click', () => {
+            const input = $('input', button.parentElement);
+            if (!input) return;
+            const visible = input.type === 'password';
+            input.type = visible ? 'text' : 'password';
+            button.setAttribute('aria-pressed', String(visible));
+            button.setAttribute('aria-label', visible ? button.dataset.hide : button.dataset.show);
+            button.querySelector('use')?.setAttribute('href', visible ? '#i-eye-off' : '#i-eye');
+        });
+    });
 }
 
 function updateItemCount() {
@@ -975,6 +1151,7 @@ window.addEventListener('online', rearmStream);
 document.addEventListener('visibilitychange', rearmStream);
 
 applyShortcutLabels();
+bindPreviewImages();
 wireDialogs();
 wireShell();
 wirePicking();

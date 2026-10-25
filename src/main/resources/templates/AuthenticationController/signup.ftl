@@ -16,8 +16,11 @@
 
     <div class="field">
         <label class="label" for="password">${i18n("auth.signup.password.placeholder")}</label>
-        <input class="input<#if form.hasError("password")> is-invalid</#if>" type="password" id="password"
-               name="password" autocomplete="new-password" required>
+        <div class="secret">
+            <input class="input<#if form.hasError("password")> is-invalid</#if>" type="password" id="password"
+                   name="password" autocomplete="new-password" required>
+            <@icons.secretToggle/>
+        </div>
         <#if form.hasError("password")>
             <p class="help is-invalid">${form.getError("password")}</p>
         </#if>
@@ -25,8 +28,11 @@
 
     <div class="field">
         <label class="label" for="confirm-password">${i18n("auth.signup.confirm.placeholder")}</label>
-        <input class="input<#if form.hasError("confirm-password")> is-invalid</#if>" type="password"
-               id="confirm-password" name="confirm-password" autocomplete="new-password" required>
+        <div class="secret">
+            <input class="input<#if form.hasError("confirm-password")> is-invalid</#if>" type="password"
+                   id="confirm-password" name="confirm-password" autocomplete="new-password" required>
+            <@icons.secretToggle/>
+        </div>
         <#if form.hasError("confirm-password")>
             <p class="help is-invalid">${form.getError("confirm-password")}</p>
         </#if>
