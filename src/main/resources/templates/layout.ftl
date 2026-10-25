@@ -2,11 +2,11 @@
 <#import "_modals.ftl" as modal>
 <#import "_icons.ftl" as icons>
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="${i18n("html.lang")}" data-theme="light">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Filed Papers</title>
+    <title><#if title == "Filed Papers">Filed Papers<#else>${title} · Filed Papers</#if></title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
@@ -33,15 +33,18 @@
                 <span class="wordmark__v">${version}</span>
             </a>
 
-            <button class="searchbar" id="open-search" type="button">
-                <@icons.icon "search"/>
-                <span class="searchbar__label">${i18n("dashboard.search")}</span>
-                <kbd>⌘K</kbd>
-            </button>
-
-            <button class="btn btn--ink btn--block" id="add-bookmark" type="button">
-                <@icons.icon "plus"/>${i18n("layout.add.bookmark")}
-            </button>
+            <div class="sidebar__search">
+                <button class="searchbar" id="open-search" type="button">
+                    <@icons.icon "search"/>
+                    <span class="searchbar__label">${i18n("dashboard.search")}</span>
+                    <kbd class="kbd-combo" data-combo="K">⌘K</kbd>
+                </button>
+                <button class="btn btn--ink btn--icon" id="add-bookmark" type="button"
+                        aria-label="${i18n("layout.add.bookmark")}"
+                        data-tip="${i18n("layout.add.bookmark")}">
+                    <@icons.icon "plus"/>
+                </button>
+            </div>
         </div>
 
         <nav class="sidebar__nav scroll" id="nav">
@@ -100,7 +103,7 @@
                 </a>
                 <div class="menu__sep"></div>
                 <button class="menu__item" id="menu-theme" type="button">
-                    <@icons.icon "moon"/>${i18n("layout.menu.theme")}<kbd class="menu__kbd">⌘J</kbd>
+                    <@icons.icon "moon"/>${i18n("layout.menu.theme")}<kbd class="menu__kbd kbd-combo" data-combo="J">⌘J</kbd>
                 </button>
                 <div class="menu__sep"></div>
                 <a class="menu__item menu__item--danger" href="/auth/logout">

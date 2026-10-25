@@ -1,6 +1,6 @@
 <#import "./layout.ftl" as layout>
 <#import "../_icons.ftl" as icons>
-<@layout.myLayout "Two-factor authentication">
+<@layout.myLayout i18n("auth.mfa.title")>
 <h1 class="auth__title">${i18n("auth.mfa.title")}</h1>
 <p class="auth__subtitle">${i18n("auth.mfa.subtitle")}</p>
 

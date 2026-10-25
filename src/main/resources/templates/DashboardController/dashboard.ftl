@@ -1,9 +1,15 @@
 <#import "../layout.ftl" as layout>
 <#import "../_icons.ftl" as icons>
 <#import "../_item.ftl" as tile>
-<@layout.myLayout "Dashboard">
 <#assign isTrash = active == "trash">
 <#assign isInbox = active == "inbox">
+<#assign pageTitle = i18n("layout.inbox.name")>
+<#if isTrash>
+    <#assign pageTitle = i18n("layout.trash.name")>
+<#elseif !isInbox>
+    <#assign pageTitle = breadcrumb>
+</#if>
+<@layout.myLayout pageTitle>
 <#assign retention = trashRetention.value + " " + i18n("dashboard.trash.unit." + trashRetention.unit)>
 
 <div class="page-head">
@@ -22,10 +28,14 @@
             <button class="btn btn--quiet btn--sm btn--muted" id="pick-start" type="button">
                 <@icons.icon "check-square"/>${i18n("dashboard.select")}
             </button>
-            <button class="btn btn--quiet btn--icon btn--sm" id="view-list" type="button" data-tip="${i18n("dashboard.view.list")}">
+            <button class="btn btn--quiet btn--icon btn--sm" id="view-list" type="button"
+                    aria-pressed="false" aria-label="${i18n("dashboard.view.list")}"
+                    data-tip="${i18n("dashboard.view.list")}">
                 <@icons.icon "list"/>
             </button>
-            <button class="btn btn--quiet btn--icon btn--sm" id="view-grid" type="button" data-tip="${i18n("dashboard.view.grid")}">
+            <button class="btn btn--quiet btn--icon btn--sm" id="view-grid" type="button"
+                    aria-pressed="true" aria-label="${i18n("dashboard.view.grid")}"
+                    data-tip="${i18n("dashboard.view.grid")}">
                 <@icons.icon "grid"/>
             </button>
         </#if>

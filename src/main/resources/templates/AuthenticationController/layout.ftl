@@ -1,11 +1,11 @@
 <#macro myLayout title="Filed Papers">
 <#import "../_icons.ftl" as icons>
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="${i18n("html.lang")}" data-theme="light">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Filed Papers</title>
+    <title><#if title == "Filed Papers">Filed Papers<#else>${title} · Filed Papers</#if></title>
     <link rel="icon" type="image/x-icon" href="/favicon.ico">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">

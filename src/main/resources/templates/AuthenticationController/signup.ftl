@@ -1,6 +1,6 @@
 <#import "./layout.ftl" as layout>
 <#import "../_icons.ftl" as icons>
-<@layout.myLayout "Sign up">
+<@layout.myLayout i18n("auth.signup.title")>
 <h1 class="auth__title">${i18n("auth.signup.title")}</h1>
 <p class="auth__subtitle">${i18n("auth.signup.subtitle")}</p>
 

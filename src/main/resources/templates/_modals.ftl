@@ -25,7 +25,9 @@
             <div style="display:flex;flex-direction:column;gap:18px;margin-top:20px">
                 <div class="field">
                     <label class="label" for="bookmark-url">${i18n("layout.modal.add.bookmark.url")}</label>
-                    <input class="input" type="url" name="bookmark-url" id="bookmark-url" placeholder="https://example.com">
+                    <input class="input" type="url" name="bookmark-url" id="bookmark-url"
+                           placeholder="https://example.com" aria-describedby="bookmark-url-error">
+                    <p class="help is-invalid is-hidden" id="bookmark-url-error">${i18n("layout.modal.add.bookmark.url.required")}</p>
                 </div>
                 <div class="field">
                     <label class="label" for="bookmark-category">${i18n("layout.modal.add.bookmark.category")}</label>
@@ -33,7 +35,7 @@
                         <#list categories as category>
                             <#assign slug = category.name?lower_case>
                             <#if slug != "trash">
-                                <option value="${category.uid}"<#if categoryUid?? && categoryUid == category.uid> selected</#if>>
+                                <option value="${category.uid}"<#if slug == "inbox"> data-inbox selected</#if>>
                                     <#if slug == "inbox">${i18n("layout.inbox.name")}<#else>${category.name}</#if>
                                 </option>
                             </#if>
@@ -56,7 +58,9 @@
             <p class="dialog__text">${i18n("layout.modal.add.category.hint")}</p>
             <div class="field" style="margin-top:20px">
                 <label class="label" for="category">${i18n("layout.modal.add.category.name")}</label>
-                <input class="input" type="text" name="category" id="category" maxlength="32">
+                <input class="input" type="text" name="category" id="category" maxlength="32"
+                       aria-describedby="category-error">
+                <p class="help is-invalid is-hidden" id="category-error">${i18n("layout.modal.add.category.name.required")}</p>
             </div>
         </div>
         <div class="dialog__foot">
@@ -72,7 +76,9 @@
             <div class="dialog__title">${i18n("layout.modal.rename.category.title")}</div>
             <div class="field" style="margin-top:20px">
                 <label class="label" for="existing-category">${i18n("layout.modal.rename.category.name")}</label>
-                <input class="input" type="text" name="category" id="existing-category" maxlength="32">
+                <input class="input" type="text" name="category" id="existing-category" maxlength="32"
+                       aria-describedby="existing-category-error">
+                <p class="help is-invalid is-hidden" id="existing-category-error">${i18n("layout.modal.add.category.name.required")}</p>
             </div>
         </div>
         <div class="dialog__foot">

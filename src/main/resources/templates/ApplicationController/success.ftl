@@ -1,6 +1,6 @@
 <#import "./layout.ftl" as layout>
 <#import "../_icons.ftl" as icons>
-<@layout.myLayout "Success">
+<@layout.myLayout i18n("application.success.title")>
 <div class="auth__brand">
     <span class="auth__mark" style="background:var(--moss);color:#fff"><@icons.icon "check"/></span>
     <span class="auth__wordmark">Filed Papers<span class="auth__dot">.</span></span>

@@ -1,6 +1,6 @@
 <#import "../layout.ftl" as layout>
 <#import "../_icons.ftl" as icons>
-<@layout.myLayout "Profile">
+<@layout.myLayout i18n("profile.breadcrumbs")>
 <div class="column">
     <div class="page-head" style="margin-bottom:26px">
         <div>

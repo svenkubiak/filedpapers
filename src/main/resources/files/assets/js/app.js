@@ -17,6 +17,14 @@ const i18n = $id('i18n-js').dataset;
 let categoryToRename = null;
 let categoryToDelete = null;
 
+function applyShortcutLabels() {
+    const mac = /Mac|iPhone|iPad|iPod/.test(navigator.userAgent);
+    $$('.kbd-combo').forEach(el => {
+        const key = el.dataset.combo;
+        if (key) el.textContent = mac ? `⌘${key}` : `Ctrl+${key}`;
+    });
+}
+
 function showToast(message, type = 'success', duration = 4000) {
     const container = $id('toasts');
     if (!container || !message) return;
@@ -147,12 +155,20 @@ function wireShell() {
     applyTheme(currentTheme());
 }
 
+function setFieldError(input, message, invalid) {
+    if (!input) return;
+    input.classList.toggle('is-invalid', invalid);
+    input.setAttribute('aria-invalid', String(invalid));
+    message?.classList.toggle('is-hidden', !invalid);
+    if (invalid) input.focus();
+}
+
 function addCategory() {
     const input = $id('category');
     const name = input?.value.trim();
 
     if (!name) {
-        input?.classList.add('is-invalid');
+        setFieldError(input, $id('category-error'), true);
         return;
     }
 
@@ -170,7 +186,7 @@ function renameCategory() {
     const uid = categoryToRename?.dataset.uid;
 
     if (!name || !uid) {
-        input?.classList.add('is-invalid');
+        setFieldError(input, $id('existing-category-error'), true);
         return;
     }
 
@@ -208,13 +224,13 @@ function addBookmark() {
     const category = $id('bookmark-category');
     const button = $id('confirm-add-bookmark');
 
-    if (!url?.value) {
-        url?.classList.add('is-invalid');
+    if (!url?.value.trim()) {
+        setFieldError(url, $id('bookmark-url-error'), true);
         return;
     }
 
     button.classList.add('is-busy');
-    window.apiPost('/api/v1/items?async=true', { url: url.value, category: category.value })
+    window.apiPost('/api/v1/items?async=true', { url: url.value.trim(), category: category.value })
         .then(() => {
             toastAfterReload(i18n.bookmarkCreatedSuccess);
             window.location.href = '/dashboard/' + category.value;
@@ -227,15 +243,28 @@ function addBookmark() {
 
 function trashItem(item) {
     const uid = item.dataset.uid;
+    item.dataset.leaving = 'true';
+    item.style.pointerEvents = 'none';
     item.style.transition = 'opacity .25s ease';
     item.style.opacity = '0';
 
     window.apiPut(`/api/v1/items/${uid}`, {})
         .then(() => {
-            toastAfterReload(i18n.bookmarkDeletedSuccess);
-            window.location.reload();
+            window.setTimeout(() => {
+                const shelf = $id('shelf');
+                item.remove();
+                updateItemCount();
+                if (shelf && !shelf.querySelector('.item')) {
+                    toastAfterReload(i18n.bookmarkDeletedSuccess);
+                    reloadWhenIdle();
+                    return;
+                }
+                showToast(i18n.bookmarkDeletedSuccess);
+            }, 250);
         })
         .catch((error) => {
+            delete item.dataset.leaving;
+            item.style.pointerEvents = '';
             item.style.opacity = '';
             fail(error);
         });
@@ -263,7 +292,10 @@ function refreshTray() {
             : i18n.selectedMany.replace('{0}', String(count));
     }
 
-    if (!count) stopPicking();
+    ['bulk-move', 'bulk-copy', 'bulk-delete'].forEach(id => {
+        const button = $id(id);
+        if (button) button.disabled = count === 0;
+    });
 }
 
 function startPicking() {
@@ -289,13 +321,7 @@ function togglePick(item) {
 }
 
 function wirePicking() {
-    on('#pick-start', 'click', () => {
-        const first = $('.item');
-        if (first) {
-            document.body.classList.add('picking');
-            togglePick(first);
-        }
-    });
+    on('#pick-start', 'click', startPicking);
     on('#pick-done', 'click', stopPicking);
 
     on(document, 'click', (e) => {
@@ -498,12 +524,12 @@ function renderPalette(groups) {
     moveCursor(0);
 }
 
-function moveCursor(index) {
+function moveCursor(index, scroll = true) {
     palette.rows.forEach(row => row.classList.remove('is-cursor'));
     const row = palette.rows[Math.max(0, Math.min(index, palette.rows.length - 1))];
     if (row) {
         row.classList.add('is-cursor');
-        row.scrollIntoView({ block: 'nearest' });
+        if (scroll) row.scrollIntoView({ block: 'nearest' });
     }
 }
 
@@ -570,10 +596,11 @@ function runPaletteRow(row) {
     if (!row) return;
 
     if (row.dataset.action === 'add-bookmark') {
-        openDialog($id('add-bookmark-modal'));
+        openAddBookmark();
         return;
     }
     if (row.dataset.action === 'add-category') {
+        setFieldError($id('category'), $id('category-error'), false);
         openDialog($id('add-category-modal'));
         return;
     }
@@ -623,6 +650,13 @@ function wirePalette() {
         const row = e.target.closest('.palette__row');
         if (row) runPaletteRow(row);
     });
+
+    on(palette.list, 'mousemove', (e) => {
+        const row = e.target.closest('.palette__row');
+        if (!row || !palette.rows) return;
+        const index = palette.rows.indexOf(row);
+        if (index !== -1 && index !== cursorIndex()) moveCursor(index, false);
+    });
 }
 
 const VIEW_KEY = 'fp-view';
@@ -634,6 +668,8 @@ function applyView(view) {
     shelf.classList.toggle('shelf--list', view === 'list');
     $id('view-list')?.classList.toggle('is-on', view === 'list');
     $id('view-grid')?.classList.toggle('is-on', view !== 'list');
+    $id('view-list')?.setAttribute('aria-pressed', String(view === 'list'));
+    $id('view-grid')?.setAttribute('aria-pressed', String(view !== 'list'));
     try { localStorage.setItem(VIEW_KEY, view); } catch (e) { /* private mode */ }
 }
 
@@ -678,8 +714,9 @@ function wireForms() {
         e.target.form.submit();
     });
 
-    on('#bookmark-url', 'input', () => $id('bookmark-url').classList.remove('is-invalid'));
-    on('#category', 'input', () => $id('category').classList.remove('is-invalid'));
+    on('#bookmark-url', 'input', () => setFieldError($id('bookmark-url'), $id('bookmark-url-error'), false));
+    on('#category', 'input', () => setFieldError($id('category'), $id('category-error'), false));
+    on('#existing-category', 'input', () => setFieldError($id('existing-category'), $id('existing-category-error'), false));
 
     const otp = $$('.otp-input');
     otp.forEach((input, index) => {
@@ -709,6 +746,12 @@ function wireKeyboard() {
         }
 
         if (e.key === 'Escape') {
+            const menu = $id('account-menu');
+            const account = $id('account');
+            if (menu?.classList.contains('is-open')) {
+                menu.classList.remove('is-open');
+                account?.setAttribute('aria-expanded', 'false');
+            }
             closeDialogs();
             stopPicking();
             document.body.classList.remove('nav-open');
@@ -798,10 +841,9 @@ function onItemsMoved(payload) {
     let removed = 0;
     uids.forEach(uid => {
         const tile = shelf?.querySelector(`.item[data-uid="${uid}"]`);
-        if (tile) {
-            tile.remove();
-            removed += 1;
-        }
+        if (!tile || tile.dataset.leaving === 'true') return;
+        tile.remove();
+        removed += 1;
     });
 
     if (payload.from) adjustCategoryCount(payload.from, -uids.length);
@@ -932,6 +974,7 @@ window.addEventListener('pageshow', rearmStream);
 window.addEventListener('online', rearmStream);
 document.addEventListener('visibilitychange', rearmStream);
 
+applyShortcutLabels();
 wireDialogs();
 wireShell();
 wirePicking();
@@ -941,10 +984,21 @@ wireView();
 wireForms();
 wireKeyboard();
 
-on('#add-bookmark', 'click', () => openDialog($id('add-bookmark-modal')));
-on('#add-bookmark-sm', 'click', () => openDialog($id('add-bookmark-modal')));
-on('#add-bookmark-empty', 'click', () => openDialog($id('add-bookmark-modal')));
-on('#add-category-button', 'click', () => openDialog($id('add-category-modal')));
+function openAddBookmark() {
+    const select = $id('bookmark-category');
+    const inbox = select?.querySelector('[data-inbox]');
+    if (select && inbox) select.value = inbox.value;
+    setFieldError($id('bookmark-url'), $id('bookmark-url-error'), false);
+    openDialog($id('add-bookmark-modal'));
+}
+
+on('#add-bookmark', 'click', openAddBookmark);
+on('#add-bookmark-sm', 'click', openAddBookmark);
+on('#add-bookmark-empty', 'click', openAddBookmark);
+on('#add-category-button', 'click', () => {
+    setFieldError($id('category'), $id('category-error'), false);
+    openDialog($id('add-category-modal'));
+});
 on('#add-category-submit', 'click', addCategory);
 on('#rename-category-submit', 'click', renameCategory);
 on('#confirm-category-delete', 'click', deleteCategory);
@@ -964,7 +1018,9 @@ on('#confirm-logout-devices', 'click', () => {
 
 onAll('.category-rename', 'click', (e) => {
     categoryToRename = e.currentTarget;
-    $id('existing-category').value = categoryToRename.dataset.name;
+    const input = $id('existing-category');
+    input.value = categoryToRename.dataset.name;
+    setFieldError(input, $id('existing-category-error'), false);
     openDialog($id('rename-category-modal'));
 });
 

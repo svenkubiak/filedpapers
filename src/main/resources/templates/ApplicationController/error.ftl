@@ -1,6 +1,6 @@
 <#import "./layout.ftl" as layout>
 <#import "../_icons.ftl" as icons>
-<@layout.myLayout "Error">
+<@layout.myLayout i18n("application.error.title")>
 <div class="auth__brand">
     <span class="auth__mark" style="background:var(--rust);color:#fff"><@icons.icon "warn"/></span>
     <span class="auth__wordmark">Filed Papers<span class="auth__dot">.</span></span>

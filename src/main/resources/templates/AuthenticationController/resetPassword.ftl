@@ -1,5 +1,5 @@
 <#import "./layout.ftl" as layout>
-<@layout.myLayout "Reset password">
+<@layout.myLayout i18n("auth.reset.title")>
 <h1 class="auth__title">${i18n("auth.reset.title")}</h1>
 <p class="auth__subtitle">${i18n("auth.reset.subtitle")}</p>
 
