@@ -146,6 +146,15 @@ public class DashboardControllerTests {
     }
 
     @Test
+    public void testSessionUnauthorized() {
+        TestResponse response = TestRequest.get("/dashboard/session").execute();
+
+        assertThat(response, not(nullValue()));
+        assertThat(response.getStatusCode(), equalTo(StatusCodes.OK));
+        assertThat(response.getContent(), containsString("Please login to proceed."));
+    }
+
+    @Test
     public void testDashboardIoUnauthorized() {
         TestResponse response = TestRequest.get("/dashboard/io").execute();
 

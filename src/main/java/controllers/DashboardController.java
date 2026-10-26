@@ -32,6 +32,7 @@ import utils.io.IOUtils;
 import utils.io.Leaf;
 
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZoneOffset;
 import java.util.*;
@@ -44,6 +45,7 @@ import static constants.Const.TOAST_ERROR;
 public class DashboardController {
     private static final int MAX_FILE_SIZE_BYTES = 10485760; // 10MB
     private static final String AVATAR = "avatar";
+    private static final String SESSION_RENEWED = "renewed";
     private final DataService dataService;
     private final NotificationService notificationService;
     private final Config config;
@@ -216,7 +218,6 @@ public class DashboardController {
         String userUid = authentication.getSubject();
         form.expectFile(AVATAR);
         form.expectFileMaxSize(AVATAR, Avatars.MAX_UPLOAD_BYTES);
-        // Sniffed from the content, not the request; Avatars re-checks the format when decoding.
         form.expectFileMimeType(AVATAR, Avatars.MIME_TYPES);
 
         Optional<byte[]> avatar = form.isValid()
@@ -512,5 +513,16 @@ public class DashboardController {
         form.keep();
 
         return Response.redirect("/dashboard/profile");
+    }
+
+    public Response renewSession(Session session) {
+        session.withExpires(LocalDateTime.now()
+                .plusSeconds(config.getSessionCookieTokenExpires())
+                .withNano(0));
+        session.put(SESSION_RENEWED, "1");
+
+        return Response.ok()
+                .header("Cache-Control", "no-store")
+                .bodyJson(Map.of("csrfToken", session.getCsrf()));
     }
 }

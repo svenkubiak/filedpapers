@@ -229,4 +229,46 @@ public class DashboardMoveTests {
 
         assertThat(response.getStatusCode(), equalTo(401));
     }
+
+    @Test
+    public void testSessionRenewalKeepsThePageToken() {
+        String token = tokenFromDashboard();
+
+        TestResponse renewal = TestRequest.get("/dashboard/session")
+                .withCookie(authentication)
+                .withCookie(session)
+                .execute();
+
+        assertThat(renewal.getStatusCode(), equalTo(200));
+        Csrf csrf = TestUtils.csrfFrom(renewal);
+        assertThat(JsonUtils.toFlatMap(renewal.getContent()).get("csrfToken"), equalTo(token));
+        assertThat(csrf.token(), equalTo(token));
+
+        TestResponse categories = TestRequest.get("/api/v1/categories")
+                .withCookie(authentication)
+                .withCookie(csrf.cookie())
+                .withHeader("x-csrf-token", token)
+                .execute();
+
+        assertThat(categories.getStatusCode(), equalTo(200));
+    }
+
+    @Test
+    public void testSessionRenewalReplacesAnExpiredCookie() {
+        TestResponse renewal = TestRequest.get("/dashboard/session")
+                .withCookie(authentication)
+                .execute();
+
+        assertThat(renewal.getStatusCode(), equalTo(200));
+        Csrf csrf = TestUtils.csrfFrom(renewal);
+        assertThat(JsonUtils.toFlatMap(renewal.getContent()).get("csrfToken"), equalTo(csrf.token()));
+
+        TestResponse categories = TestRequest.get("/api/v1/categories")
+                .withCookie(authentication)
+                .withCookie(csrf.cookie())
+                .withHeader("x-csrf-token", csrf.token())
+                .execute();
+
+        assertThat(categories.getStatusCode(), equalTo(200));
+    }
 }

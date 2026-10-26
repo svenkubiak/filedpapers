@@ -60,6 +60,8 @@ function flushStoredToasts() {
 
 // Deliberately no reload on failure: it would wipe the toast and the logged error.
 function fail(error) {
+    if (error?.sessionExpired) return;
+
     const response = error?.response;
 
     if (!response) {
@@ -814,7 +816,11 @@ function wireForms() {
         const button = $id('avatar-pick');
         button.classList.add('is-busy');
         button.disabled = true;
-        e.target.form.submit();
+        // form.submit() skips the submit listener that would otherwise renew the token.
+        const send = () => e.target.form.submit();
+        window.refreshCsrfToken().then(send).catch((error) => {
+            if (!error?.sessionExpired) send();
+        });
     });
 
     on('#bookmark-url', 'input', () => setFieldError($id('bookmark-url'), $id('bookmark-url-error'), false));

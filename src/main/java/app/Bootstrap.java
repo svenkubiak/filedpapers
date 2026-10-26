@@ -50,6 +50,7 @@ public class Bootstrap implements MangooBootstrap {
                 On.get().to("/dashboard/{categoryUid}").respondeWith("dashboard"),
                 On.get().to("/dashboard/item/{uid}").respondeWith("item"),
                 On.get().to("/dashboard/profile").respondeWith("profile"),
+                On.get().to("/dashboard/session").respondeWith("renewSession"),
                 On.get().to("/dashboard/about").respondeWith("about"),
                 On.get().to("/dashboard/resync").respondeWith("resync"),
                 On.post().to("/dashboard/profile/change-username").respondeWith("doChangeUsername"),
