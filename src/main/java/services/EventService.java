@@ -13,13 +13,7 @@ import utils.Utils;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 // EventSource can't send an Authorization header and the sse route has no filters, so the
@@ -33,12 +27,6 @@ public class EventService {
     private final Map<String, Ticket> tickets = new ConcurrentHashMap<>();
     private final Map<String, Set<ServerSentEventConnection>> connections = new ConcurrentHashMap<>();
     private final ServerSentEventManager eventManager;
-
-    private record Ticket(String userUid, Instant expiresAt) {
-        boolean isExpired() {
-            return Instant.now().isAfter(expiresAt);
-        }
-    }
 
     @Inject
     public EventService(ServerSentEventManager eventManager) {
@@ -173,5 +161,11 @@ public class EventService {
 
     public void purgeExpiredTickets() {
         tickets.entrySet().removeIf(entry -> entry.getValue().isExpired());
+    }
+
+    private record Ticket(String userUid, Instant expiresAt) {
+        boolean isExpired() {
+            return Instant.now().isAfter(expiresAt);
+        }
     }
 }
