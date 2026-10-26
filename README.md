@@ -84,6 +84,7 @@ Before starting the installation process, make sure you have the following prere
    ```
    APPLICATION_URL=http://localhost
    ALLOW_REGISTRATION=true
+   APPLICATION_TRASH_RETENTION=72
    SMTP_HOST=localhost
    SMTP_PORT=25
    SMTP_AUTHENTICATION=true

@@ -6,6 +6,8 @@ default:
     url: env{}
     secret: env{}
     registration: env{}
+    trash:
+      retention: env{72} # Hours
     parameter:
       strict: true
   connector:
