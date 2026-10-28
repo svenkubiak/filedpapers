@@ -18,10 +18,10 @@
     "metascraper-url": "^5.58.4",
     "puppeteer-core": "^25.16.0",
     "sharp": "^0.35.5",
-    "single-file-cli": "^2.19.0"
+    "single-file-cli": "^2.21.0"
   },
   "overrides": {
-    "qs": "6.16.0"
+    "qs": "6.16.1"
   },
   "allowScripts": {
     "re2": false
