@@ -154,7 +154,7 @@ if [[ "$MODE" == "dev" ]]; then
   echo
 
   run_silent "Building image ${BOLD}${IMAGE_DEV_PATH}${RESET}" \
-    docker build --no-cache -t "$IMAGE_NAME:dev" .
+    docker build --pull --no-cache -t "$IMAGE_NAME:dev" .
   run_silent "Tagging image" \
     docker tag "$IMAGE_NAME:dev" "$IMAGE_DEV_PATH"
   run_silent "Pushing image ${BOLD}${IMAGE_DEV_PATH}${RESET}" \
@@ -165,7 +165,7 @@ if [[ "$MODE" == "dev" ]]; then
 
   cd metascraper
   run_silent "Building image ${BOLD}${IMAGE_METASCRAPER_DEV_PATH}${RESET}" \
-    docker build --no-cache -t "$IMAGE_NAME_METASCRAPER:dev" .
+    docker build --pull --no-cache -t "$IMAGE_NAME_METASCRAPER:dev" .
   run_silent "Tagging image" \
     docker tag "$IMAGE_NAME_METASCRAPER:dev" "$IMAGE_METASCRAPER_DEV_PATH"
   run_silent "Pushing image ${BOLD}${IMAGE_METASCRAPER_DEV_PATH}${RESET}" \
@@ -229,7 +229,7 @@ fi
 echo
 
 run_silent "Building image ${BOLD}${IMAGE_FULL_PATH}${RESET}" \
-  docker build --no-cache -t "$IMAGE_NAME:$IMAGE_VERSION" .
+  docker build --pull --no-cache -t "$IMAGE_NAME:$IMAGE_VERSION" .
 
 if is_stable_release; then
   run_silent "Tagging as latest" docker tag "$IMAGE_NAME:$IMAGE_VERSION" "$IMAGE_NAME:latest"
@@ -255,7 +255,7 @@ echo
 
 cd metascraper
 run_silent "Building image ${BOLD}${IMAGE_METASCRAPER_FULL_PATH}${RESET}" \
-  docker build --no-cache -t "$IMAGE_NAME_METASCRAPER:$IMAGE_VERSION" .
+  docker build --pull --no-cache -t "$IMAGE_NAME_METASCRAPER:$IMAGE_VERSION" .
 
 if is_stable_release; then
   run_silent "Tagging as latest" docker tag "$IMAGE_NAME_METASCRAPER:$IMAGE_VERSION" "$IMAGE_NAME_METASCRAPER:latest"

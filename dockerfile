@@ -1,8 +1,12 @@
 FROM amazoncorretto:25-headless
 
-RUN yum install -y shadow-utils \
+# AL2023 locks dnf to the base image release (system-release). A plain yum update
+# stays on that snapshot, so security fixes published in a newer release never
+# get installed. --releasever=latest moves the image to the current AL2023 repo.
+RUN yum update -y --releasever=latest \
+    && yum install -y shadow-utils \
     && yum clean all \
-    && rm -rf /var/cache/yum \
+    && rm -rf /var/cache/yum /var/cache/dnf \
     && groupadd --gid 1000 appgroup \
     && useradd \
         --uid 33 \
