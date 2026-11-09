@@ -4,7 +4,7 @@ import constants.Const;
 import io.mangoo.core.Application;
 import io.mangoo.core.Config;
 import io.mangoo.test.TestRunner;
-import io.mangoo.persistence.interfaces.Datastore;
+import io.mangoo.interfaces.persistence.Datastore;
 import models.Category;
 import models.Item;
 import models.User;
@@ -87,11 +87,11 @@ public class EventStreamTests {
 
     private String userWithInbox() {
         User user = new User(Utils.randomString() + "@bar.com");
-        Application.getInstance(io.mangoo.persistence.interfaces.Datastore.class).save(user);
+        Application.getInstance(io.mangoo.interfaces.persistence.Datastore.class).save(user);
         Category inbox = new Category(Const.INBOX, user.getUid(), Role.INBOX);
-        Application.getInstance(io.mangoo.persistence.interfaces.Datastore.class).save(inbox);
+        Application.getInstance(io.mangoo.interfaces.persistence.Datastore.class).save(inbox);
         Category trash = new Category("Trash", user.getUid(), Role.TRASH);
-        Application.getInstance(io.mangoo.persistence.interfaces.Datastore.class).save(trash);
+        Application.getInstance(io.mangoo.interfaces.persistence.Datastore.class).save(trash);
 
         return user.getUid();
     }

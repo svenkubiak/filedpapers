@@ -6,16 +6,16 @@ services:
     env_file:
       - .env
     environment:
+      # The configuration file is packaged in the image and is intentionally not part of JAVA_OPTS
       JAVA_OPTS: >
-        -Dapplication.config=/app/config/config.yaml  
         -Xms512m
         -Xmx512m
         -XX:+UseCompactObjectHeaders
     ports:
       - "127.0.0.1:9090:9090"
     volumes:
-      - ./config:/app/config
       - ./logs:/logs
+      - ./secrets:/run/secrets:ro
     depends_on:
       filedpapers-database:
         condition: service_healthy

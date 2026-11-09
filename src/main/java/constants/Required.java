@@ -13,7 +13,6 @@ public final class Required {
     public static final String CONNECTION = "connection can not be null";
     public static final String COOKIE_NAME = "cookieName can not be null";
     public static final String CREATED_AT = "createdAt can not be null";
-    public static final String EXPIRES_AT = "expiresAt can not be null";
     public static final String DATA = "data can not be null";
     public static final String DATA_SERVICE = "dataService can not be null";
     public static final String DATASTORE = "database can not be null";

@@ -3,7 +3,7 @@ package services;
 import constants.Const;
 import controllers.TestExtension;
 import io.mangoo.core.Application;
-import io.mangoo.persistence.interfaces.Datastore;
+import io.mangoo.interfaces.persistence.Datastore;
 import models.Category;
 import models.Item;
 import models.User;

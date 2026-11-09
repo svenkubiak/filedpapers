@@ -10,7 +10,7 @@
   "dependencies": {
     "axios": "^1.21.0",
     "express": "^5.3.0",
-    "metascraper": "^5.58.5",
+    "metascraper": "^5.58.6",
     "metascraper-amazon": "^5.58.4",
     "metascraper-description": "^5.58.4",
     "metascraper-image": "^5.58.4",

@@ -1,4 +1,21 @@
-# Values of the active environment (under environments) override these defaults.
+# Application configuration
+#
+# Values in the active environment overwrite default values.
+#
+# dev and test use the literal secrets below. prod is the Docker installation:
+# every secret is file{} and is read from a file named like the configuration
+# key. The directory is /run/secrets, unless APPLICATION_SECRETS_PATH is set.
+# install.sh creates those files and does not write a second config.yaml.
+#
+# application.url reads APPLICATION_URL and falls back to http://localhost.
+# application.registration reads APPLICATION_REGISTRATION and falls back to true.
+# application.trash.retention reads APPLICATION_TRASH_RETENTION and falls back to 72.
+# connector.http.port reads CONNECTOR_HTTP_PORT and falls back to 9090.
+# persistence.mongo.host reads PERSISTENCE_MONGO_HOST and has no fallback.
+# persistence.mongo.username reads PERSISTENCE_MONGO_USERNAME and falls back to filedpapers.
+# persistence.mongo.authdb reads PERSISTENCE_MONGO_AUTHDB and falls back to admin.
+# SMTP host, port, username, from, protocol, authentication and debug read SMTP_* and have no fallback.
+# smtp.password is secrets/smtp.password.
 
 default:
   application:
@@ -7,8 +24,6 @@ default:
     secret: JMvtA6RWYQTjWE5mT9jNCuXiAP9U90ZNdk8V3wmdWZZE8WceVjplpRNZm4WIYRG0
     language: en
     registration: true
-    metascraper:
-      url: arg{}
   api:
     accessToken:
       secret: 7jxYMCRL1WIyiaSn5gb0ULCnX3a5GTsnBXfv2AJVj4ZIBiUQqRuv9SrhoGor2AIk
@@ -41,8 +56,6 @@ default:
       secret: C4rfFW6PSE9lvDqa5pgBnfaSDJuxBCnFgoHed3k92YE7pmVK39XMo9nVD1M4PEBG
       key: C4rfFW6PSE9lvDqa5pgBnfaSDJuxBCnFgoHed3k92YE7pmVK39XMo9nVD1M4PEBG
       secure: true
-  token:
-    secret: X6JdFDrUmDXna5E47xqirx3zzVuzvUPK
   flash:
     cookie:
       name: filedpapers-flash
@@ -61,9 +74,6 @@ default:
 
 environments:
   test:
-    application:
-      metascraper:
-        url: arg{}
     connector:
       http:
         host: 127.0.0.1
@@ -87,7 +97,7 @@ environments:
   dev:
     connector:
       http:
-        host: 127.0.0.1
+        host: 192.168.1.224
         port: 9090
     session:
       cookie:
@@ -103,4 +113,71 @@ environments:
         embedded: true
         host: localhost
         port: 31031
+        package: models
+
+  prod:
+    application:
+      secret: file{}
+      url: env{http://localhost}
+      registration: env{true}
+      parameter:
+        strict: true
+      trash:
+        retention: env{72}
+    connector:
+      http:
+        host: 0.0.0.0
+        port: env{9090}
+    api:
+      accessToken:
+        key: file{}
+        secret: file{}
+        expires: 5
+      refreshToken:
+        secret: file{}
+        key: file{}
+        expires: 10080
+      challengeToken:
+        key: file{}
+        secret: file{}
+    session:
+      cookie:
+        name: __Host-filedpapers-session
+        secret: file{}
+        key: file{}
+        secure: true
+    authentication:
+      cookie:
+        name: __Host-filedpapers-authentication
+        secret: file{}
+        key: file{}
+        secure: true
+    flash:
+      cookie:
+        name: __Host-filedpapers-flash
+        secret: file{}
+        key: file{}
+        secure: true
+    i18n:
+      cookie:
+        name: __Host-filedpapers-i18n
+    smtp:
+      host: env{}
+      port: env{}
+      authentication: env{}
+      username: env{}
+      password: file{}
+      from: env{}
+      protocol: env{}
+      debug: env{}
+    persistence:
+      mongo:
+        embedded: false
+        host: env{}
+        port: 27017
+        dbname: filedpapers
+        username: env{filedpapers}
+        password: file{}
+        authdb: env{admin}
+        auth: true
         package: models

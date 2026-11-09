@@ -7,7 +7,7 @@ import constants.Const;
 import helpers.Csrf;
 import helpers.TestUtils;
 import io.mangoo.core.Application;
-import io.mangoo.persistence.interfaces.Datastore;
+import io.mangoo.interfaces.persistence.Datastore;
 import io.mangoo.test.TestRunner;
 import io.mangoo.test.http.TestRequest;
 import io.mangoo.test.http.TestResponse;

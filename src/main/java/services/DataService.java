@@ -1,18 +1,19 @@
 package services;
 
+import com.mongodb.WriteConcern;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.model.Filters;
-import com.mongodb.client.model.IndexOptions;
-import com.mongodb.client.model.Indexes;
 import com.mongodb.client.model.Sorts;
+import com.mongodb.client.model.UpdateOptions;
 import com.mongodb.client.result.DeleteResult;
 import constants.Collections;
 import constants.Const;
 import constants.Invalid;
 import constants.Required;
+import io.mangoo.constants.Default;
 import io.mangoo.interfaces.TokenBlacklist;
-import io.mangoo.persistence.interfaces.Datastore;
+import io.mangoo.interfaces.persistence.Datastore;
 import io.mangoo.routing.bindings.Authentication;
 import io.mangoo.utils.CommonUtils;
 import io.mangoo.utils.DateUtils;
@@ -34,10 +35,10 @@ import utils.Utils;
 import utils.preview.LinkPreview;
 import utils.preview.LinkPreviewFetcher;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 import static com.mongodb.client.model.Aggregates.*;
@@ -72,19 +73,6 @@ public class DataService {
         this.eventService = Objects.requireNonNull(eventService, Required.EVENT_SERVICE);
         this.tokenBlacklist = Objects.requireNonNull(tokenBlacklist, Required.TOKEN_BLACKLIST);
         this.applicationUrl = Objects.requireNonNull(applicationUrl, Required.APPLICATION_URL);
-    }
-
-    public void indexify() {
-        datastore.query(Token.class)
-                .createIndex(
-                        Indexes.ascending(Const.EXPIRES_AT),
-                        new IndexOptions().expireAfter(0L, TimeUnit.SECONDS));
-
-        // Entries written before expiresAt existed only carry a timestamp.
-        datastore.query(Token.class)
-                .createIndex(
-                        Indexes.descending("timestamp"),
-                        new IndexOptions().expireAfter(8L, TimeUnit.DAYS));
     }
 
     public Optional<List<Map<String, Object>>> findCategories(String userUid) {
@@ -712,7 +700,7 @@ public class DataService {
             user.setPassword(CommonUtils.hashArgon2(password, user.getSalt()));
             save(user);
             // A reset implies suspected compromise, so all earlier sessions are revoked.
-            tokenBlacklist.revokeSubject(userUid);
+            revokeSubject(userUid);
         }
     }
 
@@ -756,11 +744,55 @@ public class DataService {
 
         // Revoke only after any save(user) of the caller: save writes the whole document and would reset sessionsValidFrom.
         if (findUserByUid(userUid) != null) {
-            tokenBlacklist.revokeSubject(userUid);
+            revokeSubject(userUid);
             return true;
         }
 
         return false;
+    }
+
+    // The previous blacklist stored single-token revocations in tokens. Copy the ones that can still
+    // be presented into mangoo's collection, then drop the old one. Subject cutoffs stay on the user.
+    private void migrateRevokedTokens() {
+        var database = datastore.getMongoDatabase();
+        boolean exists = false;
+        for (String name : database.listCollectionNames()) {
+            if ("tokens".equals(name)) {
+                exists = true;
+                break;
+            }
+        }
+        if (!exists) {
+            return;
+        }
+
+        MongoCollection<Document> tokens = database.getCollection("tokens");
+        MongoCollection<Document> revocations = database.getCollection("mangooio_revocations")
+                .withWriteConcern(WriteConcern.MAJORITY);
+        Instant now = Instant.now();
+        for (Document token : tokens.find()) {
+            String jwtId = token.getString(Const.UID);
+            Date expiresAt = token.getDate("expiresAt");
+            if (StringUtils.isBlank(jwtId) || expiresAt == null || !expiresAt.toInstant().isAfter(now)) {
+                continue;
+            }
+
+            revocations.updateOne(
+                    eq("_id", "jti:" + jwtId),
+                    max("expireAt", Date.from(expiresAt.toInstant().plusSeconds(Default.JWT_CLOCK_SKEW))),
+                    new UpdateOptions().upsert(true));
+        }
+        tokens.drop();
+    }
+
+    // The web filter reads sessionsValidFrom. Mangoo's blacklist is what cookie logout and the API checks consult.
+    // updateOne, not save: save writes the whole document and would put the previous cutoff back.
+    private void revokeSubject(String userUid) {
+        var since = Instant.now();
+        datastore.query(User.class).updateOne(
+                eq(Const.UID, userUid),
+                max(Const.SESSIONS_VALID_FROM, since.getEpochSecond()));
+        tokenBlacklist.revokeSubject(userUid, since);
     }
 
     public void resync(String userUid) {
@@ -810,6 +842,8 @@ public class DataService {
 
     @SuppressWarnings("unchecked")
     public void upgrade() {
+        migrateRevokedTokens();
+
         datastore.query(Collections.ITEMS).updateMany(
                 exists("imageBase64"),
                 unset("imageBase64"));
@@ -895,10 +929,9 @@ public class DataService {
             datastore.query(Item.class).find()
                     .projection(include(Const.MEDIA_UID, Const.ARCHIVE_UID))
                     .forEach(doc -> {
-                        var item = (Item) doc;
-                        if (item != null && ( StringUtils.isNotBlank(item.getMediaUid()) || StringUtils.isNotBlank(item.getArchiveUid()) )) {
-                            usedMediaUids.add(item.getMediaUid());
-                            usedMediaUids.add(item.getArchiveUid());
+                        if (doc != null && ( StringUtils.isNotBlank(doc.getMediaUid()) || StringUtils.isNotBlank(doc.getArchiveUid()) )) {
+                            usedMediaUids.add(doc.getMediaUid());
+                            usedMediaUids.add(doc.getArchiveUid());
                         }
                     });
 

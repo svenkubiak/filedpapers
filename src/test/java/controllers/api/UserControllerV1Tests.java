@@ -3,7 +3,7 @@ package controllers.api;
 import constants.Const;
 import controllers.TestExtension;
 import io.mangoo.core.Application;
-import io.mangoo.persistence.interfaces.Datastore;
+import io.mangoo.interfaces.persistence.Datastore;
 import io.mangoo.test.http.TestRequest;
 import io.mangoo.test.http.TestResponse;
 import io.mangoo.utils.CommonUtils;
@@ -176,9 +176,20 @@ public class UserControllerV1Tests {
 
     @Test
     void testAMistypedOtpKeepsTheChallengeToken() {
+        // Own user: Mangoo accepts each TOTP step once per user, and testLoginMfa already spends the current step of "bar".
+        String secret = TotpUtils.createSecret();
+        String username = Utils.randomString();
+        Datastore datastore = Application.getInstance(Datastore.class);
+        User user = new User(username);
+        user.setPassword(CommonUtils.hashArgon2("bar", user.getSalt()));
+        user.setMfa(true);
+        user.setMfaSecret(secret);
+        user.setMfaFallback(Utils.randomString());
+        datastore.save(user);
+
         TestResponse response = TestRequest.post("/api/v1/users/login")
                 .withContentType("application/json")
-                .withStringBody(JsonUtils.toJson(Map.of("username", "bar", "password", "bar")))
+                .withStringBody(JsonUtils.toJson(Map.of("username", username, "password", "bar")))
                 .execute();
 
         String challengeToken = JsonUtils.toFlatMap(response.getContent()).get("challengeToken");
@@ -190,7 +201,7 @@ public class UserControllerV1Tests {
 
         assertThat(response.getStatusCode()).isEqualTo(403);
 
-        String body = JsonUtils.toJson(Map.of("challengeToken", challengeToken, "otp", TotpUtils.getTotp("foobar")));
+        String body = JsonUtils.toJson(Map.of("challengeToken", challengeToken, "otp", TotpUtils.getTotp(secret)));
         response = TestRequest.post("/api/v1/users/mfa")
                 .withContentType("application/json")
                 .withStringBody(body)

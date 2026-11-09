@@ -76,24 +76,33 @@ Before starting the installation process, make sure you have the following prere
 2. **Download and execute the installation script:**
 
    ```shell
-   curl -sSL https://raw.githubusercontent.com/svenkubiak/filedpapers/refs/heads/main/install.sh | bash
+   curl -fsSL --proto '=https' --tlsv1.2 -O https://raw.githubusercontent.com/svenkubiak/filedpapers/refs/heads/main/install.sh
+   less install.sh   # review before running
+   bash install.sh
    ```
-   
+
+   The application uses the `config.yaml` packaged in the image. `install.sh` does not write a configuration file. It generates `.env` with mode `600` and secret files in `secrets/` (directory mode `755`, files mode `644`). Compose mounts that directory at `/run/secrets`, where mangoo reads the `file{}` values. To pin the downloaded `compose.yaml` to a released tag instead of `main`, set `FILEDPAPERS_VERSION`, for example `FILEDPAPERS_VERSION=6.0.18 bash install.sh`.
+
 3. **After installation is complete open the .env file and set your custom configuration:**
 
    ```
    APPLICATION_URL=http://localhost
-   ALLOW_REGISTRATION=true
+   APPLICATION_REGISTRATION=true
    APPLICATION_TRASH_RETENTION=72
+   CONNECTOR_HTTP_PORT=9090
+   PERSISTENCE_MONGO_HOST=filedpapers-database
    SMTP_HOST=localhost
    SMTP_PORT=25
    SMTP_AUTHENTICATION=true
    SMTP_USERNAME=username
-   SMTP_PASSWORD=password
    SMTP_FROM=email@localhost
    SMTP_PROTOCOL=smtptls
    SMTP_DEBUG=false
    ```
+
+   The mailbox password is the file `secrets/smtp.password`, not a variable in `.env`. A new installation writes the placeholder `password` there. Replace it before sending mail.
+
+   `CONNECTOR_HTTP_PORT` is the port inside the container. The published port in `compose.yaml` must forward to it. `PERSISTENCE_MONGO_HOST` is `filedpapers-database` when MongoDB is the service from `compose.yaml`.
 
 4. **Start the containers**
 

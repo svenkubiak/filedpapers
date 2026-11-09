@@ -3,7 +3,7 @@ package controllers.api;
 import constants.Const;
 import controllers.TestExtension;
 import io.mangoo.core.Application;
-import io.mangoo.persistence.interfaces.Datastore;
+import io.mangoo.interfaces.persistence.Datastore;
 import io.mangoo.test.http.TestRequest;
 import io.mangoo.test.http.TestResponse;
 import io.mangoo.utils.CommonUtils;

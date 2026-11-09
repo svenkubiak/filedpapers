@@ -10,7 +10,6 @@ public final class Const {
     public static final String COUNT = "count";
     public static final String DEFAULT_LANGUAGE = "en";
     public static final String EMAIL_PREFIX = "[Filed Papers]";
-    public static final String EXPIRES_AT = "expiresAt";
     public static final String FILEDPAPERS_FILES = "filedpapers.files";
     public static final String GENERAL_ERROR = "An error occurred. Please try again.";
     public static final String IMAGE = "image";

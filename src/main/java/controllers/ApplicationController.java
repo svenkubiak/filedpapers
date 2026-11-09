@@ -1,6 +1,6 @@
 package controllers;
 
-import io.mangoo.persistence.interfaces.Datastore;
+import io.mangoo.interfaces.persistence.Datastore;
 import io.mangoo.routing.Response;
 import jakarta.inject.Inject;
 
