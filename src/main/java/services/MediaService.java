@@ -159,7 +159,7 @@ public class MediaService {
                 .binaryResponse()
                 .send();
 
-        if (result.isValid()) {
+        if (result.isSuccess()) {
             uid = store(result.binaryBody(), userUid);
         } else {
             LOG.error("Failed to fetch and store image");
