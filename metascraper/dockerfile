@@ -25,6 +25,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 
 RUN npm ci \
+    && node -e "require('re2'); console.log('RE2 OK')" \
     && npm cache clean --force \
     && rm -rf /usr/local/lib/node_modules/npm \
     && rm -f /usr/local/bin/npm \
