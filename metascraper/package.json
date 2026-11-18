@@ -24,6 +24,6 @@
     "qs": "6.16.1"
   },
   "allowScripts": {
-    "re2": false
+    "re2@1.27.1": true
   }
 }
