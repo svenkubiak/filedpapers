@@ -29,7 +29,7 @@ public class SessionRevocationFilter implements PerRequestFilter {
     public SessionRevocationFilter(DataService dataService,
                                    AuthenticationService authenticationService,
                                    @Named(Key.AUTHENTICATION_COOKIE_NAME) String cookieName,
-                                   @Named("authentication.redirect.login") String loginRedirect) {
+                                   @Named(Key.AUTHENTICATION_REDIRECT) String loginRedirect) {
         this.dataService = Objects.requireNonNull(dataService, Required.DATA_SERVICE);
         this.authenticationService = Objects.requireNonNull(authenticationService, Required.AUTHENTICATION_SERVICE);
         this.cookieName = Objects.requireNonNull(cookieName, Required.COOKIE_NAME);
