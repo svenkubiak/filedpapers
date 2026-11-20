@@ -6,6 +6,7 @@ import io.mangoo.exceptions.MangooJwtException;
 import io.mangoo.interfaces.filters.PerRequestFilter;
 import io.mangoo.routing.Response;
 import io.mangoo.routing.bindings.Request;
+import io.mangoo.utils.JwtUtils;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import org.apache.logging.log4j.LogManager;
@@ -60,7 +61,7 @@ public class SessionRevocationFilter implements PerRequestFilter {
                 return response;
             }
         } catch (MangooJwtException e) {
-            LOG.error("Failed to parse authentication cookie", e);
+            JwtUtils.logRejection(LOG, "Authentication", e);
         }
 
         return Response.redirect(loginRedirect).end();

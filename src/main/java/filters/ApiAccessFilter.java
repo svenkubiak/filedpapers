@@ -10,6 +10,7 @@ import io.mangoo.exceptions.MangooJwtException;
 import io.mangoo.interfaces.filters.PerRequestFilter;
 import io.mangoo.routing.Response;
 import io.mangoo.routing.bindings.Request;
+import io.mangoo.utils.JwtUtils;
 import io.mangoo.utils.RequestUtils;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
@@ -97,7 +98,7 @@ public class ApiAccessFilter implements PerRequestFilter {
                 }
 
                 var user = dataService.findUserByUid(userUid);
-                if (user != null && AuthenticationService.isSessionValid(user, jwtClaimsSet)) {
+                if (AuthenticationService.isSessionValid(user, jwtClaimsSet)) {
                     request.addAttribute(Const.USER_UID, userUid);
                     return response;
                 }
@@ -105,7 +106,7 @@ public class ApiAccessFilter implements PerRequestFilter {
                 return Response.unauthorized().end();
             }
         } catch (MangooJwtException e) {
-            LOG.error("Failed to parse authorization", e);
+            JwtUtils.logRejection(LOG, "Authentication", e);
             return Response.unauthorized().end();
         }
 
