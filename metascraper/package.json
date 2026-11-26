@@ -10,13 +10,13 @@
   "dependencies": {
     "axios": "^1.21.1",
     "express": "^5.3.0",
-    "metascraper": "^5.58.7",
-    "metascraper-amazon": "^5.58.7",
-    "metascraper-description": "^5.58.7",
-    "metascraper-image": "^5.58.7",
-    "metascraper-title": "^5.58.7",
-    "metascraper-url": "^5.58.7",
-    "puppeteer-core": "^25.17.0",
+    "metascraper": "^5.58.10",
+    "metascraper-amazon": "^5.58.10",
+    "metascraper-description": "^5.58.10",
+    "metascraper-image": "^5.58.10",
+    "metascraper-title": "^5.58.10",
+    "metascraper-url": "^5.58.10",
+    "puppeteer-core": "^25.19.0",
     "sharp": "^0.35.5",
     "single-file-cli": "^2.27.3"
   },
@@ -24,6 +24,6 @@
     "qs": "6.16.1"
   },
   "allowScripts": {
-    "re2@1.27.1": true
+    "re2@1.27.2": true
   }
 }
